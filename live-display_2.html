@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Song Request Queue - Live Display</title>
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+      overflow: hidden;
+      height: 100vh;
+    }
+    
+    .header {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 30px 40px;
+      border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h1 {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .live-dot {
+      width: 20px;
+      height: 20px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { 
+        opacity: 1; 
+        transform: scale(1);
+      }
+      50% { 
+        opacity: 0.6; 
+        transform: scale(1.1);
+      }
+    }
+    
+    .stats-bar {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 20px 40px;
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      font-size: 20px;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fbbf24;
+    }
+    
+    .main-content {
+      display: flex;
+      height: calc(100vh - 220px);
+    }
+    
+    .now-playing-section {
+      flex: 1;
+      padding: 40px;
+      border-right: 2px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .section-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fbbf24;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .now-playing-card {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 40px;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .now-playing-number {
+      font-size: 80px;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-bottom: 20px;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    }
+    
+    .now-playing-song {
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      line-height: 1.2;
+    }
+    
+    .now-playing-artist {
+      font-size: 32px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 25px;
+    }
+    
+    .now-playing-requester {
+      font-size: 24px;
+      color: rgba(255, 255, 255, 0.6);
+      font-style: italic;
+    }
+    
+    .queue-section {
+      flex: 1;
+      padding: 40px;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    
+    .queue-section::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .queue-item {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 20px 25px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
+      animation: slideIn 0.5s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .queue-number {
+      font-size: 36px;
+      font-weight: 900;
+      color: #fbbf24;
+      min-width: 60px;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .queue-info {
+      flex: 1;
+    }
+    
+    .queue-song {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    
+    .queue-artist {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 3px;
+    }
+    
+    .queue-requester {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.5);
+      font-style: italic;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .empty-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    
+    .empty-text {
+      font-size: 28px;
+    }
+    
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+    }
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #fbbf24;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.7);
+      border-top: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .refresh-time {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .main-content {
+        flex-direction: column;
+      }
+      
+      .now-playing-section {
+        border-right: none;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        max-height: 40vh;
+      }
+      
+      .queue-section {
+        max-height: 60vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎵 SONG REQUESTS</h1>
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span>LIVE</span>
+    </div>
+  </div>
+  
+  <div class="stats-bar">
+    <div class="stat">
+      <span>🎧 In Queue:</span>
+      <span class="stat-value" id="queueCount">0</span>
+    </div>
+    <div class="stat">
+      <span>✓ Played Today:</span>
+      <span class="stat-value" id="playedCount">0</span>
+    </div>
+    <div class="stat">
+      <span>👥 Total Requests:</span>
+      <span class="stat-value" id="totalCount">0</span>
+    </div>
+  </div>
+  
+  <div class="main-content">
+    <div class="now-playing-section">
+      <div class="section-title">NOW PLAYING</div>
+      <div class="now-playing-card" id="nowPlaying">
+        <div class="loading">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="queue-section">
+      <div class="section-title">UP NEXT</div>
+      <div id="queueList">
+        <div class="loading">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <div class="refresh-time" id="lastUpdate">
+      🔄 Updating...
+    </div>
+    <div>Submit your requests at: <strong>[YOUR FORM URL]</strong></div>
+  </div>
+
+  <script>
+    // ============= CONFIGURATION =============
+    // REPLACE THIS with your Google Sheet ID
+    const SHEET_ID = '11JgHhTJyDXnJHDYE4DiuDPuCCrSWjpUW6uKRskpvIds';
+    
+    // How often to refresh (in seconds)
+    const REFRESH_INTERVAL = 15;
+    
+    // Google Sheets CSV export URL format
+    const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+    
+    // ============= STATE =============
+    let allSongs = [];
+    let currentSongIndex = 0;
+    
+    // ============= MAIN FUNCTIONS =============
+    
+    async function fetchQueue() {
+      try {
+        const response = await fetch(SHEET_CSV_URL);
+        const csvText = await response.text();
+        
+        // Parse CSV
+        const rows = parseCSV(csvText);
+        if (rows.length < 2) {
+          displayEmpty();
+          return;
+        }
+        
+        // Get headers and data
+        const headers = rows[0];
+        const data = rows.slice(1);
+        
+        // Find column indices
+        const requesterCol = headers.findIndex(h => 
+          h.toLowerCase().includes('name') || h.toLowerCase().includes('requester')
+        );
+        const songCol = headers.findIndex(h => 
+          h.toLowerCase().includes('song') && !h.toLowerCase().includes('artist')
+        );
+        const artistCol = headers.findIndex(h => 
+          h.toLowerCase().includes('artist')
+        );
+        const statusCol = headers.findIndex(h => 
+          h.toLowerCase().includes('status')
+        );
+        
+        // Process data
+        allSongs = data.map(row => ({
+          requester: row[requesterCol] || 'Unknown',
+          song: row[songCol] || 'Unknown Song',
+          artist: row[artistCol] || 'Unknown Artist',
+          status: row[statusCol] || ''
+        })).filter(song => song.song !== 'Unknown Song');
+        
+        // Separate played and pending
+        const played = allSongs.filter(s => s.status === 'Added ✓' || s.status.includes('Played'));
+        const pending = allSongs.filter(s => s.status !== 'Added ✓' && !s.status.includes('Played'));
+        
+        // Update display
+        updateStats(pending.length, played.length, allSongs.length);
+        displayNowPlaying(pending[0]);
+        displayQueue(pending.slice(1, 11)); // Show next 10
+        updateTimestamp();
+        
+      } catch (error) {
+        console.error('Error fetching queue:', error);
+        displayError();
+      }
+    }
+    
+    function parseCSV(csv) {
+      const rows = [];
+      let currentRow = [];
+      let currentField = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < csv.length; i++) {
+        const char = csv[i];
+        const nextChar = csv[i + 1];
+        
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            currentField += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          currentRow.push(currentField.trim());
+          currentField = '';
+        } else if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (currentField || currentRow.length > 0) {
+            currentRow.push(currentField.trim());
+            rows.push(currentRow);
+            currentRow = [];
+            currentField = '';
+          }
+          if (char === '\r' && nextChar === '\n') i++;
+        } else {
+          currentField += char;
+        }
+      }
+      
+      if (currentField || currentRow.length > 0) {
+        currentRow.push(currentField.trim());
+        rows.push(currentRow);
+      }
+      
+      return rows;
+    }
+    
+    function updateStats(queueCount, playedCount, totalCount) {
+      document.getElementById('queueCount').textContent = queueCount;
+      document.getElementById('playedCount').textContent = playedCount;
+      document.getElementById('totalCount').textContent = totalCount;
+    }
+    
+    function displayNowPlaying(song) {
+      const container = document.getElementById('nowPlaying');
+      
+      if (!song) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🎵</div>
+            <div class="empty-text">Queue is empty!</div>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = `
+        <div class="now-playing-number">#1</div>
+        <div class="now-playing-song">${escapeHtml(song.song)}</div>
+        <div class="now-playing-artist">${escapeHtml(song.artist)}</div>
+        <div class="now-playing-requester">Requested by ${escapeHtml(song.requester)}</div>
+      `;
+    }
+    
+    function displayQueue(songs) {
+      const container = document.getElementById('queueList');
+      
+      if (songs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">✓</div>
+            <div class="empty-text">No more songs in queue</div>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = songs.map((song, index) => `
+        <div class="queue-item">
+          <div class="queue-number">#${index + 2}</div>
+          <div class="queue-info">
+            <div class="queue-song">${escapeHtml(song.song)}</div>
+            <div class="queue-artist">${escapeHtml(song.artist)}</div>
+            <div class="queue-requester">Requested by ${escapeHtml(song.requester)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function displayEmpty() {
+      document.getElementById('nowPlaying').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🎵</div>
+          <div class="empty-text">Waiting for song requests...</div>
+        </div>
+      `;
+      
+      document.getElementById('queueList').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <div class="empty-text">Submit a request to get started!</div>
+        </div>
+      `;
+    }
+    
+    function displayError() {
+      document.getElementById('nowPlaying').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-text">Unable to load queue</div>
+        </div>
+      `;
+    }
+    
+    function updateTimestamp() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      document.getElementById('lastUpdate').innerHTML = `
+        🔄 Last updated: <strong>${timeStr}</strong>
+      `;
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // ============= INITIALIZATION =============
+    
+    // Initial load
+    fetchQueue();
+    
+    // Auto-refresh
+    setInterval(fetchQueue, REFRESH_INTERVAL * 1000);
+    
+    // Check if Sheet ID needs to be configured
+    if (SHEET_ID === '1O2s36eb35SsBgUOoo10frv1uInSio_0pJn-FHxtC5tM') {
+      console.warn('⚠️ Remember to update SHEET_ID in the script!');
+    }
+  </script>
+</body>
+</html>
