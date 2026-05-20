@@ -272,7 +272,6 @@
       gap: 8px;
     }
     
-    /* Responsive adjustments */
     @media (max-width: 1200px) {
       .main-content {
         flex-direction: column;
@@ -342,115 +341,35 @@
   </div>
 
   <script>
-    // ============= CONFIGURATION =============
-    // REPLACE THIS with your Google Sheet ID
-    const SHEET_ID = '11JgHhTJyDXnJHDYE4DiuDPuCCrSWjpUW6uKRskpvIds';
-    
-    // How often to refresh (in seconds)
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwhV0ZdZXXMLPH303L8ttpZCY1Oj6Yh3aM7vw9tJbXFf-FshLDGrZzHR3OOx_O2Eu1_qA/exec';
     const REFRESH_INTERVAL = 15;
     
-    // Google Sheets CSV export URL format
-    const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
-    
-    // ============= STATE =============
     let allSongs = [];
-    let currentSongIndex = 0;
-    
-    // ============= MAIN FUNCTIONS =============
     
     async function fetchQueue() {
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbwhV0ZdZXXMLPH303L8ttpZCY1Oj6Yh3aM7vw9tJbXFf-FshLDGrZzHR3OOx_O2Eu1_qA/exec');
-        const csvText = await response.text();
+        const response = await fetch(WEB_APP_URL);
+        const songs = await response.json();
         
-        // Parse CSV
-        const rows = parseCSV(csvText);
-        if (rows.length < 2) {
+        if (!songs || songs.length === 0) {
           displayEmpty();
           return;
         }
         
-        // Get headers and data
-        const headers = rows[0];
-        const data = rows.slice(1);
+        allSongs = songs.filter(s => s['SONG TITLE?'] && s["WHO'S THE ARTIST?"]);
         
-        // Find column indices
-        const requesterCol = headers.findIndex(h => 
-          h.toLowerCase().includes('name') || h.toLowerCase().includes('requester')
-        );
-        const songCol = headers.findIndex(h => 
-          h.toLowerCase().includes('song') && !h.toLowerCase().includes('artist')
-        );
-        const artistCol = headers.findIndex(h => 
-          h.toLowerCase().includes('artist')
-        );
-        const statusCol = headers.findIndex(h => 
-          h.toLowerCase().includes('status')
-        );
+        const played = allSongs.filter(s => s.Status === 'Added ✓');
+        const pending = allSongs.filter(s => s.Status !== 'Added ✓');
         
-        // Process data
-        allSongs = data.map(row => ({
-          requester: row[requesterCol] || 'Unknown',
-          song: row[songCol] || 'Unknown Song',
-          artist: row[artistCol] || 'Unknown Artist',
-          status: row[statusCol] || ''
-        })).filter(song => song.song !== 'Unknown Song');
-        
-        // Separate played and pending
-        const played = allSongs.filter(s => s.status === 'Added ✓' || s.status.includes('Played'));
-        const pending = allSongs.filter(s => s.status !== 'Added ✓' && !s.status.includes('Played'));
-        
-        // Update display
         updateStats(pending.length, played.length, allSongs.length);
         displayNowPlaying(pending[0]);
-        displayQueue(pending.slice(1, 11)); // Show next 10
+        displayQueue(pending.slice(1, 11));
         updateTimestamp();
         
       } catch (error) {
-        console.error('Error fetching queue:', error);
+        console.error('Error:', error);
         displayError();
       }
-    }
-    
-    function parseCSV(csv) {
-      const rows = [];
-      let currentRow = [];
-      let currentField = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < csv.length; i++) {
-        const char = csv[i];
-        const nextChar = csv[i + 1];
-        
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            currentField += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === ',' && !inQuotes) {
-          currentRow.push(currentField.trim());
-          currentField = '';
-        } else if ((char === '\n' || char === '\r') && !inQuotes) {
-          if (currentField || currentRow.length > 0) {
-            currentRow.push(currentField.trim());
-            rows.push(currentRow);
-            currentRow = [];
-            currentField = '';
-          }
-          if (char === '\r' && nextChar === '\n') i++;
-        } else {
-          currentField += char;
-        }
-      }
-      
-      if (currentField || currentRow.length > 0) {
-        currentRow.push(currentField.trim());
-        rows.push(currentRow);
-      }
-      
-      return rows;
     }
     
     function updateStats(queueCount, playedCount, totalCount) {
@@ -474,9 +393,9 @@
       
       container.innerHTML = `
         <div class="now-playing-number">#1</div>
-        <div class="now-playing-song">${escapeHtml(song.song)}</div>
-        <div class="now-playing-artist">${escapeHtml(song.artist)}</div>
-        <div class="now-playing-requester">Requested by ${escapeHtml(song.requester)}</div>
+        <div class="now-playing-song">${escapeHtml(song['SONG TITLE?'])}</div>
+        <div class="now-playing-artist">${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
+        <div class="now-playing-requester">Requested by ${escapeHtml(song["WHAT'S YOUR NAME?"])}</div>
       `;
     }
     
@@ -497,9 +416,9 @@
         <div class="queue-item">
           <div class="queue-number">#${index + 2}</div>
           <div class="queue-info">
-            <div class="queue-song">${escapeHtml(song.song)}</div>
-            <div class="queue-artist">${escapeHtml(song.artist)}</div>
-            <div class="queue-requester">Requested by ${escapeHtml(song.requester)}</div>
+            <div class="queue-song">${escapeHtml(song['SONG TITLE?'])}</div>
+            <div class="queue-artist">${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
+            <div class="queue-requester">Requested by ${escapeHtml(song["WHAT'S YOUR NAME?"])}</div>
           </div>
         </div>
       `).join('');
@@ -548,18 +467,8 @@
       return div.innerHTML;
     }
     
-    // ============= INITIALIZATION =============
-    
-    // Initial load
     fetchQueue();
-    
-    // Auto-refresh
     setInterval(fetchQueue, REFRESH_INTERVAL * 1000);
-    
-    // Check if Sheet ID needs to be configured
-    if (SHEET_ID === '1O2s36eb35SsBgUOoo10frv1uInSio_0pJn-FHxtC5tM') {
-      console.warn('⚠️ Remember to update SHEET_ID in the script!');
-    }
   </script>
 </body>
 </html>
