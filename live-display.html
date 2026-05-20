@@ -360,7 +360,7 @@
     
     async function fetchQueue() {
       try {
-        const response = await fetch(SHEET_CSV_URL);
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwhV0ZdZXXMLPH303L8ttpZCY1Oj6Yh3aM7vw9tJbXFf-FshLDGrZzHR3OOx_O2Eu1_qA/exec');
         const csvText = await response.text();
         
         // Parse CSV
