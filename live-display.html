@@ -337,7 +337,7 @@
     <div class="refresh-time" id="lastUpdate">
       🔄 Updating...
     </div>
-    <div>Submit your requests at: <strong>[YOUR FORM URL]</strong></div>
+    <div style="display: flex; align-items: center; gap: 15px;">   <span>Submit your request by scanning the QR code →</span>   <img id="qrcode" style="width: 80px; height: 80px; background: white; padding: 5px; border-radius: 8px;" alt="QR Code"> </div>
   </div>
 
   <script>
@@ -469,6 +469,9 @@
     
     fetchQueue();
     setInterval(fetchQueue, REFRESH_INTERVAL * 1000);
+    const formUrl = 'https://forms.gle/6Lfgdw5tLhpyA6ZP8';
+const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(formUrl)}`;
+document.getElementById('qrcode').src = qrApi;
   </script>
 </body>
 </html>
