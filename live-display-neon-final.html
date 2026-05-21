@@ -445,6 +445,7 @@
         const songs = await res.json();
         if (!songs || !songs.length) { document.getElementById('totalCount').textContent = '0'; return; }
 
+        if (songs[0]) console.log('Sheet columns:', Object.keys(songs[0]));
         allSongs = songs.filter(s => s['SONG TITLE?'] && s["WHO'S THE ARTIST?"]);
         allSongs.sort((a, b) => new Date(a.Timestamp||0) - new Date(b.Timestamp||0));
 
@@ -461,7 +462,7 @@
     }
 
     function createSongCard(song) {
-      const videoId = song['Video ID'] || '';
+      const videoId = song['Video ID'] || song['video id'] || song['videoId'] || song['VIDEO ID'] || '';
       const thumb = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
       const ts = new Date(song.Timestamp);
       const timeStr = isNaN(ts) ? '' : ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
@@ -501,7 +502,11 @@
       container.innerHTML = messages.map(msg => {
         const name = msg.name || 'Guest';
         const idx  = getUserColor(name);
-        const time = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+        const rawTime = msg.timestamp || msg.Timestamp || '';
+        const parsedTime = rawTime ? new Date(rawTime) : null;
+        const time = (parsedTime && !isNaN(parsedTime))
+          ? parsedTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true})
+          : '';
         return `
           <div class="chat-message user-${idx}">
             <div class="chat-header-row">
