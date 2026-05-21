@@ -501,7 +501,7 @@
       container.innerHTML = messages.map(msg => {
         const name = msg.name || 'Guest';
         const idx  = getUserColor(name);
-        const time = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+        const time = msg.timestamp   ? new Date(msg.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true})   : new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
         return `
           <div class="chat-message user-${idx}">
             <div class="chat-header-row">
