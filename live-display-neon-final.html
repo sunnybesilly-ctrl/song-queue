@@ -346,7 +346,7 @@
 
     <!-- HEADER -->
     <div class="header">
-      <div class="title">✨ SONG REQUESTS ✨</div>
+      <div class="title">✨ SONG REQUESTS ✨ <span id="headerDate" style="font-size:22px;opacity:0.8;letter-spacing:1px;"></span></div>
       <div class="header-right">
         <div class="total-stat" id="totalCount">0</div>
         <div class="dot"></div>
@@ -522,6 +522,8 @@
     }
 
     // ── INIT ─────────────────────────────────────────────────────
+    const _now = new Date();
+    document.getElementById('headerDate').textContent = _now.toLocaleDateString('en-US', {month:'numeric',day:'numeric',year:'2-digit'});
     fetchSongQueue();
     fetchChatMessages();
     setInterval(() => { fetchSongQueue(); fetchChatMessages(); }, REFRESH_INTERVAL * 1000);
