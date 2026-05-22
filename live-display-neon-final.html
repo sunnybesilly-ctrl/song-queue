@@ -9,7 +9,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #0d3d0d 0%, #1a5c1a 25%, #2d7a2d 50%, #1a5c1a 75%, #0d3d0d 100%);
+      background: transparent;
       color: #fff;
       height: 100vh;
       overflow: hidden;
@@ -54,6 +54,12 @@
       letter-spacing: 3px;
       text-align: center;
       text-shadow: 0 0 20px rgba(255,215,0,0.6), 3px 3px 6px rgba(0,0,0,0.8);
+      animation: neonPulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes neonPulse {
+      0%, 100% { text-shadow: 0 0 30px rgba(255,215,0,1), 0 0 60px rgba(255,215,0,0.6), 0 0 100px rgba(255,215,0,0.3); }
+      50% { text-shadow: 0 0 10px rgba(255,215,0,0.3), 0 0 20px rgba(255,215,0,0.1); }
     }
 
     .header-right {
@@ -127,8 +133,8 @@
     }
 
     .song-card {
-      background: linear-gradient(135deg, rgba(255,215,0,0.18), rgba(200,16,46,0.12));
-      border: 2px solid #FFD700;
+      background: transparent;
+      border: none;
       border-radius: 14px;
       padding: 10px 14px;
       display: flex;
@@ -136,41 +142,51 @@
       gap: 14px;
       min-width: 560px;
       max-width: 580px;
-      box-shadow: 0 0 24px rgba(255,215,0,0.2), 0 4px 16px rgba(0,0,0,0.5);
-      backdrop-filter: blur(22px);
-      height: 340px;
+      box-shadow: none;
+      backdrop-filter: none;
+      height: 420px;
+      animation: cardSlideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+
+    @keyframes cardSlideIn {
+      0% { opacity: 0; transform: translateX(80px) scale(0.85); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
     }
 
     .thumbnail {
-      width: 280px;
+      width: auto;
       height: 100%;
+      max-width: 320px;
       border-radius: 10px;
       object-fit: cover;
-      border: 2px solid rgba(255,255,255,0.8);
-      box-shadow: 0 0 16px rgba(255,215,0,0.3);
-      background: rgba(0,0,0,0.4);
+      aspect-ratio: 1 / 1;
+      border: none;
+      box-shadow: none;
       flex-shrink: 0;
-      align-self: stretch;
+      display: block;
     }
 
     .song-info {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      gap: 6px;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 8px 0;
     }
 
     .submission-time {
-      font-size: 15px;
+      font-size: 22px;
       color: #FFD700;
       background: rgba(0,0,0,0.6);
-      padding: 4px 10px;
-      border-radius: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
       display: inline-block;
       font-weight: 700;
-      box-shadow: 0 0 10px rgba(255,215,0,0.3);
+      box-shadow: 0 0 14px rgba(255,215,0,0.5);
       align-self: flex-start;
+      margin-top: auto;
+      order: 10;
     }
 
     .artist {
@@ -199,7 +215,7 @@
       backdrop-filter: blur(12px);
       border-top: 4px solid #FFD700;
       box-shadow: 0 -2px 0 #c8102e;
-      padding: 28px 30px;
+      padding: 32px 30px;
       display: flex;
       justify-content: space-evenly;
       align-items: center;
@@ -208,14 +224,14 @@
 
     .qr-section {
       display: flex;
-      flex-direction: column;
+      flex-direction: column-reverse;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
     }
 
     .qr-code {
-      width: 200px;
-      height: 200px;
+      width: 240px;
+      height: 240px;
       background: white;
       padding: 5px;
       border-radius: 10px;
@@ -230,12 +246,12 @@
     }
 
     .qr-label {
-      font-size: 16px;
+      font-size: 20px;
       color: #FFD700;
-      font-weight: 700;
-      letter-spacing: 1px;
+      font-weight: 800;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      text-shadow: 0 0 8px rgba(255,215,0,0.4);
+      text-shadow: 0 0 12px rgba(255,215,0,0.7);
       text-align: center;
     }
 
@@ -298,7 +314,7 @@
       margin-bottom: 5px;
     }
 
-    .chat-name { font-size: 17px; font-weight: 700; }
+    .chat-name { font-size: 21px; font-weight: 700; }
     .chat-time { font-size: 14px; color: #FFD700; font-weight: 600; }
     .chat-text { font-size: 17px; color: #fff; line-height: 1.5; font-weight: 500; }
 
@@ -343,11 +359,14 @@
     <circle cx="85%" cy="85%" r="100" fill="#c8102e" filter="url(#spray)"/>
   </svg>
 
+  <!-- Floating music notes -->
+  <canvas id="notesCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.55;"></canvas>
+
   <div class="container">
 
     <!-- HEADER -->
     <div class="header">
-      <div class="title">✨ SONG REQUESTS ✨ <span id="headerDate" style="font-size:22px;opacity:0.8;letter-spacing:1px;"></span></div>
+      <div class="title">✨ SONG REQUESTS ✨ <span id="headerDate"></span></div>
       <div class="header-right">
         <div class="total-stat" id="totalCount">0</div>
         <div class="dot"></div>
@@ -458,24 +477,34 @@
     function displayQueue() {
       const wrapper = document.getElementById('tickerWrapper');
       if (!allSongs.length) { wrapper.innerHTML = '<div class="empty-state">No requests yet…</div>'; return; }
-      const html = allSongs.map(createSongCard).join('');
+      const html = allSongs.map((s,i) => createSongCard(s,i)).join('');
       wrapper.innerHTML = html + html; // duplicate for seamless loop
     }
 
-    function createSongCard(song) {
+    const CARD_PALETTES = [
+      { artist: '#FFD700', song: '#fff', requester: '#86efac', border: '#FFD700' },
+      { artist: '#f472b6', song: '#fde68a', requester: '#a5f3fc', border: '#f472b6' },
+      { artist: '#a78bfa', song: '#fff', requester: '#fcd34d', border: '#a78bfa' },
+      { artist: '#34d399', song: '#fde68a', requester: '#f9a8d4', border: '#34d399' },
+      { artist: '#fb923c', song: '#fff', requester: '#86efac', border: '#fb923c' },
+    ];
+
+    function createSongCard(song, idx) {
       const videoId = song['Video ID'] || song['video id'] || song['videoId'] || song['VIDEO ID'] || '';
-      const thumb = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
+      const thumb = videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '';
+      const thumbFallback = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
       const ts = new Date(song.Timestamp);
       const timeStr = isNaN(ts) ? '' : ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+      const p = CARD_PALETTES[idx % CARD_PALETTES.length];
 
       return `
-        <div class="song-card">
-          ${thumb ? `<img class="thumbnail" src="${thumb}" alt="thumb">` : ''}
+        <div class="song-card" style="border-color:${p.border}; box-shadow: 0 0 28px ${p.border}44, 0 4px 16px rgba(0,0,0,0.5);">
+          ${thumb ? `<img class="thumbnail" src="${thumb}" alt="thumb" onerror="this.src='${thumbFallback}'">` : ''}
           <div class="song-info">
+            <div class="artist" style="color:${p.artist}">${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
+            <div class="song-title" style="color:${p.song}">${escapeHtml(song['SONG TITLE?'])}</div>
+            <div class="requester" style="color:${p.requester}">Requested by ${escapeHtml(song["WHAT'S YOUR NAME?"]||'')}</div>
             ${timeStr ? `<div class="submission-time">⏰ ${timeStr}</div>` : ''}
-            <div class="artist">${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
-            <div class="song-title">${escapeHtml(song['SONG TITLE?'])}</div>
-            <div class="requester">Requested by ${escapeHtml(song["WHAT'S YOUR NAME?"]||'')}</div>
           </div>
         </div>
       `;
@@ -524,10 +553,134 @@
 
     // ── INIT ─────────────────────────────────────────────────────
     const _now = new Date();
-    document.getElementById('headerDate').textContent = _now.toLocaleDateString('en-US', {month:'numeric',day:'numeric',year:'2-digit'});
+    const dateStr = _now.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+    const dateEl = document.getElementById('headerDate');
+    dateEl.textContent = dateStr;
+    dateEl.style.cssText = 'font-size:18px; font-weight:400; letter-spacing:2px; opacity:0.9; font-style:italic; color:#FFD700; text-shadow: 0 0 12px rgba(255,215,0,0.5);';
     fetchSongQueue();
     fetchChatMessages();
     setInterval(() => { fetchSongQueue(); fetchChatMessages(); }, REFRESH_INTERVAL * 1000);
+  </script>
+
+  <script>
+    // Floating music notes animation
+    const canvas = document.getElementById('notesCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+    const NOTES = ['♩','♪','♫','♬','♭','♮','♯'];
+    const COLORS = ['#FFD700','#f472b6','#a78bfa','#34d399','#fb923c','#fff'];
+    const notes = Array.from({length: 28}, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      note: NOTES[Math.floor(Math.random()*NOTES.length)],
+      color: COLORS[Math.floor(Math.random()*COLORS.length)],
+      size: 14 + Math.random() * 28,
+      speed: 0.3 + Math.random() * 0.7,
+      drift: (Math.random() - 0.5) * 0.4,
+      opacity: 0.2 + Math.random() * 0.5,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.01 + Math.random() * 0.02
+    }));
+
+    function animateNotes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      notes.forEach(n => {
+        n.y -= n.speed;
+        n.x += Math.sin(n.wobble) * n.drift;
+        n.wobble += n.wobbleSpeed;
+        if (n.y < -40) { n.y = canvas.height + 20; n.x = Math.random() * canvas.width; }
+        ctx.save();
+        ctx.globalAlpha = n.opacity;
+        ctx.fillStyle = n.color;
+        ctx.font = `${n.size}px serif`;
+        ctx.shadowColor = n.color;
+        ctx.shadowBlur = 12;
+        ctx.fillText(n.note, n.x, n.y);
+        ctx.restore();
+      });
+      requestAnimationFrame(animateNotes);
+    }
+    animateNotes();
+  </script>
+
+  <script>
+    // ── FIREWORKS ─────────────────────────────────────────────────
+    const fwCanvas = document.createElement('canvas');
+    fwCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;';
+    document.body.appendChild(fwCanvas);
+    const fwCtx = fwCanvas.getContext('2d');
+    fwCanvas.width = window.innerWidth;
+    fwCanvas.height = window.innerHeight;
+    window.addEventListener('resize', () => { fwCanvas.width = window.innerWidth; fwCanvas.height = window.innerHeight; });
+
+    const FW_COLORS = ['#FFD700','#f472b6','#a78bfa','#34d399','#fb923c','#fff','#c8102e','#60a5fa'];
+    let particles = [];
+
+    function launchFirework(x, y) {
+      const count = 80;
+      const color = FW_COLORS[Math.floor(Math.random() * FW_COLORS.length)];
+      const color2 = FW_COLORS[Math.floor(Math.random() * FW_COLORS.length)];
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 / count) * i;
+        const speed = 2 + Math.random() * 6;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 1,
+          color: Math.random() > 0.5 ? color : color2,
+          size: 2 + Math.random() * 3,
+          decay: 0.012 + Math.random() * 0.01,
+          gravity: 0.08
+        });
+      }
+    }
+
+    function animateFireworks() {
+      fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+      particles = particles.filter(p => p.alpha > 0.01);
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.vx *= 0.98;
+        p.alpha -= p.decay;
+        fwCtx.save();
+        fwCtx.globalAlpha = p.alpha;
+        fwCtx.fillStyle = p.color;
+        fwCtx.shadowColor = p.color;
+        fwCtx.shadowBlur = 6;
+        fwCtx.beginPath();
+        fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        fwCtx.fill();
+        fwCtx.restore();
+      });
+      requestAnimationFrame(animateFireworks);
+    }
+    animateFireworks();
+
+    // Track song count and fire fireworks when new song appears
+    let lastSongCount = 0;
+    const origFetch = fetchSongQueue;
+    const origDisplay = displayQueue;
+
+    // Patch displayQueue to detect new songs
+    const _origDisplayQueue = displayQueue;
+    window.displayQueue = function() {
+      _origDisplayQueue();
+      if (allSongs.length > lastSongCount && lastSongCount > 0) {
+        // New song added — burst fireworks!
+        const x = Math.random() * window.innerWidth * 0.6 + window.innerWidth * 0.1;
+        const y = Math.random() * window.innerHeight * 0.4 + 80;
+        launchFirework(x, y);
+        setTimeout(() => launchFirework(x + 100, y - 60), 200);
+        setTimeout(() => launchFirework(x - 80, y + 40), 400);
+      }
+      lastSongCount = allSongs.length;
+    };
   </script>
 </body>
 </html>
