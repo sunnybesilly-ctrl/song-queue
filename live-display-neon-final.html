@@ -358,6 +358,126 @@
       color: rgba(255,255,255,0.4);
       font-size: 18px;
     }
+
+    /* ── CHAT HYPE OVERLAY ── */
+    .hype-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 9000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .hype-overlay.visible { opacity: 1; }
+
+    .hype-text {
+      font-size: 72px;
+      font-weight: 900;
+      color: #FFD700;
+      text-align: center;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      line-height: 1.2;
+      padding: 0 60px;
+      text-shadow: 0 0 40px rgba(255,215,0,0.9), 0 0 80px rgba(255,215,0,0.5);
+      animation: hypeFlash 0.5s ease-in-out infinite;
+    }
+
+    .hype-overlay.settled .hype-text {
+      animation: none;
+      text-shadow: 0 0 30px rgba(255,215,0,0.7), 0 0 60px rgba(255,215,0,0.3);
+    }
+
+    .hype-sub {
+      font-size: 38px;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 24px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(255,255,255,0.5);
+    }
+
+    @keyframes hypeFlash {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.2; transform: scale(0.97); }
+    }
+
+    /* ── ENGAGEMENT OVERLAYS ── */
+    .engage-overlay {
+      position: fixed;
+      bottom: 0; left: 0;
+      width: 100%; height: 88%;
+      z-index: 8500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transform: translateY(100%);
+      transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      border-radius: 24px 24px 0 0;
+    }
+    .engage-overlay.visible { transform: translateY(0); }
+
+    .engage-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .engage-text {
+      font-size: 72px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      line-height: 1.2;
+      padding: 0 60px;
+    }
+
+    .engage-overlay.flashing .engage-text {
+      animation: engageWiggle 0.25s ease-in-out infinite;
+    }
+    .engage-overlay.settled .engage-text { animation: none; }
+
+    .engage-qr {
+      width: 220px;
+      height: 220px;
+      background: white;
+      padding: 10px;
+      border-radius: 16px;
+      border: 5px solid currentColor;
+      box-shadow: 0 0 40px currentColor;
+    }
+
+    .engage-sub {
+      font-size: 34px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 0 0 16px rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 0 40px;
+    }
+
+    @keyframes engageWiggle {
+      0%   { transform: translateX(0) scale(1.02); }
+      25%  { transform: translateX(-8px) scale(1.03); }
+      50%  { transform: translateX(8px) scale(1.02); }
+      75%  { transform: translateX(-6px) scale(1.03); }
+      100% { transform: translateX(0) scale(1.02); }
+    }
   </style>
 </head>
 <body>
@@ -572,6 +692,53 @@
       }).join('');
 
       if (wasAtBottom || autoScroll) container.scrollTop = container.scrollHeight;
+      checkHypeOverlay(messages.length);
+    }
+
+    // ── HYPE OVERLAY ─────────────────────────────────────────────
+    let hypeShownAt = 0;
+    let hypeActive = false;
+    let lastHypeCount = 0;
+
+    function checkHypeOverlay(count) {
+      if (hypeActive) return;
+      // Trigger when 3+ new messages arrive since last check
+      const newSince = count - lastHypeCount;
+      if (newSince >= 3) {
+        lastHypeCount = count;
+        showHype();
+      }
+    }
+
+    function showHype() {
+      hypeActive = true;
+      const overlay = document.getElementById('hypeOverlay');
+      overlay.classList.remove('settled');
+      overlay.classList.add('visible');
+
+      // Flash for 8 seconds then settle static
+      setTimeout(() => {
+        overlay.classList.add('settled');
+      }, 8000);
+
+      // Firework bursts during hype
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+          if (typeof launchFirework === 'function') {
+            launchFirework(
+              Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1,
+              Math.random() * window.innerHeight * 0.5 + 80
+            );
+          }
+        }, i * 1500);
+      }
+
+      // Hide after 60 seconds
+      setTimeout(() => {
+        overlay.classList.remove('visible', 'settled');
+        hypeActive = false;
+        lastHypeCount = allSongs.length;
+      }, 60000);
     }
 
     // ── INIT ─────────────────────────────────────────────────────
@@ -628,6 +795,107 @@
     fetchSongQueue();
     fetchChatMessages();
     setInterval(() => { fetchSongQueue(); fetchChatMessages(); }, REFRESH_INTERVAL * 1000);
+
+    // ── ENGAGEMENT ROTATOR ───────────────────────────────────────
+    const ENGAGEMENTS = [
+      {
+        text: '🎵 Request a Song!',
+        sub: 'Scan to add your banger to the queue',
+        color: '#FFD700',
+        bg: 'rgba(0,0,0,0.85)',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://forms.gle/6Lfgdw5tLhpyA6ZP8'
+      },
+      {
+        text: '💬 Join the Party Chat!',
+        sub: 'Scan to join the convo right now',
+        color: '#f472b6',
+        bg: 'rgba(0,0,0,0.85)',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://forms.gle/jPyroTbAu3Z2xWep8'
+      },
+      {
+        text: '👻 Add Me on Snapchat!',
+        sub: "Scan to connect — let's be friends",
+        color: '#FFFC00',
+        bg: 'rgba(0,0,0,0.88)',
+        qrSnapchat: true
+      },
+      {
+        text: '💸 Send Me Money lol',
+        sub: 'Scan to tip the DJ — @sunnyaubade',
+        color: '#34d399',
+        bg: 'rgba(0,0,0,0.85)',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://venmo.com/sunnyaubade'
+      }
+    ];
+
+    let engageIdx = 0;
+    let engageActive = false;
+
+    function showEngagement() {
+      if (engageActive || document.getElementById('hypeOverlay').classList.contains('visible')) return;
+      engageActive = true;
+
+      const e = ENGAGEMENTS[engageIdx % ENGAGEMENTS.length];
+      engageIdx++;
+
+      const overlay = document.getElementById('engageOverlay');
+      const textEl = document.getElementById('engageText');
+      const subEl = document.getElementById('engageSub');
+      const qrEl = document.getElementById('engageQR');
+
+      textEl.textContent = e.text;
+      textEl.style.color = e.color;
+      textEl.style.textShadow = '0 0 40px ' + e.color + ', 0 0 80px ' + e.color + '55';
+      subEl.textContent = e.sub;
+      overlay.style.background = e.bg;
+      qrEl.style.borderColor = e.color;
+      qrEl.style.boxShadow = '0 0 40px ' + e.color;
+      qrEl.style.color = e.color;
+
+      if (e.qrSnapchat) {
+        qrEl.src = document.getElementById('snapQR') ? document.getElementById('snapQR').src : '';
+      } else {
+        qrEl.src = e.qrSrc;
+      }
+
+      // Slide up from bottom + wiggle for 5s
+      overlay.classList.remove('settled', 'flashing');
+      overlay.classList.add('visible', 'flashing');
+
+      // Fireworks during entrance
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          if (typeof launchFirework === 'function') {
+            launchFirework(
+              Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1,
+              Math.random() * window.innerHeight * 0.3 + 60
+            );
+          }
+        }, i * 1500);
+      }
+
+      // After 5s stop wiggling, go static for 30s
+      setTimeout(() => {
+        overlay.classList.remove('flashing');
+        overlay.classList.add('settled');
+      }, 5000);
+
+      // Slide back down after 35s total (5 wiggle + 30 static)
+      setTimeout(() => {
+        overlay.classList.remove('visible', 'settled', 'flashing');
+        engageActive = false;
+      }, 35000);
+    }
+
+    // Every 5 minutes
+    function scheduleEngagement() {
+      setTimeout(() => {
+        showEngagement();
+        scheduleEngagement();
+      }, 300000);
+    }
+    setTimeout(scheduleEngagement, 300000); // first one at 5 min
+
 
     // Start scroll after first render
     setTimeout(() => { buildCardSpeeds(); animateScroll(); }, 800);
