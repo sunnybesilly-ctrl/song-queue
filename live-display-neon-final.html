@@ -753,8 +753,8 @@
     let scrollX = 0;
     let cardWidths = [];
     let cardSpeeds = [];
-    const BASE_FAST = 1.8;
-    const BASE_SLOW = 0.4;
+    const BASE_FAST = 2.5;  // older songs scroll fast
+    const BASE_SLOW = 0.25; // newest song lingers
 
     function buildCardSpeeds() {
       const wrapper = document.getElementById('tickerWrapper');
@@ -791,6 +791,10 @@
       wrapper.style.transform = `translateX(-${scrollX}px)`;
       requestAnimationFrame(animateScroll);
     }
+
+    // Move engage overlay to body so container overflow doesn't clip it
+    document.body.appendChild(document.getElementById('engageOverlay'));
+    document.body.appendChild(document.getElementById('hypeOverlay'));
 
     fetchSongQueue();
     fetchChatMessages();
@@ -1004,12 +1008,9 @@
     // Track song count and fire fireworks when new song appears
     let lastSongCount = 0;
 
-    // Patch displayQueue to detect new songs
-    const _origDisplayQueue = displayQueue;
-    window.displayQueue = function() {
-      _origDisplayQueue();
+    // Check for new songs on each queue refresh — no patching needed
+    setInterval(() => {
       if (allSongs.length > lastSongCount && lastSongCount > 0) {
-        // New song — big triple burst!
         const x = Math.random() * window.innerWidth * 0.5 + window.innerWidth * 0.1;
         const y = Math.random() * window.innerHeight * 0.35 + 80;
         launchFirework(x, y);
@@ -1018,7 +1019,7 @@
         setTimeout(() => launchFirework(window.innerWidth * 0.5, 150), 540);
       }
       lastSongCount = allSongs.length;
-    };
+    }, 10000);
 
     // ── AMBIENT SPARKLES ─────────────────────────────────────────
     // Tiny sparkle particles that drift from corners periodically
