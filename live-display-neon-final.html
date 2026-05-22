@@ -88,9 +88,24 @@
       box-shadow: 0 0 24px #00ff00;
     }
 
+    @keyframes scanMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100px; }
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .header-date {
+      position: absolute;
+      left: 40px;
+      font-size: 20px;
+      font-weight: 600;
+      color: rgba(255,215,0,0.75);
+      letter-spacing: 2px;
+      font-style: italic;
     }
 
     /* ── MAIN CONTENT ── */
@@ -105,6 +120,7 @@
     /* ── LEFT: SONGS + QR FOOTER ── */
     .left-panel {
       flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -141,11 +157,11 @@
       display: flex;
       align-items: stretch;
       gap: 14px;
-      min-width: 680px;
-      max-width: 720px;
+      min-width: 620px;
+      max-width: 680px;
       box-shadow: none;
       backdrop-filter: none;
-      height: 500px;
+      height: 420px;
     }
 
     .thumbnail {
@@ -187,30 +203,42 @@
     }
 
     .artist {
-      font-size: 52px;
+      font-size: 48px;
       font-weight: 900;
       color: #FFD700;
       text-shadow: 0 0 15px rgba(255,215,0,0.5);
       line-height: 1.2;
       word-break: break-word;
       overflow-wrap: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .song-title {
-      font-size: 46px;
+      font-size: 42px;
       color: #fff;
       font-weight: 600;
       word-break: break-word;
       overflow-wrap: break-word;
       line-height: 1.2;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .requester {
-      font-size: 36px;
-      color: #fff;
+      font-size: 32px;
+      color: rgba(255,255,255,0.9);
       font-weight: 600;
       word-break: break-word;
       overflow-wrap: break-word;
+      white-space: normal;
+      font-style: italic;
+      letter-spacing: 1px;
+      line-height: 1.3;
     }
 
 
@@ -241,48 +269,60 @@
 
     /* ── QR FOOTER (left side) ── */
     .qr-footer {
-      background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(12px);
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(16px);
       border-top: 4px solid #FFD700;
-      box-shadow: 0 -2px 0 #c8102e;
-      padding: 28px 20px;
+      box-shadow: 0 -2px 0 #c8102e, 0 -8px 40px rgba(255,215,0,0.15);
+      padding: 16px 24px;
       display: flex;
-      justify-content: space-evenly;
-      align-items: center;
-      gap: 16px;
+      justify-content: space-around;
+      align-items: stretch;
+      gap: 12px;
+      overflow: hidden;
     }
 
     .qr-section {
       display: flex;
-      flex-direction: column-reverse;
+      flex-direction: column;
       align-items: center;
+      justify-content: flex-end;
       gap: 10px;
+      flex: 1;
+      min-width: 0;
+      padding: 0 4px;
     }
 
     .qr-code {
-      width: 200px;
-      height: 200px;
+      width: min(170px, calc(23vw - 60px));
+      height: min(170px, calc(23vw - 60px));
+      max-width: 170px;
+      max-height: 170px;
       background: white;
       padding: 5px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 3px solid #FFD700;
-      box-shadow: 0 0 20px rgba(255,215,0,0.6);
+      box-shadow: 0 0 20px rgba(255,215,0,0.5), 0 4px 16px rgba(0,0,0,0.6);
       transition: all 0.3s;
+      flex-shrink: 0;
     }
 
     .qr-code:hover {
-      transform: scale(1.08);
-      box-shadow: 0 0 30px rgba(255,215,0,0.9);
+      transform: scale(1.06);
+      box-shadow: 0 0 35px rgba(255,215,0,0.9);
     }
 
     .qr-label {
-      font-size: 28px;
+      font-size: clamp(13px, 1.4vw, 22px);
       color: #FFD700;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
-      text-shadow: 0 0 12px rgba(255,215,0,0.7);
+      text-shadow: 0 0 12px rgba(255,215,0,0.8);
       text-align: center;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.2;
+      max-width: 100%;
     }
 
     /* ── RIGHT: CHAT (full height) ── */
@@ -297,16 +337,18 @@
     }
 
     .chat-header {
-      padding: 18px;
-      background: linear-gradient(135deg, #1a5c1a, #0d3d0d);
+      padding: 20px;
+      background: linear-gradient(135deg, #1a5c1a 0%, #0d3d0d 50%, #1a5c1a 100%);
       border-bottom: 3px solid #FFD700;
-      font-size: 28px;
-      font-weight: 700;
+      box-shadow: 0 3px 0 #c8102e;
+      font-size: 32px;
+      font-weight: 900;
       color: #FFD700;
       text-align: center;
-      letter-spacing: 2px;
-      text-shadow: 0 0 10px rgba(255,215,0,0.4);
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(255,215,0,0.7), 0 0 40px rgba(255,215,0,0.3);
       flex-shrink: 0;
+      animation: neonPulse 3s ease-in-out infinite;
     }
 
     .chat-messages {
@@ -537,6 +579,22 @@
     <circle cx="85%" cy="85%" r="100" fill="#c8102e" filter="url(#spray)"/>
   </svg>
 
+  <!-- Scanline overlay -->
+  <div style="
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0) 0px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0.07) 2px,
+      rgba(0,0,0,0.07) 4px
+    );
+    animation: scanMove 8s linear infinite;
+  "></div>
+
   <!-- Floating music notes -->
   <canvas id="notesCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.55;"></canvas>
 
@@ -544,7 +602,8 @@
 
     <!-- HEADER -->
     <div class="header">
-      <div class="title">✨ SONG REQUESTS ✨ <span id="headerDate"></span></div>
+      <div class="title">✨ SONG REQUESTS ✨</div>
+      <div class="header-date" id="headerDate"></div>
       <div class="header-right">
         <div class="total-stat" id="totalCount">0</div>
         <div class="dot"></div>
@@ -597,7 +656,7 @@
 
       <!-- RIGHT PANEL: full-height chat -->
       <div class="chat-section">
-        <div class="chat-header">💬 PARTY CHAT</div>
+        <div class="chat-header">💬 PARTY CHAT 💬</div>
         <div class="chat-messages" id="chatMessages">
           <div class="empty-state">No messages yet…</div>
         </div>
@@ -640,7 +699,7 @@
     // ── SONG QUEUE ───────────────────────────────────────────────
     async function fetchSongQueue() {
       try {
-        const res = await fetch(SONG_QUEUE_URL);
+        const res = await fetch(SONG_QUEUE_URL, { redirect: 'follow' });
         const songs = await res.json();
         if (!songs || !songs.length) { document.getElementById('totalCount').textContent = '0'; return; }
 
@@ -703,7 +762,7 @@
     // ── CHAT ─────────────────────────────────────────────────────
     async function fetchChatMessages() {
       try {
-        const res = await fetch(CHAT_SHEET_URL);
+        const res = await fetch(CHAT_SHEET_URL, { redirect: 'follow' });
         const messages = await res.json();
         if (!messages || !messages.length) {
           document.getElementById('chatMessages').innerHTML = '<div class="empty-state">No messages yet…</div>';
@@ -758,8 +817,9 @@
     }
 
     function showHype() {
-      hypeActive = true;
       const overlay = document.getElementById('hypeOverlay');
+      if (!overlay) return;
+      hypeActive = true;
       overlay.classList.remove('settled');
       overlay.classList.add('visible');
 
@@ -793,7 +853,7 @@
     const dateStr = _now.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
     const dateEl = document.getElementById('headerDate');
     dateEl.textContent = dateStr;
-    dateEl.style.cssText = 'font-size:18px; font-weight:400; letter-spacing:2px; opacity:0.9; font-style:italic; color:#FFD700; text-shadow: 0 0 12px rgba(255,215,0,0.5);';
+    // date styled via CSS class now
 
     // ── VARIABLE SPEED SCROLL ──────────────────────────────────
     // Cards scroll with individual speeds — older = faster, newer = slower/lingering
@@ -823,7 +883,7 @@
       {
         emoji: '🎵',
         text: 'Add to the Vibe',
-        sub: 'Got a song that NEEDS to be played tonight?\nDon\'t hold back — put it in the queue!',
+        sub: "Got a song that NEEDS to be played tonight? Don't hold back — put it in the queue!",
         cta: '📱 Request a Song',
         color: '#FFD700',
         bg: 'rgba(10,30,10,0.92)',
@@ -833,7 +893,7 @@
       {
         emoji: '💬',
         text: 'The Chat is Waiting',
-        sub: 'Everyone\'s talking — except you.\nScan and join the party chat right now!',
+        sub: "Everyone's talking — except you. Scan and join the party chat right now!",
         cta: '📱 Join the Chat',
         color: '#f472b6',
         bg: 'rgba(30,5,20,0.92)',
@@ -843,7 +903,7 @@
       {
         emoji: '👻',
         text: 'Let\'s Be Friends',
-        sub: 'Had a great time tonight?\nAdd me on Snapchat and let\'s keep the party going!',
+        sub: "Had a great time tonight? Add me on Snapchat and let's keep the party going!",
         cta: '📱 Add on Snapchat',
         color: '#FFFC00',
         bg: 'rgba(30,28,0,0.92)',
@@ -853,7 +913,7 @@
       {
         emoji: '💸',
         text: 'Enjoy the Party?',
-        sub: 'Tips are never required but always\nloved — $sunnyaubade on Cash App!'
+        sub: 'Tips are never required but always loved — $sunnyaubade on Cash App!',
         cta: '📱 Send a Tip',
         color: '#34d399',
         bg: 'rgba(0,20,10,0.92)',
@@ -866,14 +926,16 @@
     let engageActive = false;
 
     function showEngagement() {
-      if (engageActive || document.getElementById('hypeOverlay').classList.contains('visible')) return;
+      const hypeEl = document.getElementById('hypeOverlay');
+      if (engageActive || (hypeEl && hypeEl.classList.contains('visible'))) return;
+      const overlay = document.getElementById('engageOverlay');
+      const card = document.getElementById('engageCard');
+      if (!overlay || !card) return;
       engageActive = true;
 
       const e = ENGAGEMENTS[engageIdx % ENGAGEMENTS.length];
       engageIdx++;
 
-      const overlay = document.getElementById('engageOverlay');
-      const card = document.getElementById('engageCard');
       const emojiEl = document.getElementById('engageEmoji');
       const textEl = document.getElementById('engageText');
       const subEl = document.getElementById('engageSub');
@@ -1041,9 +1103,6 @@
       requestAnimationFrame(animateFireworks);
     }
     animateFireworks();
-
-    // Track song count and fire fireworks when new song appears
-    let lastSongCount = 0;
 
     // ── AMBIENT SPARKLES ─────────────────────────────────────────
     // Tiny sparkle particles that drift from corners periodically
