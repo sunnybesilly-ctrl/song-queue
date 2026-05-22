@@ -114,6 +114,7 @@
     /* Song ticker */
     .ticker-section {
       flex: 1;
+      min-height: 0;
       display: flex;
       align-items: center;
       overflow: hidden;
@@ -122,7 +123,7 @@
 
     .ticker-wrapper {
       display: flex;
-      animation: scroll 45s linear infinite;
+      animation: scroll 180s linear infinite;
       gap: 32px;
       align-items: center;
     }
@@ -140,37 +141,39 @@
       display: flex;
       align-items: stretch;
       gap: 14px;
-      min-width: 560px;
-      max-width: 580px;
+      min-width: 680px;
+      max-width: 720px;
       box-shadow: none;
       backdrop-filter: none;
-      height: 420px;
+      height: 500px;
     }
 
     .thumbnail {
-      width: auto;
-      height: 100%;
-      max-width: 320px;
+      width: 220px;
+      height: 220px;
+      max-width: 220px;
       border-radius: 10px;
       object-fit: cover;
-      aspect-ratio: 1 / 1;
       border: none;
       box-shadow: none;
       flex-shrink: 0;
       display: block;
+      align-self: center;
     }
 
     .song-info {
       flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      gap: 10px;
+      justify-content: center;
+      gap: 8px;
       padding: 8px 0;
+      overflow: hidden;
     }
 
     .submission-time {
-      font-size: 26px;
+      font-size: 34px;
       color: #FFD700;
       background: rgba(0,0,0,0.6);
       padding: 6px 14px;
@@ -184,23 +187,30 @@
     }
 
     .artist {
-      font-size: 44px;
+      font-size: 52px;
       font-weight: 900;
       color: #FFD700;
       text-shadow: 0 0 15px rgba(255,215,0,0.5);
       line-height: 1.2;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .song-title {
-      font-size: 32px;
+      font-size: 46px;
       color: #fff;
       font-weight: 600;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      line-height: 1.2;
     }
 
     .requester {
-      font-size: 26px;
+      font-size: 36px;
       color: #fff;
       font-weight: 600;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
 
@@ -210,7 +220,7 @@
     }
 
     .newest-badge {
-      font-size: 20px;
+      font-size: 26px;
       font-weight: 900;
       color: #fff;
       background: linear-gradient(135deg, #c8102e, #ff4d6d);
@@ -235,11 +245,11 @@
       backdrop-filter: blur(12px);
       border-top: 4px solid #FFD700;
       box-shadow: 0 -2px 0 #c8102e;
-      padding: 32px 30px;
+      padding: 28px 20px;
       display: flex;
       justify-content: space-evenly;
       align-items: center;
-      gap: 30px;
+      gap: 16px;
     }
 
     .qr-section {
@@ -250,8 +260,8 @@
     }
 
     .qr-code {
-      width: 240px;
-      height: 240px;
+      width: 200px;
+      height: 200px;
       background: white;
       padding: 5px;
       border-radius: 10px;
@@ -266,9 +276,9 @@
     }
 
     .qr-label {
-      font-size: 20px;
+      font-size: 28px;
       color: #FFD700;
-      font-weight: 800;
+      font-weight: 900;
       letter-spacing: 2px;
       text-transform: uppercase;
       text-shadow: 0 0 12px rgba(255,215,0,0.7);
@@ -334,9 +344,9 @@
       margin-bottom: 5px;
     }
 
-    .chat-name { font-size: 38px; font-weight: 800; }
-    .chat-time { font-size: 22px; color: #FFD700; font-weight: 600; }
-    .chat-text { font-size: 30px; color: #fff; line-height: 1.5; font-weight: 500; }
+    .chat-name { font-size: 38px; font-weight: 900; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
+    .chat-time { font-size: 22px; color: #FFD700; font-weight: 700; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
+    .chat-text { font-size: 30px; color: #fff; line-height: 1.5; font-weight: 700; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
 
     /* User color classes */
     .user-0 { background: linear-gradient(135deg,rgba(249,115,22,.25),rgba(234,88,12,.15)); border-left: 4px solid #f97316; }
@@ -419,69 +429,97 @@
     /* ── ENGAGEMENT OVERLAYS ── */
     .engage-overlay {
       position: fixed;
-      bottom: 0; left: 0;
-      width: 100%; height: 88%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       z-index: 8500;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       pointer-events: none;
-      transform: translateY(110%);
-      transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-      border-radius: 24px 24px 0 0;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
-    .engage-overlay.visible { transform: translateY(0); }
+    .engage-overlay.visible { opacity: 1; }
 
-    .engage-inner {
+    .engage-card {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 32px;
+      gap: 28px;
+      padding: 52px 64px;
+      border-radius: 32px;
+      border: 4px solid;
+      backdrop-filter: blur(18px);
+      transform: translateY(120vh);
+      transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 780px;
+      width: 90%;
+    }
+    .engage-overlay.visible .engage-card {
+      transform: translateY(0);
+    }
+    .engage-overlay.leaving .engage-card {
+      transform: translateY(120vh);
+      transition: transform 0.9s cubic-bezier(0.7, 0, 0.84, 0);
+    }
+
+    .engage-emoji {
+      font-size: 90px;
+      line-height: 1;
+      animation: engageBounce 1.8s ease-in-out infinite;
+    }
+
+    @keyframes engageBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-16px) scale(1.08); }
     }
 
     .engage-text {
-      font-size: 72px;
+      font-size: 64px;
       font-weight: 900;
       text-align: center;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      line-height: 1.2;
-      padding: 0 60px;
-    }
-
-    .engage-overlay.flashing .engage-text {
-      animation: engageWiggle 0.25s ease-in-out infinite;
-    }
-    .engage-overlay.settled .engage-text { animation: none; }
-
-    .engage-qr {
-      width: 220px;
-      height: 220px;
-      background: white;
-      padding: 10px;
-      border-radius: 16px;
-      border: 5px solid currentColor;
-      box-shadow: 0 0 40px currentColor;
+      line-height: 1.15;
     }
 
     .engage-sub {
       font-size: 34px;
       font-weight: 700;
-      color: #fff;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-shadow: 0 0 16px rgba(255,255,255,0.6);
+      color: rgba(255,255,255,0.92);
+      letter-spacing: 1px;
       text-align: center;
-      padding: 0 40px;
+      line-height: 1.4;
+      font-style: italic;
     }
 
-    @keyframes engageWiggle {
-      0%   { transform: translateX(0) scale(1.02); }
-      25%  { transform: translateX(-8px) scale(1.03); }
-      50%  { transform: translateX(8px) scale(1.02); }
-      75%  { transform: translateX(-6px) scale(1.03); }
-      100% { transform: translateX(0) scale(1.02); }
+    .engage-qr {
+      width: 280px;
+      height: 280px;
+      background: white;
+      padding: 12px;
+      border-radius: 20px;
+      border: 6px solid;
+      box-shadow: 0 0 50px currentColor, 0 0 100px currentColor;
+      animation: engageQRPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes engageQRPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .engage-cta {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      animation: engageCtaBlink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes engageCtaBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
   </style>
 </head>
@@ -657,7 +695,6 @@
             <div class="artist" style="color:${p.artist}">${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
             <div class="song-title" style="color:${p.song}">${escapeHtml(song['SONG TITLE?'])}</div>
             <div class="requester" style="color:${p.requester}">Requested by ${escapeHtml(song["WHAT'S YOUR NAME?"]||'')}</div>
-            ${timeStr ? `<div class="submission-time">⏰ ${timeStr}</div>` : ''}
           </div>
         </div>
       `;
@@ -784,32 +821,44 @@
     // ── ENGAGEMENT ROTATOR ───────────────────────────────────────
     const ENGAGEMENTS = [
       {
-        text: '🎵 Request a Song!',
-        sub: 'Scan to add your banger to the queue',
+        emoji: '🎵',
+        text: 'Add to the Vibe',
+        sub: 'Got a song that NEEDS to be played tonight?\nDon\'t hold back — put it in the queue!',
+        cta: '📱 Request a Song',
         color: '#FFD700',
-        bg: 'rgba(0,0,0,0.85)',
-        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://forms.gle/6Lfgdw5tLhpyA6ZP8'
+        bg: 'rgba(10,30,10,0.92)',
+        borderColor: '#FFD700',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://forms.gle/6Lfgdw5tLhpyA6ZP8'
       },
       {
-        text: '💬 Join the Party Chat!',
-        sub: 'Scan to join the convo right now',
+        emoji: '💬',
+        text: 'The Chat is Waiting',
+        sub: 'Everyone\'s talking — except you.\nScan and join the party chat right now!',
+        cta: '📱 Join the Chat',
         color: '#f472b6',
-        bg: 'rgba(0,0,0,0.85)',
-        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://forms.gle/jPyroTbAu3Z2xWep8'
+        bg: 'rgba(30,5,20,0.92)',
+        borderColor: '#f472b6',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://forms.gle/jPyroTbAu3Z2xWep8'
       },
       {
-        text: '👻 Add Me on Snapchat!',
-        sub: "Scan to connect — let's be friends",
+        emoji: '👻',
+        text: 'Let\'s Be Friends',
+        sub: 'Had a great time tonight?\nAdd me on Snapchat and let\'s keep the party going!',
+        cta: '📱 Add on Snapchat',
         color: '#FFFC00',
-        bg: 'rgba(0,0,0,0.88)',
+        bg: 'rgba(30,28,0,0.92)',
+        borderColor: '#FFFC00',
         qrSnapchat: true
       },
       {
-        text: '💸 Send Me Money lol',
-        sub: 'Scan to tip the DJ — @sunnyaubade',
+        emoji: '💸',
+        text: 'Enjoy the Party?',
+        sub: 'Tips are never required but always\nloved — $sunnyaubade on Cash App!'
+        cta: '📱 Send a Tip',
         color: '#34d399',
-        bg: 'rgba(0,0,0,0.85)',
-        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https://venmo.com/sunnyaubade'
+        bg: 'rgba(0,20,10,0.92)',
+        borderColor: '#34d399',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://cash.app/$sunnyaubade'
       }
     ];
 
@@ -824,52 +873,60 @@
       engageIdx++;
 
       const overlay = document.getElementById('engageOverlay');
+      const card = document.getElementById('engageCard');
+      const emojiEl = document.getElementById('engageEmoji');
       const textEl = document.getElementById('engageText');
       const subEl = document.getElementById('engageSub');
       const qrEl = document.getElementById('engageQR');
+      const ctaEl = document.getElementById('engageCta');
 
+      // Set content
+      emojiEl.textContent = e.emoji;
       textEl.textContent = e.text;
       textEl.style.color = e.color;
-      textEl.style.textShadow = '0 0 40px ' + e.color + ', 0 0 80px ' + e.color + '55';
+      textEl.style.textShadow = '0 0 40px ' + e.color + ', 0 0 80px ' + e.color + '44';
       subEl.textContent = e.sub;
-      overlay.style.background = e.bg;
-      qrEl.style.borderColor = e.color;
-      qrEl.style.boxShadow = '0 0 40px ' + e.color;
-      qrEl.style.color = e.color;
+      ctaEl.textContent = e.cta;
+      ctaEl.style.color = e.color;
 
+      // Card styling
+      card.style.background = e.bg;
+      card.style.borderColor = e.color;
+      card.style.boxShadow = '0 0 80px ' + e.color + '55, 0 30px 80px rgba(0,0,0,0.8)';
+
+      // QR
+      qrEl.style.borderColor = e.color;
+      qrEl.style.color = e.color;
       if (e.qrSnapchat) {
         qrEl.src = document.getElementById('snapQR') ? document.getElementById('snapQR').src : '';
       } else {
         qrEl.src = e.qrSrc;
       }
 
-      // Slide up from bottom + wiggle for 5s
-      overlay.classList.remove('settled', 'flashing');
-      overlay.classList.add('visible', 'flashing');
+      // Dark backdrop on overlay itself
+      overlay.style.background = 'rgba(0,0,0,0.6)';
 
-      // Fireworks during entrance
-      for (let i = 0; i < 3; i++) {
+      // Show overlay first (fades in), card rises up
+      overlay.classList.remove('leaving');
+      overlay.classList.add('visible');
+
+      // Fireworks on entrance
+      setTimeout(() => {
+        if (typeof launchFirework === 'function') {
+          launchFirework(window.innerWidth * 0.25, window.innerHeight * 0.3);
+          setTimeout(() => launchFirework(window.innerWidth * 0.75, window.innerHeight * 0.3), 300);
+          setTimeout(() => launchFirework(window.innerWidth * 0.5, window.innerHeight * 0.2), 600);
+        }
+      }, 800);
+
+      // After 20s, slide card back down then fade out
+      setTimeout(() => {
+        overlay.classList.add('leaving');
         setTimeout(() => {
-          if (typeof launchFirework === 'function') {
-            launchFirework(
-              Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1,
-              Math.random() * window.innerHeight * 0.3 + 60
-            );
-          }
-        }, i * 1500);
-      }
-
-      // After 5s stop wiggling, go static for 30s
-      setTimeout(() => {
-        overlay.classList.remove('flashing');
-        overlay.classList.add('settled');
-      }, 5000);
-
-      // Slide back down after 35s total (5 wiggle + 30 static)
-      setTimeout(() => {
-        overlay.classList.remove('visible', 'settled', 'flashing');
-        engageActive = false;
-      }, 35000);
+          overlay.classList.remove('visible', 'leaving');
+          engageActive = false;
+        }, 950);
+      }, 20000);
     }
 
     // Every 5 minutes
@@ -879,7 +936,8 @@
         scheduleEngagement();
       }, 300000);
     }
-    setTimeout(scheduleEngagement, 300000); // first one at 5 min
+    setTimeout(showEngagement, 30000); // first one after 30s
+    setTimeout(scheduleEngagement, 330000); // then every 5 min
 
 
   </script>
