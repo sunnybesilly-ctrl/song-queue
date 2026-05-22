@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Song Request Queue - Live Display</title>
+  <link rel="icon" href="https://api.iconify.design/twemoji/musical-notes.svg" type="image/svg+xml">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -416,6 +417,186 @@
       font-size: 18px;
     }
 
+
+
+    /* ── SPOTLIGHT OVERLAY (newest song cinematic entrance) ── */
+    .spotlight-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 8000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.88);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    .spotlight-overlay.visible { opacity: 1; }
+    .spotlight-overlay.leaving { opacity: 0; }
+
+    .spotlight-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+      padding: 48px 60px;
+      border-radius: 28px;
+      border: 4px solid;
+      max-width: 860px;
+      width: 90%;
+      position: relative;
+      animation: spotlightZoom 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes spotlightZoom {
+      0%   { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    .spotlight-position {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+
+    .spotlight-requester {
+      font-size: 80px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 2px;
+      text-shadow: 0 0 40px currentColor, 0 0 80px currentColor;
+      word-break: break-word;
+    }
+
+    .spotlight-wants {
+      font-size: 32px;
+      color: rgba(255,255,255,0.7);
+      font-style: italic;
+      letter-spacing: 1px;
+    }
+
+    .spotlight-song {
+      font-size: 52px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .spotlight-artist {
+      font-size: 38px;
+      font-weight: 700;
+      opacity: 0.85;
+      word-break: break-word;
+    }
+
+    .spotlight-hype {
+      font-size: 30px;
+      font-style: italic;
+      color: rgba(255,255,255,0.85);
+      margin-top: 8px;
+    }
+
+    .spotlight-queue-pos {
+      font-size: 24px;
+      font-weight: 700;
+      opacity: 0.6;
+      letter-spacing: 2px;
+    }
+
+    /* Radial glow behind spotlight card */
+    .spotlight-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, currentColor 0%, transparent 70%);
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Card queue position badge */
+    .card-position {
+      font-size: 22px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Card hype caption */
+    .card-hype {
+      font-size: 24px;
+      font-style: italic;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.3;
+    }
+
+    /* Card queue info */
+    .card-queue-info {
+      font-size: 20px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 1px;
+    }
+
+    /* ── CHAT ENTICERS ── */
+    .ghost-bubble {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(200,16,46,0.1));
+      border: 2px solid rgba(255,215,0,0.5);
+      border-radius: 18px 18px 4px 18px;
+      padding: 16px 22px;
+      max-width: 88%;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      animation: ghostPop 6s ease-in-out forwards;
+      backdrop-filter: blur(8px);
+    }
+
+    .ghost-bubble-name {
+      font-size: 26px;
+      font-weight: 900;
+      color: #FFD700;
+      margin-bottom: 4px;
+    }
+
+    .ghost-bubble-text {
+      font-size: 22px;
+      color: rgba(255,255,255,0.9);
+      font-style: italic;
+    }
+
+    @keyframes ghostPop {
+      0%   { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.9); }
+      10%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+      80%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.95); }
+    }
+
+    /* Chat panel highlight flash */
+    .chat-section.flash-highlight {
+      animation: chatFlash 1.2s ease-in-out;
+    }
+
+    @keyframes chatFlash {
+      0%   { border-left-color: #FFD700; box-shadow: inset 3px 0 0 rgba(200,16,46,0.4); }
+      25%  { border-left-color: #f472b6; box-shadow: -4px 0 40px rgba(244,114,182,0.8), inset 3px 0 0 rgba(244,114,182,0.6); }
+      50%  { border-left-color: #FFD700; box-shadow: -4px 0 60px rgba(255,215,0,0.9), inset 3px 0 0 rgba(255,215,0,0.6); }
+      75%  { border-left-color: #f472b6; box-shadow: -4px 0 40px rgba(244,114,182,0.8), inset 3px 0 0 rgba(244,114,182,0.6); }
+      100% { border-left-color: #FFD700; box-shadow: inset 3px 0 0 rgba(200,16,46,0.4); }
+    }
+
     /* ── CHAT HYPE OVERLAY ── */
     .hype-overlay {
       position: fixed;
@@ -657,6 +838,7 @@
       <!-- RIGHT PANEL: full-height chat -->
       <div class="chat-section">
         <div class="chat-header">💬 PARTY CHAT 💬</div>
+        <div id="ghostBubbleContainer" style="position:relative;flex-shrink:0;height:0;overflow:visible;"></div>
         <div class="chat-messages" id="chatMessages">
           <div class="empty-state">No messages yet…</div>
         </div>
@@ -731,29 +913,26 @@
       const videoId = song['Video ID'] || song['video id'] || song['videoId'] || song['VIDEO ID'] || '';
       const thumb = videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '';
       const thumbFallback = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
-      const ts = new Date(song.Timestamp);
-      let timeStr = '';
-      if (!isNaN(ts)) {
-        const mo = String(ts.getMonth() + 1).padStart(2,'0');
-        const da = String(ts.getDate()).padStart(2,'0');
-        const t = ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-        timeStr = mo + '/' + da + ' ' + t;
-      }
       const p = CARD_PALETTES[idx % CARD_PALETTES.length];
-      const isNewest = idx === window.allSongs.length - 1;
+      const total = window.allSongs.length;
+      const isNewest = idx === total - 1;
       const newestStyle = isNewest
         ? `animation: newestPulse 1.4s ease-in-out infinite; border-width: 4px;`
         : '';
       const badge = isNewest ? `<div class="newest-badge">🔥 JUST ADDED</div>` : '';
+      const hype = HYPE_CAPTIONS[idx % HYPE_CAPTIONS.length];
+      const requesterFirst = (song["WHAT'S YOUR NAME?"] || '').trim().split(' ')[0];
 
       return `
         <div class="song-card" style="border-color:${p.border}; box-shadow: 0 0 ${isNewest ? '60px' : '28px'} ${p.border}${isNewest ? 'cc' : '44'}, 0 4px 16px rgba(0,0,0,0.5); ${newestStyle}">
           ${thumb ? `<img class="thumbnail" src="${thumb}" alt="thumb" onerror="this.src='${thumbFallback}'">` : ''}
           <div class="song-info">
             ${badge}
-            <div class="artist" style="color:${p.artist}">${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
+            <div class="requester" style="color:${p.artist}; font-size:52px; font-weight:900;">${escapeHtml(requesterFirst)}</div>
             <div class="song-title" style="color:${p.song}">${escapeHtml(song['SONG TITLE?'])}</div>
-            <div class="requester" style="color:${p.requester}">Requested by ${escapeHtml(song["WHAT'S YOUR NAME?"]||'')}</div>
+            <div class="artist" style="color:${p.artist}; font-size:34px; font-weight:700;">by ${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
+            <div class="card-hype">${hype}</div>
+            <div class="card-queue-info">Song #${idx + 1} of ${total} tonight</div>
           </div>
         </div>
       `;
@@ -798,6 +977,7 @@
       }).join('');
 
       if (wasAtBottom || autoScroll) container.scrollTop = container.scrollHeight;
+      flashChatOnNewMessage(messages.length);
       checkHypeOverlay(messages.length);
     }
 
@@ -873,10 +1053,195 @@
           setTimeout(() => launchFirework(x + 120, y - 80), 180);
           setTimeout(() => launchFirework(x - 100, y + 50), 360);
           setTimeout(() => launchFirework(window.innerWidth * 0.5, 150), 540);
+          // Show spotlight for the newest song
+          const newest = window.allSongs[window.allSongs.length - 1];
+          if (newest) showSpotlight(newest, window.allSongs.length - 1, window.allSongs.length);
         }
         lastSongCount = window.allSongs.length;
       }
     }, REFRESH_INTERVAL * 1000);
+
+
+    // ── CHAT ENTICERS ─────────────────────────────────────────────
+    const ENTICE_PHRASES = [
+      "{name}, why you so quiet? Get in the chat 👀",
+      "{name}! The chat needs you rn 💬",
+      "Ayo {name}, say something! 🗣️",
+      "{name} is lurking… we see you 👁️",
+      "Don't be shy {name}, jump in the chat! 🔥",
+      "{name} hasn't said a word yet 😭",
+      "The chat misses you {name} 💔",
+      "{name}! Your voice matters, say something! ✨",
+      "Psst… {name}… the chat is right there 👉💬",
+      "{name}, drop a vibe check in the chat!",
+      "We know you're here {name}, say hi! 👋",
+      "{name} said nothing and that's crazy 😂",
+      "Chat is heating up! Where you at {name}? 🔥",
+      "{name}, what's the song rating? Tell us!",
+      "Someone tell {name} the chat is poppin' 🎉",
+      "{name}! One message. That's all we ask 🙏",
+      "The vibe is immaculate {name}, come talk about it!",
+      "{name} is too cool to chat apparently 💅",
+      "Calling {name} to the chat… please respond 📞",
+      "{name}, drop your hottest take rn 🌶️",
+      "This song goes HARD right {name}? Say something!",
+      "{name}! The group chat at home can wait 😭",
+      "Someone wake {name} up, the chat is live 🚨",
+      "{name}, scandalous silence detected 🕵️",
+      "If {name} doesn't say something we riot 😤",
+      "{name}, are you even having fun? Prove it in the chat!",
+      "👀 {name} has entered the building but won't chat…",
+      "{name}! What's your song request reaction??",
+      "The chat demands a word from {name} 👑",
+      "{name}, even just an emoji counts! Come on 🎵"
+    ];
+
+    function getRandomName() {
+      if (window.allSongs && window.allSongs.length > 0) {
+        const names = window.allSongs
+          .map(s => s["WHAT'S YOUR NAME?"])
+          .filter(n => n && n.trim().length > 0);
+        if (names.length > 0) {
+          return names[Math.floor(Math.random() * names.length)].trim().split(' ')[0];
+        }
+      }
+      return null;
+    }
+
+    function showGhostBubble() {
+      const name = getRandomName();
+      if (!name) return; // no names yet, skip
+
+      const phrase = ENTICE_PHRASES[Math.floor(Math.random() * ENTICE_PHRASES.length)]
+        .replace('{name}', name);
+
+      const container = document.getElementById('ghostBubbleContainer');
+      if (!container) return;
+
+      // Remove old bubble
+      const old = container.querySelector('.ghost-bubble');
+      if (old) old.remove();
+
+      const bubble = document.createElement('div');
+      bubble.className = 'ghost-bubble';
+      bubble.innerHTML = `<div class="ghost-bubble-text">${phrase}</div>`;
+      container.appendChild(bubble);
+
+      // Flash the chat panel border
+      const chatSection = document.querySelector('.chat-section');
+      if (chatSection) {
+        chatSection.classList.remove('flash-highlight');
+        void chatSection.offsetWidth; // force reflow
+        chatSection.classList.add('flash-highlight');
+        setTimeout(() => chatSection.classList.remove('flash-highlight'), 1200);
+      }
+
+      // Remove bubble after animation
+      setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6200);
+    }
+
+    // Also flash on every new chat message
+    const _origFetchChat = fetchChatMessages;
+    let _lastChatFlash = 0;
+    const _chatFlashInterval = 45000 + Math.random() * 30000;
+
+    // Ghost bubble every 45-75 seconds
+    function scheduleGhostBubble() {
+      const delay = 45000 + Math.random() * 30000;
+      setTimeout(() => {
+        showGhostBubble();
+        scheduleGhostBubble();
+      }, delay);
+    }
+    setTimeout(scheduleGhostBubble, 15000); // first one after 15s
+
+    // Flash chat border whenever new message arrives
+    function flashChatOnNewMessage(newCount) {
+      if (newCount > (window.lastMessageCount || 0)) {
+        const chatSection = document.querySelector('.chat-section');
+        if (chatSection) {
+          chatSection.classList.remove('flash-highlight');
+          void chatSection.offsetWidth;
+          chatSection.classList.add('flash-highlight');
+          setTimeout(() => chatSection.classList.remove('flash-highlight'), 1200);
+        }
+      }
+    }
+
+
+    const HYPE_CAPTIONS = [
+      "This one SLAPS 🔥",
+      "Oh we're really doing this? 👀",
+      "Bold choice. Respect. 💅",
+      "The crowd is NOT ready 😤",
+      "Say less. It's going in. ✅",
+      "Absolute banger incoming 🎵",
+      "We been WAITING for this one 🙌",
+      "The audacity. We love it. 😂",
+      "Someone's taste is unmatched 👑",
+      "This is the moment right here 🎶",
+      "No notes. Perfect request. 🤌",
+      "The vibes just shifted 🌊",
+      "Certified hood classic 🎤",
+      "The DJ is shaking rn 💃",
+      "Real ones know this song 🫶",
+      "This request understood the assignment 📝",
+      "The floor is about to open up 🕺",
+      "Somebody's been waiting all night for this 😭",
+      "This song hits different after midnight 🌙",
+      "The people have spoken 📣",
+    ];
+
+    const SPOTLIGHT_SHOWN = new Set();
+
+    function showSpotlight(song, position, total) {
+      const key = song['SONG TITLE?'] + song["WHAT'S YOUR NAME?"];
+      if (SPOTLIGHT_SHOWN.has(key)) return;
+      SPOTLIGHT_SHOWN.add(key);
+
+      const overlay = document.getElementById('spotlightOverlay');
+      const card = document.getElementById('spotlightCard');
+      if (!overlay || !card) return;
+
+      const name = (song["WHAT'S YOUR NAME?"] || 'Someone').trim().split(' ')[0];
+      const songTitle = song['SONG TITLE?'] || '';
+      const artist = song["WHO'S THE ARTIST?"] || '';
+      const hype = HYPE_CAPTIONS[Math.floor(Math.random() * HYPE_CAPTIONS.length)];
+      const p = CARD_PALETTES[position % CARD_PALETTES.length];
+
+      document.getElementById('spotlightPosition').textContent = '🎵 NEW REQUEST';
+      document.getElementById('spotlightRequester').textContent = name;
+      document.getElementById('spotlightRequester').style.color = p.artist;
+      document.getElementById('spotlightSong').textContent = songTitle;
+      document.getElementById('spotlightArtist').textContent = 'by ' + artist;
+      document.getElementById('spotlightArtist').style.color = p.artist;
+      document.getElementById('spotlightHype').textContent = hype;
+      document.getElementById('spotlightQueuePos').textContent =
+        'Song #' + (position + 1) + ' of ' + total + ' tonight';
+
+      card.style.borderColor = p.border;
+      card.style.background = 'rgba(0,0,0,0.9)';
+      card.style.boxShadow = '0 0 80px ' + p.border + '44';
+      card.querySelector('.spotlight-glow').style.color = p.border;
+
+      overlay.classList.remove('leaving');
+      overlay.classList.add('visible');
+
+      // Fireworks
+      setTimeout(() => {
+        if (typeof launchFirework === 'function') {
+          launchFirework(window.innerWidth * 0.3, window.innerHeight * 0.3);
+          setTimeout(() => launchFirework(window.innerWidth * 0.7, window.innerHeight * 0.3), 300);
+          setTimeout(() => launchFirework(window.innerWidth * 0.5, window.innerHeight * 0.2), 600);
+        }
+      }, 400);
+
+      // Hold for 4 seconds then fade
+      setTimeout(() => {
+        overlay.classList.add('leaving');
+        setTimeout(() => overlay.classList.remove('visible', 'leaving'), 700);
+      }, 4000);
+    }
 
     // ── ENGAGEMENT ROTATOR ───────────────────────────────────────
     const ENGAGEMENTS = [
