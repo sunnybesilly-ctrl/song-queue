@@ -122,14 +122,9 @@
 
     .ticker-wrapper {
       display: flex;
-      animation: scroll 45s linear infinite;
       gap: 32px;
       align-items: center;
-    }
-
-    @keyframes scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
+      will-change: transform;
     }
 
     .song-card {
@@ -145,12 +140,6 @@
       box-shadow: none;
       backdrop-filter: none;
       height: 420px;
-      animation: cardSlideIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-    }
-
-    @keyframes cardSlideIn {
-      0% { opacity: 0; transform: translateX(80px) scale(0.85); }
-      100% { opacity: 1; transform: translateX(0) scale(1); }
     }
 
     .thumbnail {
@@ -176,7 +165,7 @@
     }
 
     .submission-time {
-      font-size: 22px;
+      font-size: 26px;
       color: #FFD700;
       background: rgba(0,0,0,0.6);
       padding: 6px 14px;
@@ -190,23 +179,49 @@
     }
 
     .artist {
-      font-size: 36px;
-      font-weight: 700;
+      font-size: 44px;
+      font-weight: 900;
       color: #FFD700;
       text-shadow: 0 0 15px rgba(255,215,0,0.5);
       line-height: 1.2;
     }
 
     .song-title {
-      font-size: 26px;
+      font-size: 32px;
       color: #fff;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .requester {
-      font-size: 22px;
+      font-size: 26px;
       color: #fff;
       font-weight: 600;
+    }
+
+
+    @keyframes newestPulse {
+      0%, 100% { box-shadow: 0 0 60px currentColor, 0 0 120px currentColor, 0 4px 16px rgba(0,0,0,0.5); transform: scale(1); }
+      50% { box-shadow: 0 0 30px currentColor, 0 0 60px currentColor, 0 4px 16px rgba(0,0,0,0.5); transform: scale(1.01); }
+    }
+
+    .newest-badge {
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(135deg, #c8102e, #ff4d6d);
+      padding: 4px 14px;
+      border-radius: 20px;
+      display: inline-block;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      animation: badgePop 0.8s ease-in-out infinite alternate;
+      align-self: flex-start;
+      box-shadow: 0 0 20px rgba(200,16,46,0.8);
+    }
+
+    @keyframes badgePop {
+      0% { transform: scale(1); opacity: 0.9; }
+      100% { transform: scale(1.06); opacity: 1; }
     }
 
     /* ── QR FOOTER (left side) ── */
@@ -257,7 +272,7 @@
 
     /* ── RIGHT: CHAT (full height) ── */
     .chat-section {
-      width: 400px;
+      width: 720px;
       background: rgba(0,0,0,0.55);
       backdrop-filter: blur(18px);
       display: flex;
@@ -270,7 +285,7 @@
       padding: 18px;
       background: linear-gradient(135deg, #1a5c1a, #0d3d0d);
       border-bottom: 3px solid #FFD700;
-      font-size: 22px;
+      font-size: 28px;
       font-weight: 700;
       color: #FFD700;
       text-align: center;
@@ -297,7 +312,7 @@
 
     .chat-message {
       border-radius: 10px;
-      padding: 12px 14px;
+      padding: 16px 18px;
       animation: slideIn 0.4s ease-out;
       backdrop-filter: blur(12px);
     }
@@ -314,9 +329,9 @@
       margin-bottom: 5px;
     }
 
-    .chat-name { font-size: 21px; font-weight: 700; }
-    .chat-time { font-size: 14px; color: #FFD700; font-weight: 600; }
-    .chat-text { font-size: 17px; color: #fff; line-height: 1.5; font-weight: 500; }
+    .chat-name { font-size: 38px; font-weight: 800; }
+    .chat-time { font-size: 22px; color: #FFD700; font-weight: 600; }
+    .chat-text { font-size: 30px; color: #fff; line-height: 1.5; font-weight: 500; }
 
     /* User color classes */
     .user-0 { background: linear-gradient(135deg,rgba(249,115,22,.25),rgba(234,88,12,.15)); border-left: 4px solid #f97316; }
@@ -479,6 +494,8 @@
       if (!allSongs.length) { wrapper.innerHTML = '<div class="empty-state">No requests yet…</div>'; return; }
       const html = allSongs.map((s,i) => createSongCard(s,i)).join('');
       wrapper.innerHTML = html + html; // duplicate for seamless loop
+      scrollX = 0;
+      setTimeout(buildCardSpeeds, 100);
     }
 
     const CARD_PALETTES = [
@@ -496,11 +513,17 @@
       const ts = new Date(song.Timestamp);
       const timeStr = isNaN(ts) ? '' : ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
       const p = CARD_PALETTES[idx % CARD_PALETTES.length];
+      const isNewest = idx === allSongs.length - 1;
+      const newestStyle = isNewest
+        ? `animation: newestPulse 1.4s ease-in-out infinite; border-width: 4px;`
+        : '';
+      const badge = isNewest ? `<div class="newest-badge">🔥 JUST ADDED</div>` : '';
 
       return `
-        <div class="song-card" style="border-color:${p.border}; box-shadow: 0 0 28px ${p.border}44, 0 4px 16px rgba(0,0,0,0.5);">
+        <div class="song-card" style="border-color:${p.border}; box-shadow: 0 0 ${isNewest ? '60px' : '28px'} ${p.border}${isNewest ? 'cc' : '44'}, 0 4px 16px rgba(0,0,0,0.5); ${newestStyle}">
           ${thumb ? `<img class="thumbnail" src="${thumb}" alt="thumb" onerror="this.src='${thumbFallback}'">` : ''}
           <div class="song-info">
+            ${badge}
             <div class="artist" style="color:${p.artist}">${escapeHtml(song["WHO'S THE ARTIST?"])}</div>
             <div class="song-title" style="color:${p.song}">${escapeHtml(song['SONG TITLE?'])}</div>
             <div class="requester" style="color:${p.requester}">Requested by ${escapeHtml(song["WHAT'S YOUR NAME?"]||'')}</div>
@@ -557,9 +580,57 @@
     const dateEl = document.getElementById('headerDate');
     dateEl.textContent = dateStr;
     dateEl.style.cssText = 'font-size:18px; font-weight:400; letter-spacing:2px; opacity:0.9; font-style:italic; color:#FFD700; text-shadow: 0 0 12px rgba(255,215,0,0.5);';
+
+    // ── VARIABLE SPEED SCROLL ──────────────────────────────────
+    // Cards scroll with individual speeds — older = faster, newer = slower/lingering
+    let scrollX = 0;
+    let cardWidths = [];
+    let cardSpeeds = [];
+    const BASE_FAST = 1.8;
+    const BASE_SLOW = 0.4;
+
+    function buildCardSpeeds() {
+      const wrapper = document.getElementById('tickerWrapper');
+      const cards = wrapper.querySelectorAll('.song-card');
+      const half = Math.floor(cards.length / 2); // only real cards (not dupes)
+      cardWidths = [];
+      cardSpeeds = [];
+      cards.forEach((card, i) => {
+        const realIdx = i % half;
+        // older cards (lower index) = faster; newest = slowest
+        const t = half <= 1 ? 0 : realIdx / (half - 1); // 0=oldest, 1=newest
+        const speed = BASE_FAST - t * (BASE_FAST - BASE_SLOW);
+        cardWidths.push(card.offsetWidth + 32); // +gap
+        cardSpeeds.push(speed);
+      });
+    }
+
+    function animateScroll() {
+      const wrapper = document.getElementById('tickerWrapper');
+      if (!wrapper || cardWidths.length === 0) { requestAnimationFrame(animateScroll); return; }
+
+      // Find which card zone we're in and use its speed
+      const totalWidth = cardWidths.reduce((a,b) => a+b, 0) / 2;
+      let accumulated = 0;
+      let currentSpeed = BASE_FAST;
+      const pos = ((scrollX % totalWidth) + totalWidth) % totalWidth;
+      for (let i = 0; i < Math.floor(cardWidths.length / 2); i++) {
+        accumulated += cardWidths[i];
+        if (pos < accumulated) { currentSpeed = cardSpeeds[i]; break; }
+      }
+
+      scrollX += currentSpeed;
+      if (scrollX >= totalWidth) scrollX -= totalWidth;
+      wrapper.style.transform = `translateX(-${scrollX}px)`;
+      requestAnimationFrame(animateScroll);
+    }
+
     fetchSongQueue();
     fetchChatMessages();
     setInterval(() => { fetchSongQueue(); fetchChatMessages(); }, REFRESH_INTERVAL * 1000);
+
+    // Start scroll after first render
+    setTimeout(() => { buildCardSpeeds(); animateScroll(); }, 800);
   </script>
 
   <script>
@@ -664,23 +735,76 @@
 
     // Track song count and fire fireworks when new song appears
     let lastSongCount = 0;
-    const origFetch = fetchSongQueue;
-    const origDisplay = displayQueue;
 
     // Patch displayQueue to detect new songs
     const _origDisplayQueue = displayQueue;
     window.displayQueue = function() {
       _origDisplayQueue();
       if (allSongs.length > lastSongCount && lastSongCount > 0) {
-        // New song added — burst fireworks!
-        const x = Math.random() * window.innerWidth * 0.6 + window.innerWidth * 0.1;
-        const y = Math.random() * window.innerHeight * 0.4 + 80;
+        // New song — big triple burst!
+        const x = Math.random() * window.innerWidth * 0.5 + window.innerWidth * 0.1;
+        const y = Math.random() * window.innerHeight * 0.35 + 80;
         launchFirework(x, y);
-        setTimeout(() => launchFirework(x + 100, y - 60), 200);
-        setTimeout(() => launchFirework(x - 80, y + 40), 400);
+        setTimeout(() => launchFirework(x + 120, y - 80), 180);
+        setTimeout(() => launchFirework(x - 100, y + 50), 360);
+        setTimeout(() => launchFirework(window.innerWidth * 0.5, 150), 540);
       }
       lastSongCount = allSongs.length;
     };
+
+    // ── AMBIENT SPARKLES ─────────────────────────────────────────
+    // Tiny sparkle particles that drift from corners periodically
+    function launchSparkle() {
+      const sides = [
+        { x: 0, y: Math.random() * window.innerHeight },
+        { x: window.innerWidth, y: Math.random() * window.innerHeight },
+        { x: Math.random() * window.innerWidth, y: 0 }
+      ];
+      const src = sides[Math.floor(Math.random() * sides.length)];
+      const count = 12 + Math.floor(Math.random() * 10);
+      const color = FW_COLORS[Math.floor(Math.random() * FW_COLORS.length)];
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.8 + Math.random() * 2.5;
+        particles.push({
+          x: src.x, y: src.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 0.7 + Math.random() * 0.3,
+          color,
+          size: 1.5 + Math.random() * 2.5,
+          decay: 0.006 + Math.random() * 0.006,
+          gravity: 0.03
+        });
+      }
+    }
+
+    // Ambient sparkle bursts every 3-6 seconds
+    function scheduleSparkle() {
+      launchSparkle();
+      setTimeout(scheduleSparkle, 3000 + Math.random() * 3000);
+    }
+    setTimeout(scheduleSparkle, 2000);
+
+    // ── HEADER SHIMMER ────────────────────────────────────────────
+    // Periodic shimmer burst from the title
+    function titleShimmer() {
+      const titleEl = document.querySelector('.title');
+      if (titleEl) {
+        const rect = titleEl.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            const x = cx + (Math.random() - 0.5) * rect.width;
+            const y = cy + (Math.random() - 0.5) * rect.height * 0.5;
+            launchSparkle();
+          }, i * 150);
+        }
+      }
+      setTimeout(titleShimmer, 8000 + Math.random() * 6000);
+    }
+    setTimeout(titleShimmer, 5000);
   </script>
 </body>
 </html>
