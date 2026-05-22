@@ -122,9 +122,14 @@
 
     .ticker-wrapper {
       display: flex;
+      animation: scroll 45s linear infinite;
       gap: 32px;
       align-items: center;
-      will-change: transform;
+    }
+
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
 
     .song-card {
@@ -574,6 +579,7 @@
 
     // ── STATE ────────────────────────────────────────────────────
     window.allSongs = [];
+    let lastSongCount = 0;
     window.lastMessageCount = 0;
     let userColorMap = {};
     let nextColorIndex = 0;
@@ -614,8 +620,6 @@
       if (!window.allSongs.length) { wrapper.innerHTML = '<div class="empty-state">No requests yet…</div>'; return; }
       const html = window.allSongs.map((s,i) => createSongCard(s,i)).join('');
       wrapper.innerHTML = html + html; // duplicate for seamless loop
-      scrollX = 0;
-      setTimeout(buildCardSpeeds, 100);
     }
 
     const CARD_PALETTES = [
@@ -631,7 +635,13 @@
       const thumb = videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '';
       const thumbFallback = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
       const ts = new Date(song.Timestamp);
-      const timeStr = isNaN(ts) ? '' : ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+      let timeStr = '';
+      if (!isNaN(ts)) {
+        const mo = String(ts.getMonth() + 1).padStart(2,'0');
+        const da = String(ts.getDate()).padStart(2,'0');
+        const t = ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+        timeStr = mo + '/' + da + ' ' + t;
+      }
       const p = CARD_PALETTES[idx % CARD_PALETTES.length];
       const isNewest = idx === window.allSongs.length - 1;
       const newestStyle = isNewest
@@ -750,47 +760,7 @@
 
     // ── VARIABLE SPEED SCROLL ──────────────────────────────────
     // Cards scroll with individual speeds — older = faster, newer = slower/lingering
-    let scrollX = 0;
-    let cardWidths = [];
-    let cardSpeeds = [];
-    const BASE_FAST = 2.5;  // older songs scroll fast
-    const BASE_SLOW = 0.25; // newest song lingers
 
-    function buildCardSpeeds() {
-      const wrapper = document.getElementById('tickerWrapper');
-      const cards = wrapper.querySelectorAll('.song-card');
-      const half = Math.floor(cards.length / 2); // only real cards (not dupes)
-      cardWidths = [];
-      cardSpeeds = [];
-      cards.forEach((card, i) => {
-        const realIdx = i % half;
-        // older cards (lower index) = faster; newest = slowest
-        const t = half <= 1 ? 0 : realIdx / (half - 1); // 0=oldest, 1=newest
-        const speed = BASE_FAST - t * (BASE_FAST - BASE_SLOW);
-        cardWidths.push(card.offsetWidth + 32); // +gap
-        cardSpeeds.push(speed);
-      });
-    }
-
-    function animateScroll() {
-      const wrapper = document.getElementById('tickerWrapper');
-      if (!wrapper || cardWidths.length === 0) { requestAnimationFrame(animateScroll); return; }
-
-      // Find which card zone we're in and use its speed
-      const totalWidth = cardWidths.reduce((a,b) => a+b, 0) / 2;
-      let accumulated = 0;
-      let currentSpeed = BASE_FAST;
-      const pos = ((scrollX % totalWidth) + totalWidth) % totalWidth;
-      for (let i = 0; i < Math.floor(cardWidths.length / 2); i++) {
-        accumulated += cardWidths[i];
-        if (pos < accumulated) { currentSpeed = cardSpeeds[i]; break; }
-      }
-
-      scrollX += currentSpeed;
-      if (scrollX >= totalWidth) scrollX -= totalWidth;
-      wrapper.style.transform = `translateX(-${scrollX}px)`;
-      requestAnimationFrame(animateScroll);
-    }
 
     fetchSongQueue();
     fetchChatMessages();
@@ -912,8 +882,6 @@
     setTimeout(scheduleEngagement, 300000); // first one at 5 min
 
 
-    // Start scroll after first render
-    setTimeout(() => { buildCardSpeeds(); animateScroll(); }, 800);
   </script>
 
   <script>
