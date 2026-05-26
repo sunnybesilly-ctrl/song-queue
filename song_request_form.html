@@ -5,13 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a1f0a">
+<meta name="theme-color" content="#091809">
 <title>Song Request</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* =====================================================
-   ROOT — matching queue page green/gold/red palette
-===================================================== */
 :root {
   --green-deep:  #091809;
   --green-mid:   #0e2a0e;
@@ -21,6 +18,7 @@
   --gold-glow:   rgba(245,197,24,0.3);
   --red:         #cc1111;
   --red-bright:  #ff3333;
+  --pink:        #f472b6;
   --white:       #ffffff;
   --dim:         rgba(255,255,255,0.6);
   --dim2:        rgba(255,255,255,0.35);
@@ -28,41 +26,26 @@
   --font-d:      'Bebas Neue', sans-serif;
   --font-b:      'Barlow Condensed', sans-serif;
   --font-f:      'Barlow', sans-serif;
-  /* Mobile tap target minimum */
-  --tap-min:     52px;
+  --tap-min:     54px;
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
 html { font-size: 16px; }
-
 body {
   background: var(--green-deep);
   background-image:
     repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px),
     radial-gradient(ellipse 100% 50% at 50% 0%, var(--green-light) 0%, var(--green-deep) 65%);
   min-height: 100vh;
-  min-height: -webkit-fill-available;
   font-family: var(--font-b);
   color: var(--white);
   overflow-x: hidden;
-  /* Safe area for iPhone notch/home bar */
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
   padding-top: env(safe-area-inset-top);
 }
 
-/* =====================================================
-   FLOATING NOTES BACKGROUND
-===================================================== */
+/* FLOATING NOTES */
 .notes-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.note {
-  position: absolute;
-  opacity: 0;
-  color: var(--gold);
-  filter: drop-shadow(0 0 4px var(--gold-glow));
-  animation: floatUp linear infinite;
-  user-select: none;
-}
+.note { position: absolute; opacity: 0; color: var(--gold); filter: drop-shadow(0 0 4px var(--gold-glow)); animation: floatUp linear infinite; user-select: none; }
 @keyframes floatUp {
   0%   { opacity: 0; transform: translateY(105vh) rotate(-10deg); }
   8%   { opacity: 0.3; }
@@ -70,52 +53,16 @@ body {
   100% { opacity: 0; transform: translateY(-10vh) rotate(20deg); }
 }
 
-/* =====================================================
-   HEADER
-===================================================== */
-.header {
-  position: relative; z-index: 10;
-  text-align: center;
-  padding: 20px 16px 14px;
-  border-bottom: 2px solid var(--gold-dim);
-  border-top: 3px solid var(--red);
-  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 100%);
-}
-.header-eyebrow {
-  font-size: 11px; letter-spacing: 0.22em; color: var(--gold-dim);
-  font-family: var(--font-f); margin-bottom: 4px; text-transform: uppercase;
-}
-.header-title {
-  font-family: var(--font-d);
-  font-size: clamp(36px, 11vw, 52px);
-  color: var(--gold);
-  letter-spacing: 0.06em;
-  line-height: 0.95;
-  text-shadow: 0 0 40px var(--gold-glow), 0 2px 0 rgba(0,0,0,0.6);
-}
+/* HEADER */
+.header { position: relative; z-index: 10; text-align: center; padding: 20px 16px 14px; border-bottom: 2px solid var(--gold-dim); border-top: 3px solid var(--red); background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 100%); }
+.header-eyebrow { font-size: 11px; letter-spacing: 0.22em; color: var(--gold-dim); font-family: var(--font-f); margin-bottom: 4px; text-transform: uppercase; }
+.header-title { font-family: var(--font-d); font-size: clamp(36px, 11vw, 52px); color: var(--gold); letter-spacing: 0.06em; line-height: 0.95; text-shadow: 0 0 40px var(--gold-glow), 0 2px 0 rgba(0,0,0,0.6); }
 .header-title em { color: var(--white); font-style: normal; }
 
-/* =====================================================
-   VIP BANNER
-===================================================== */
-.vip-banner {
-  position: relative; z-index: 10;
-  background: rgba(0,0,0,0.55);
-  border-left: 3px solid var(--gold);
-  border-right: 3px solid var(--gold);
-  border-bottom: 1px solid rgba(245,197,24,0.2);
-  margin: 14px 14px 0;
-  padding: 14px 16px;
-}
-.vip-title {
-  font-family: var(--font-d); font-size: 19px;
-  color: var(--gold); letter-spacing: 0.08em; margin-bottom: 8px;
-}
-.vip-item {
-  display: flex; align-items: flex-start; gap: 8px;
-  font-size: 14px; color: var(--dim); font-family: var(--font-f);
-  line-height: 1.45; margin-bottom: 5px;
-}
+/* VIP BANNER */
+.vip-banner { position: relative; z-index: 10; background: rgba(0,0,0,0.55); border-left: 3px solid var(--gold); border-right: 3px solid var(--gold); border-bottom: 1px solid rgba(245,197,24,0.2); margin: 14px 14px 0; padding: 14px 16px; }
+.vip-title { font-family: var(--font-d); font-size: 19px; color: var(--gold); letter-spacing: 0.08em; margin-bottom: 8px; }
+.vip-item { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: var(--dim); font-family: var(--font-f); line-height: 1.45; margin-bottom: 5px; }
 .vip-item::before { content: '★'; color: var(--gold); font-size: 10px; margin-top: 3px; flex-shrink: 0; }
 .vip-item b { color: var(--gold); }
 .vip-item a { color: var(--gold); font-weight: 700; text-decoration: none; }
@@ -123,415 +70,119 @@ body {
 .terms-line { font-size: 11px; color: var(--dim2); font-family: var(--font-f); font-style: italic; margin-top: 5px; line-height: 1.4; }
 .red-stripe { height: 3px; background: linear-gradient(90deg, transparent, var(--red) 15%, var(--red) 85%, transparent); margin: 14px 0 0; position: relative; z-index: 10; }
 
-/* =====================================================
-   PAGES / STEPS
-===================================================== */
+/* STEP INDICATOR */
+.step-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 0 4px; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(245,197,24,0.25); border: 1px solid var(--gold-dim); transition: background 0.3s; }
+.step-dot.active { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
+.step-dot.done { background: var(--green-light); border-color: var(--gold); }
+.step-label { font-size: 11px; color: var(--dim2); font-family: var(--font-f); letter-spacing: 0.06em; text-align: center; padding-bottom: 14px; }
+
+/* PAGES */
 .page { display: none; position: relative; z-index: 10; padding: 0 14px; }
 .page.active { display: block; }
 
-/* =====================================================
-   STEP INDICATOR
-===================================================== */
-.step-indicator {
-  display: flex; align-items: center; justify-content: center;
-  gap: 8px; padding: 16px 0 4px;
-}
-.step-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: rgba(245,197,24,0.25);
-  border: 1px solid var(--gold-dim);
-  transition: background 0.3s;
-}
-.step-dot.active { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
-.step-dot.done { background: var(--green-light); border-color: var(--gold); }
-.step-label {
-  font-size: 11px; color: var(--dim2); font-family: var(--font-f);
-  letter-spacing: 0.06em; text-align: center; padding-bottom: 14px;
-}
-
-/* =====================================================
-   FIELD CARDS — large tap targets for mobile
-===================================================== */
-.field-card {
-  background: var(--card-bg);
-  border: 1px solid rgba(245,197,24,0.18);
-  border-left: 3px solid var(--gold);
-  border-radius: 4px;
-  padding: 16px 16px 14px;
-  margin-bottom: 12px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.field-card:focus-within {
-  border-color: rgba(245,197,24,0.5);
-  box-shadow: 0 0 18px rgba(245,197,24,0.08);
-}
-.field-card.private {
-  border-left-color: var(--red);
-  border-color: rgba(204,17,17,0.18);
-}
-.field-card.private:focus-within {
-  border-color: rgba(204,17,17,0.45);
-  box-shadow: 0 0 18px rgba(204,17,17,0.07);
-}
-.field-label {
-  font-family: var(--font-d);
-  font-size: 22px;
-  color: var(--gold);
-  letter-spacing: 0.07em;
-  margin-bottom: 10px;
-  display: flex; align-items: center; gap: 6px;
-  line-height: 1;
-}
+/* FIELD CARDS */
+.field-card { background: var(--card-bg); border: 1px solid rgba(245,197,24,0.18); border-left: 3px solid var(--gold); border-radius: 4px; padding: 16px 16px 14px; margin-bottom: 12px; transition: border-color 0.2s, box-shadow 0.2s; }
+.field-card:focus-within { border-color: rgba(245,197,24,0.5); box-shadow: 0 0 18px rgba(245,197,24,0.08); }
+.field-card.private { border-left-color: var(--red); border-color: rgba(204,17,17,0.18); }
+.field-card.private:focus-within { border-color: rgba(204,17,17,0.45); }
+.field-card.chat-card { border-left-color: var(--pink); border-color: rgba(244,114,182,0.2); }
+.field-card.chat-card:focus-within { border-color: rgba(244,114,182,0.5); }
+.field-label { font-family: var(--font-d); font-size: 22px; color: var(--gold); letter-spacing: 0.07em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; line-height: 1; }
 .field-card.private .field-label { font-size: 18px; color: rgba(255,255,255,0.8); }
+.field-card.chat-card .field-label { color: var(--pink); }
 .field-req { color: var(--red-bright); }
-.field-hint {
-  font-size: 13px; color: var(--dim); font-family: var(--font-f);
-  margin-bottom: 10px; line-height: 1.45;
-}
+.field-hint { font-size: 13px; color: var(--dim); font-family: var(--font-f); margin-bottom: 10px; line-height: 1.45; }
 .field-hint a { color: var(--gold); font-weight: 700; text-decoration: none; }
-.private-tag {
-  font-size: 10px; font-family: var(--font-b); font-weight: 700;
-  letter-spacing: 0.05em; background: rgba(204,17,17,0.18);
-  border: 0.5px solid var(--red); color: var(--red-bright);
-  padding: 2px 7px; border-radius: 3px;
-}
+.private-tag { font-size: 10px; font-family: var(--font-b); font-weight: 700; letter-spacing: 0.05em; background: rgba(204,17,17,0.18); border: 0.5px solid var(--red); color: var(--red-bright); padding: 2px 7px; border-radius: 3px; }
 
-/* *** LARGE INPUT — min 52px height for easy mobile tapping */
-.field-input {
-  width: 100%;
-  min-height: var(--tap-min);
-  background: rgba(255,255,255,0.06);
-  border: none;
-  border-bottom: 2px solid rgba(245,197,24,0.3);
-  color: var(--white);
-  font-family: var(--font-b);
-  font-size: 20px;
-  font-weight: 600;
-  padding: 10px 4px 8px;
-  outline: none;
-  transition: border-color 0.2s;
-  letter-spacing: 0.02em;
-  border-radius: 0;
-  /* Prevent iOS zoom on focus — must be >= 16px */
-  -webkit-text-size-adjust: 100%;
-}
-.field-input::placeholder {
-  color: rgba(255,255,255,0.22);
-  font-weight: 400;
-  font-size: 17px;
-}
+/* INPUTS — min 54px, 20px+ font so iOS never auto-zooms */
+.field-input { width: 100%; min-height: var(--tap-min); background: rgba(255,255,255,0.06); border: none; border-bottom: 2px solid rgba(245,197,24,0.3); color: var(--white); font-family: var(--font-b); font-size: 20px; font-weight: 600; padding: 10px 4px 8px; outline: none; transition: border-color 0.2s; border-radius: 0; -webkit-text-size-adjust: 100%; }
+.field-input::placeholder { color: rgba(255,255,255,0.22); font-weight: 400; font-size: 17px; }
 .field-input:focus { border-bottom-color: var(--gold); }
-.field-card.private .field-input {
-  font-size: 17px;
-  border-bottom-color: rgba(204,17,17,0.3);
-}
+.field-card.private .field-input { font-size: 17px; border-bottom-color: rgba(204,17,17,0.3); }
 .field-card.private .field-input:focus { border-bottom-color: var(--red-bright); }
-textarea.field-input {
-  resize: none;
-  min-height: 80px;
-  border: 1px solid rgba(204,17,17,0.25);
-  border-radius: 3px;
-  padding: 10px 12px;
-  font-size: 16px;
-  line-height: 1.5;
-}
+.field-card.chat-card .field-input { border-bottom-color: rgba(244,114,182,0.3); }
+.field-card.chat-card .field-input:focus { border-bottom-color: var(--pink); }
+textarea.field-input { resize: none; min-height: 80px; border: 1px solid rgba(204,17,17,0.25); border-radius: 3px; padding: 10px 12px; font-size: 16px; line-height: 1.5; }
 textarea.field-input:focus { border-color: var(--red-bright); }
+textarea.chat-input-ta { resize: none; min-height: 80px; border: 1px solid rgba(244,114,182,0.25); border-radius: 3px; padding: 10px 12px; font-size: 16px; line-height: 1.5; width: 100%; background: rgba(244,114,182,0.04); color: var(--white); font-family: var(--font-b); font-weight: 600; outline: none; }
+textarea.chat-input-ta:focus { border-color: var(--pink); }
+textarea.chat-input-ta::placeholder { color: rgba(255,255,255,0.22); font-weight: 400; }
 
-/* =====================================================
-   SEARCH RESULT CARD (song verification)
-===================================================== */
-.search-result {
-  display: none;
-  background: rgba(0,0,0,0.6);
-  border: 1px solid rgba(245,197,24,0.3);
-  border-radius: 4px;
-  padding: 12px 14px;
-  margin-top: 10px;
-  gap: 12px;
-  align-items: center;
-}
+/* YOUTUBE SEARCH RESULT */
+.search-status { display: none; font-size: 13px; color: var(--dim); font-family: var(--font-f); padding: 8px 0 0; text-align: center; }
+.search-status.visible { display: block; }
+.search-result { display: none; background: rgba(0,0,0,0.6); border: 1px solid rgba(245,197,24,0.3); border-radius: 4px; padding: 12px 14px; margin-top: 10px; gap: 12px; align-items: center; }
 .search-result.visible { display: flex; }
-.search-thumb {
-  width: 64px; height: 48px;
-  border-radius: 3px;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid rgba(245,197,24,0.2);
-}
+.search-thumb { width: 64px; height: 48px; border-radius: 3px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(245,197,24,0.2); }
 .search-info { flex: 1; min-width: 0; }
-.search-title {
-  font-size: 13px; font-weight: 700; color: var(--white);
-  font-family: var(--font-b); line-height: 1.3;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.search-channel {
-  font-size: 11px; color: var(--dim); font-family: var(--font-f); margin-top: 2px;
-}
-.search-badge {
-  font-size: 11px; font-family: var(--font-b); font-weight: 700;
-  letter-spacing: 0.04em; padding: 3px 9px; border-radius: 3px;
-  flex-shrink: 0;
-}
+.search-title { font-size: 13px; font-weight: 700; color: var(--white); font-family: var(--font-b); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-channel { font-size: 11px; color: var(--dim); font-family: var(--font-f); margin-top: 2px; }
+.search-badge { font-size: 11px; font-family: var(--font-b); font-weight: 700; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 3px; flex-shrink: 0; }
 .search-badge.found { background: rgba(0,200,80,0.15); border: 0.5px solid #00c850; color: #00c850; }
 .search-badge.not-found { background: rgba(204,17,17,0.15); border: 0.5px solid var(--red); color: var(--red-bright); }
 
-.search-status {
-  display: none;
-  font-size: 13px; color: var(--dim); font-family: var(--font-f);
-  padding: 8px 0 0; text-align: center;
-}
-.search-status.visible { display: block; }
-
-/* =====================================================
-   BUTTONS — minimum 52px height
-===================================================== */
-.btn-primary {
-  display: block; width: 100%;
-  min-height: var(--tap-min);
-  font-family: var(--font-d);
-  font-size: 26px;
-  letter-spacing: 0.1em;
-  color: var(--green-deep);
-  background: var(--gold);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  position: relative; overflow: hidden;
-  transition: transform 0.12s, box-shadow 0.12s, opacity 0.2s;
-  box-shadow: 0 4px 20px rgba(245,197,24,0.35), 0 0 0 2px rgba(245,197,24,0.15);
-  margin-top: 8px;
-}
-.btn-primary::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 55%);
-  pointer-events: none;
-}
-.btn-primary:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(245,197,24,0.25); }
-.btn-primary:disabled { opacity: 0.55; pointer-events: none; }
-.btn-primary.loading { opacity: 0.7; pointer-events: none; }
-
-.btn-ghost {
-  display: block; width: 100%;
-  min-height: var(--tap-min);
-  font-family: var(--font-d);
-  font-size: 22px;
-  letter-spacing: 0.08em;
-  color: var(--gold);
-  background: transparent;
-  border: 2px solid var(--gold);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  margin-top: 10px;
-}
+/* BUTTONS */
+.btn-primary { display: block; width: 100%; min-height: var(--tap-min); font-family: var(--font-d); font-size: 26px; letter-spacing: 0.1em; color: var(--green-deep); background: var(--gold); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; box-shadow: 0 4px 20px rgba(245,197,24,0.35); margin-top: 8px; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-ghost { display: block; width: 100%; min-height: var(--tap-min); font-family: var(--font-d); font-size: 22px; letter-spacing: 0.08em; color: var(--gold); background: transparent; border: 2px solid var(--gold); border-radius: 4px; cursor: pointer; transition: background 0.15s, color 0.15s; margin-top: 10px; }
 .btn-ghost:active { background: var(--gold); color: var(--green-deep); }
-
+.btn-pink { display: block; width: 100%; min-height: var(--tap-min); font-family: var(--font-d); font-size: 22px; letter-spacing: 0.08em; color: #0a0520; background: var(--pink); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.15s; box-shadow: 0 4px 16px rgba(244,114,182,0.35); margin-top: 8px; }
+.btn-pink:active { opacity: 0.85; }
+.btn-pink:disabled { opacity: 0.5; pointer-events: none; }
 .btn-row { display: flex; gap: 10px; margin-top: 4px; }
 .btn-row .btn-ghost { flex: 1; font-size: 18px; }
 .btn-row .btn-primary { flex: 2; font-size: 22px; }
 
-/* =====================================================
-   CONFIRMATION PAGE
-===================================================== */
-.confirm-icon {
-  text-align: center; font-size: 56px; margin: 20px 0 10px;
-  animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
-}
+/* CONFIRMATION PAGE */
+.confirm-icon { text-align: center; font-size: 56px; margin: 20px 0 10px; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
 @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.confirm-title {
-  font-family: var(--font-d); font-size: 38px; color: var(--gold);
-  letter-spacing: 0.08em; text-align: center;
-  text-shadow: 0 0 30px var(--gold-glow);
-  margin-bottom: 6px;
-}
-.confirm-sub {
-  text-align: center; font-size: 15px; color: var(--dim);
-  font-family: var(--font-f); line-height: 1.5; margin-bottom: 20px;
-}
-.confirm-card {
-  background: rgba(0,0,0,0.55);
-  border: 1px solid rgba(245,197,24,0.3);
-  border-left: 4px solid var(--gold);
-  border-radius: 4px;
-  padding: 16px;
-  margin-bottom: 18px;
-}
-.confirm-row {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 8px 0;
-  border-bottom: 0.5px solid rgba(255,255,255,0.06);
-}
+.confirm-title { font-family: var(--font-d); font-size: 38px; color: var(--gold); letter-spacing: 0.08em; text-align: center; text-shadow: 0 0 30px var(--gold-glow); margin-bottom: 6px; }
+.confirm-sub { text-align: center; font-size: 15px; color: var(--dim); font-family: var(--font-f); line-height: 1.5; margin-bottom: 20px; }
+.confirm-card { background: rgba(0,0,0,0.55); border: 1px solid rgba(245,197,24,0.3); border-left: 4px solid var(--gold); border-radius: 4px; padding: 16px; margin-bottom: 18px; }
+.confirm-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
 .confirm-row:last-child { border-bottom: none; padding-bottom: 0; }
-.confirm-key {
-  font-family: var(--font-d); font-size: 14px; color: var(--gold-dim);
-  letter-spacing: 0.06em; min-width: 70px; flex-shrink: 0; padding-top: 2px;
-}
-.confirm-val {
-  font-family: var(--font-b); font-size: 17px; color: var(--white);
-  font-weight: 700; line-height: 1.3; flex: 1;
-}
-.confirm-found-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-family: var(--font-b); font-weight: 700;
-  padding: 2px 9px; border-radius: 3px; margin-top: 4px;
-}
+.confirm-key { font-family: var(--font-d); font-size: 14px; color: var(--gold-dim); letter-spacing: 0.06em; min-width: 70px; flex-shrink: 0; padding-top: 2px; }
+.confirm-val { font-family: var(--font-b); font-size: 17px; color: var(--white); font-weight: 700; line-height: 1.3; flex: 1; }
+.confirm-found-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-family: var(--font-b); font-weight: 700; padding: 2px 9px; border-radius: 3px; margin-top: 4px; }
 .confirm-found-badge.found { background: rgba(0,200,80,0.15); border: 0.5px solid #00c850; color: #00c850; }
 .confirm-found-badge.not-found { background: rgba(204,17,17,0.12); border: 0.5px solid var(--red); color: var(--red-bright); }
 
-.divider-label {
-  display: flex; align-items: center; gap: 10px;
-  margin: 18px 0 14px;
-}
-.divider-label::before, .divider-label::after {
-  content: ''; flex: 1; height: 0.5px; background: rgba(245,197,24,0.2);
-}
-.divider-label span {
-  font-family: var(--font-d); font-size: 14px; color: var(--gold-dim);
-  letter-spacing: 0.1em; white-space: nowrap;
-}
+/* DIVIDERS */
+.divider-label { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; }
+.divider-label::before, .divider-label::after { content: ''; flex: 1; height: 0.5px; background: rgba(245,197,24,0.2); }
+.divider-label span { font-family: var(--font-d); font-size: 14px; color: var(--gold-dim); letter-spacing: 0.1em; white-space: nowrap; }
+.divider-label.pink-div::before, .divider-label.pink-div::after { background: rgba(244,114,182,0.25); }
+.divider-label.pink-div span { color: var(--pink); }
 
-/* =====================================================
-   ERROR MESSAGE
-===================================================== */
-.error-box {
-  display: none; background: rgba(204,17,17,0.12);
-  border: 1px solid var(--red); border-radius: 4px;
-  padding: 12px 14px; margin-top: 12px;
-  font-size: 14px; color: var(--red-bright);
-  font-family: var(--font-f); text-align: center; line-height: 1.5;
-}
+/* CHAT SENT CONFIRMATION */
+.chat-sent { display: none; text-align: center; padding: 12px; background: rgba(244,114,182,0.1); border: 1px solid rgba(244,114,182,0.3); border-radius: 4px; font-family: var(--font-d); font-size: 18px; color: var(--pink); letter-spacing: 0.05em; margin-top: 8px; }
+.chat-sent.visible { display: block; }
+
+/* ERROR */
+.error-box { display: none; background: rgba(204,17,17,0.12); border: 1px solid var(--red); border-radius: 4px; padding: 12px 14px; margin-top: 12px; font-size: 14px; color: var(--red-bright); font-family: var(--font-f); text-align: center; line-height: 1.5; }
 .error-box.visible { display: block; }
 
-/* =====================================================
-   FOOTER
-===================================================== */
-footer {
-  position: relative; z-index: 10;
-  background: rgba(0,0,0,0.65);
-  border-top: 2px solid var(--gold-dim);
-  margin-top: 32px; padding: 14px 20px;
-  text-align: center;
-}
+/* FOOTER */
+footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-top: 2px solid var(--gold-dim); margin-top: 32px; padding: 14px 20px; text-align: center; }
 .footer-name { font-family: var(--font-d); font-size: 20px; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 4px; }
 .footer-handles { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .footer-handle { font-size: 13px; color: var(--dim); font-family: var(--font-b); font-weight: 600; letter-spacing: 0.04em; }
 .footer-handle span { color: var(--gold); }
-
-/* =====================================================
-   CHAT INVITE SECTION — shown on confirmation page
-   Matches the green/gold vibe of the queue display
-===================================================== */
-.chat-invite {
-  background: rgba(0,0,0,0.45);
-  border: 1px solid rgba(245,197,24,0.25);
-  border-left: 3px solid #f472b6;
-  border-radius: 4px;
-  padding: 18px 16px 14px;
-  margin-bottom: 14px;
-}
-.chat-invite-title {
-  font-family: var(--font-d);
-  font-size: 20px;
-  color: #f472b6;
-  letter-spacing: 0.07em;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.chat-invite-sub {
-  font-size: 13px;
-  color: var(--dim);
-  font-family: var(--font-f);
-  line-height: 1.5;
-  margin-bottom: 14px;
-}
-.chat-input {
-  width: 100%;
-  min-height: 52px;
-  background: rgba(244,114,182,0.06);
-  border: none;
-  border-bottom: 2px solid rgba(244,114,182,0.35);
-  color: var(--white);
-  font-family: var(--font-b);
-  font-size: 18px;
-  font-weight: 600;
-  padding: 10px 4px 8px;
-  outline: none;
-  transition: border-color 0.2s;
-  letter-spacing: 0.02em;
-  border-radius: 0;
-  -webkit-text-size-adjust: 100%;
-  margin-bottom: 10px;
-}
-.chat-input::placeholder {
-  color: rgba(255,255,255,0.22);
-  font-weight: 400;
-  font-size: 16px;
-}
-.chat-input:focus { border-bottom-color: #f472b6; }
-textarea.chat-input {
-  resize: none;
-  min-height: 70px;
-  border: 1px solid rgba(244,114,182,0.25);
-  border-radius: 3px;
-  padding: 10px 12px;
-  font-size: 16px;
-  line-height: 1.5;
-  background: rgba(244,114,182,0.04);
-}
-textarea.chat-input:focus { border-color: #f472b6; }
-.btn-chat {
-  display: block;
-  width: 100%;
-  min-height: 52px;
-  font-family: var(--font-d);
-  font-size: 22px;
-  letter-spacing: 0.08em;
-  color: #0a0510;
-  background: #f472b6;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  box-shadow: 0 4px 16px rgba(244,114,182,0.35);
-  margin-top: 4px;
-}
-.btn-chat:active { transform: scale(0.98); }
-.btn-chat:disabled { opacity: 0.55; pointer-events: none; }
-.chat-sent {
-  display: none;
-  text-align: center;
-  padding: 12px;
-  background: rgba(244,114,182,0.1);
-  border: 1px solid rgba(244,114,182,0.3);
-  border-radius: 4px;
-  font-family: var(--font-d);
-  font-size: 18px;
-  color: #f472b6;
-  letter-spacing: 0.05em;
-  margin-top: 8px;
-}
-.chat-sent.visible { display: block; }
-
 </style>
 </head>
 <body>
 
-<!-- Floating notes -->
 <div class="notes-bg" id="notes-bg"></div>
 
-<!-- =====================================================
-  HEADER
-===================================================== -->
+<!-- HEADER -->
 <div class="header">
   <div class="header-eyebrow">✦ DJ SUNNY ✦</div>
   <div class="header-title">✦ SONG <em>REQUEST</em> ✦</div>
 </div>
 
-<!-- =====================================================
-  VIP BANNER
-===================================================== -->
+<!-- VIP BANNER -->
 <div class="vip-banner">
   <div class="vip-title">⚡ VIP SERVICES</div>
   <div class="vip-item"><b>SKIP</b> next song in queue — <b>$12</b></div>
@@ -542,18 +193,14 @@ textarea.chat-input:focus { border-color: #f472b6; }
 </div>
 <div class="red-stripe"></div>
 
-<!-- =====================================================
-  STEP INDICATOR
-===================================================== -->
+<!-- STEP INDICATOR -->
 <div class="step-indicator">
   <div class="step-dot active" id="dot-1"></div>
   <div class="step-dot" id="dot-2"></div>
 </div>
 <div class="step-label" id="step-label">Step 1 of 2 — Your Request</div>
 
-<!-- =====================================================
-  PAGE 1 — Name, Artist, Song
-===================================================== -->
+<!-- PAGE 1: Name, Artist, Song -->
 <div class="page active" id="page-1">
 
   <div class="field-card">
@@ -572,7 +219,7 @@ textarea.chat-input:focus { border-color: #f472b6; }
     <div class="field-label">SONG TITLE <span class="field-req">*</span></div>
     <input class="field-input" id="f-song" type="text" placeholder="Song title..."
       autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
-    <!-- YouTube search result appears here -->
+    <!-- YouTube search result -->
     <div class="search-status" id="search-status">🔍 Searching YouTube...</div>
     <div class="search-result" id="search-result">
       <img class="search-thumb" id="search-thumb" src="" alt="">
@@ -586,23 +233,19 @@ textarea.chat-input:focus { border-color: #f472b6; }
 
   <div class="error-box" id="error-1">Please fill in your name, artist, and song title.</div>
 
-  <button class="btn-primary" id="btn-next" onclick="goToStep2()">
-    NEXT →
-  </button>
+  <button class="btn-primary" onclick="goToStep2()">NEXT →</button>
 
 </div>
 
-<!-- =====================================================
-  PAGE 2 — Confirmation + optional Snapchat + Comment
-===================================================== -->
+<!-- PAGE 2: Confirmation + Chat + Optional private fields -->
 <div class="page" id="page-2">
 
   <div class="confirm-icon">🎵</div>
   <div class="confirm-title">REQUEST RECEIVED!</div>
-  <div class="confirm-sub">Your song is in the queue. Sunny's got you.<br>Want to add a note or your Snapchat?</div>
+  <div class="confirm-sub">Your song is in the queue — Sunny's got you!</div>
 
   <!-- Summary card -->
-  <div class="confirm-card" id="confirm-summary">
+  <div class="confirm-card">
     <div class="confirm-row">
       <div class="confirm-key">NAME</div>
       <div class="confirm-val" id="c-name">—</div>
@@ -621,40 +264,27 @@ textarea.chat-input:focus { border-color: #f472b6; }
     </div>
   </div>
 
-  <!-- =====================================================
-    PARTY CHAT INVITE — shown after song is submitted
-  ===================================================== -->
-  <div class="divider-label"><span>JOIN THE PARTY CHAT 💬</span></div>
+  <!-- PARTY CHAT INVITE -->
+  <div class="divider-label pink-div"><span>💬 JOIN THE PARTY CHAT</span></div>
 
-  <div class="chat-invite">
-    <div class="chat-invite-title">💬 PARTY CHAT</div>
-    <div class="chat-invite-sub">
-      Everyone's talking — drop a message on the live display for the whole party to see!
-    </div>
-
-    <!-- Chat name — pre-filled from song request name -->
-    <input class="chat-input" id="chat-name" type="text"
-      placeholder="Your name..."
-      autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
-
-    <!-- Chat message -->
-    <textarea class="chat-input" id="chat-message"
-      placeholder="Say something to the party... 🎉"
-      rows="3"></textarea>
-
-    <button class="btn-chat" id="btn-chat" onclick="sendChatMessage()">
+  <div class="field-card chat-card">
+    <div class="field-label">YOUR MESSAGE</div>
+    <div class="field-hint">Say something — it shows live on the big screen for everyone!</div>
+    <input class="field-input" id="chat-name" type="text" placeholder="Your name (pre-filled)..."
+      autocomplete="off" autocorrect="off" spellcheck="false" style="margin-bottom:10px;">
+    <textarea class="chat-input-ta" id="chat-message"
+      placeholder="Say something to the party... 🎉🔥" rows="3"></textarea>
+    <button class="btn-pink" id="btn-chat" onclick="sendChatMessage()">
       DROP IT IN THE CHAT 💬
     </button>
     <div class="chat-sent" id="chat-sent">✓ MESSAGE SENT — CHECK THE DISPLAY!</div>
   </div>
 
+  <!-- OPTIONAL PRIVATE FIELDS -->
   <div class="divider-label"><span>OPTIONAL — JUST FOR SUNNY</span></div>
 
-  <!-- Private: Snapchat -->
   <div class="field-card private">
-    <div class="field-label">
-      YOUR SNAPCHAT <span class="private-tag">PRIVATE</span>
-    </div>
+    <div class="field-label">YOUR SNAPCHAT <span class="private-tag">PRIVATE</span></div>
     <div class="field-hint">
       <a href="https://www.snapchat.com/add/eatitall" target="_blank">ADD @EATITALL ON SNAPCHAT</a>
       &nbsp;— or type your handle
@@ -663,31 +293,26 @@ textarea.chat-input:focus { border-color: #f472b6; }
       autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text">
   </div>
 
-  <!-- Private: Comment -->
   <div class="field-card private">
-    <div class="field-label">
-      COMMENT <span class="private-tag">PRIVATE</span>
-    </div>
+    <div class="field-label">COMMENT <span class="private-tag">PRIVATE</span></div>
     <div class="field-hint">Any special notes for Sunny? (optional)</div>
     <textarea class="field-input" id="f-comment" placeholder="Leave a note..." rows="3"></textarea>
   </div>
 
-  <div class="error-box" id="error-2">Submission failed. Please check your connection and try again.</div>
+  <div class="error-box" id="error-2">Submission failed. Check your connection and try again.</div>
 
   <div class="btn-row">
     <button class="btn-ghost" onclick="goBack()">← BACK</button>
-    <button class="btn-primary" id="btn-submit" onclick="submitForm()">SEND IT 🎵</button>
+    <button class="btn-primary" id="btn-submit" onclick="submitOptional()">DONE ✓</button>
   </div>
 
-  <button class="btn-ghost" id="btn-another" style="display:none" onclick="resetAll()">
+  <button class="btn-ghost" id="btn-another" style="display:none;margin-top:10px;" onclick="resetAll()">
     + REQUEST ANOTHER
   </button>
 
 </div>
 
-<!-- =====================================================
-  FOOTER
-===================================================== -->
+<!-- FOOTER -->
 <footer>
   <div class="footer-name">DJ SUNNY</div>
   <div class="footer-handles">
@@ -696,210 +321,247 @@ textarea.chat-input:focus { border-color: #f472b6; }
   </div>
 </footer>
 
-<!-- =====================================================
-  JAVASCRIPT
-===================================================== -->
 <script>
-// *** Google Form submission endpoint
-const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSeq1jXqVkA0-noEeSLkGTnj1lEjOQTJsgsy1X7uvjpJOmPUdg/formResponse';
+// =====================================================
+// CONFIG
+// =====================================================
+const FORM_ACTION  = 'https://docs.google.com/forms/d/e/1FAIpQLSeq1jXqVkA0-noEeSLkGTnj1lEjOQTJsgsy1X7uvjpJOmPUdg/formResponse';
+const CHAT_ACTION  = 'https://docs.google.com/forms/d/e/1FAIpQLSdhzlA9tm7A6R5b3QECXoOMyJxLiuws8Pr5HB63NWv1pXo2tA/formResponse';
+const YT_API_KEY   = 'AIzaSyDmIRaQ2Mb4iLiNxqgbl_lMGH_shUHS01I';
 
-// *** YouTube Data API key
-// *** TO ENABLE SONG SEARCH: replace 'YOUR_API_KEY' with a real YouTube Data API v3 key
-// *** Get one free at: console.cloud.google.com → Enable YouTube Data API v3 → Create credentials
-// *** Without a key, song search is skipped and all requests go through normally
-const YT_API_KEY = 'AIzaSyDmIRaQ2Mb4iLiNxqgbl_lMGH_shUHS01I';
-
-// *** Holds the current song search result
-let songFound = null;
-let searchTimer = null;
+let songFound    = null;
+let searchTimer  = null;
+let submitted    = false; // *** prevents double-submit
 
 // =====================================================
 // STEP 1 → STEP 2
+// *** Validates fields, submits to Google Sheet,
+// *** populates confirmation card, moves to page 2.
+// *** Uses try/catch so a network hiccup never blocks
+// *** the user from seeing the confirmation screen.
 // =====================================================
-
 async function goToStep2() {
   const name   = document.getElementById('f-name').value.trim();
   const artist = document.getElementById('f-artist').value.trim();
   const song   = document.getElementById('f-song').value.trim();
   const errEl  = document.getElementById('error-1');
+  const btn    = document.querySelector('#page-1 .btn-primary');
 
-  // *** Validate required fields
+  // *** Validate — all 3 required
   if (!name || !artist || !song) {
-    errEl.textContent = 'Please fill in your name, artist, and song title.';
     errEl.classList.add('visible');
     return;
   }
   errEl.classList.remove('visible');
+
+  // *** Disable button to prevent double-tap
+  btn.textContent = 'SENDING...';
+  btn.disabled = true;
+
+  // *** Submit to Google Sheet — wrapped in try/catch
+  // *** If network fails we still move forward so guest
+  // *** sees confirmation. Second submit on "Done" will retry.
+  try {
+    await postToGoogleForm(FORM_ACTION, {
+      'entry.1627059384': name,
+      'entry.68806247':   artist,
+      'entry.1305392283': song,
+      'entry.606492518':  '',
+      'entry.505222990':  ''
+    });
+    submitted = true;
+  } catch(e) {
+    // *** Silent fail — still proceed to confirmation
+    console.warn('Step 1 submit failed, will retry on Done:', e);
+  }
 
   // *** Populate confirmation card
   document.getElementById('c-name').textContent   = name;
   document.getElementById('c-artist').textContent = artist;
   document.getElementById('c-song').textContent   = song;
 
-  // *** Show YouTube found/not-found badge if we have a result
+  // *** Show YouTube found badge if we searched
   if (songFound !== null) {
-    const foundRow = document.getElementById('c-found-row');
-    const foundEl  = document.getElementById('c-found');
-    foundRow.style.display = 'flex';
-    if (songFound) {
-      foundEl.innerHTML = '<span class="confirm-found-badge found">✓ Found on YouTube</span>';
-    } else {
-      foundEl.innerHTML = '<span class="confirm-found-badge not-found">⚠ Not found — Sunny will check</span>';
-    }
+    const row = document.getElementById('c-found-row');
+    const el  = document.getElementById('c-found');
+    row.style.display = 'flex';
+    el.innerHTML = songFound
+      ? '<span class="confirm-found-badge found">✓ Found on YouTube</span>'
+      : '<span class="confirm-found-badge not-found">⚠ Not found — Sunny will check</span>';
   }
 
-  // *** Submit to Google Sheets RIGHT NOW (step 1 data)
-  // *** We submit early so even if the user closes after step 1, we capture the request
-  await sendToGoogleForms(name, artist, song, '', '');
+  // *** Pre-fill chat name with requester's name
+  document.getElementById('chat-name').value = name;
 
-  // *** Pre-fill chat name with the requester's name
-  const chatNameEl = document.getElementById('chat-name');
-  if (chatNameEl) chatNameEl.value = name;
-
-  // *** Pre-fill chat name field with song requester's name
-  const chatNameEl = document.getElementById('chat-name');
-  if (chatNameEl && name) chatNameEl.value = name;
-
-  // *** Switch to page 2
+  // *** Reset button and go to page 2
+  btn.textContent = 'NEXT →';
+  btn.disabled = false;
   showPage(2);
 }
 
+// =====================================================
+// BACK BUTTON
+// =====================================================
 function goBack() {
   showPage(1);
 }
 
 // =====================================================
-// FINAL SUBMIT (optional snap + comment)
+// OPTIONAL SUBMIT (Snap + Comment on page 2)
+// *** Submits the private fields if filled in,
+// *** then shows the "Request Another" button.
 // =====================================================
-
-async function submitForm() {
+async function submitOptional() {
   const name    = document.getElementById('f-name').value.trim();
   const artist  = document.getElementById('f-artist').value.trim();
   const song    = document.getElementById('f-song').value.trim();
   const snap    = document.getElementById('f-snap').value.trim();
   const comment = document.getElementById('f-comment').value.trim();
-  const errEl   = document.getElementById('error-2');
   const btn     = document.getElementById('btn-submit');
+  const errEl   = document.getElementById('error-2');
 
-  // *** Only submit again if they added snap or comment (to update the record)
-  if (snap || comment) {
-    btn.textContent = 'SENDING...';
-    btn.classList.add('loading');
-    errEl.classList.remove('visible');
-
+  // *** If snap or comment filled, submit again with private fields
+  // *** Also retry if first submit failed
+  if (snap || comment || !submitted) {
+    btn.textContent = 'SAVING...';
+    btn.disabled = true;
     try {
-      await sendToGoogleForms(name, artist, song, snap, comment);
+      await postToGoogleForm(FORM_ACTION, {
+        'entry.1627059384': name,
+        'entry.68806247':   artist,
+        'entry.1305392283': song,
+        'entry.606492518':  snap,
+        'entry.505222990':  comment
+      });
     } catch(e) {
-      btn.classList.remove('loading');
-      btn.textContent = 'SEND IT 🎵';
       errEl.classList.add('visible');
+      btn.disabled = false;
+      btn.textContent = 'DONE ✓';
       return;
     }
   }
 
   // *** Show done state
   btn.style.display = 'none';
-  document.querySelector('#page-2 .btn-row').style.display = 'none';
+  document.querySelector('.btn-row').style.display = 'none';
   document.getElementById('btn-another').style.display = 'block';
-  document.getElementById('confirm-sub') && (document.querySelector('.confirm-sub').textContent = "You're all set! Sit back and enjoy the vibe 🎶");
+  document.querySelector('.confirm-sub').textContent = "You're all set! Enjoy the vibe 🎶";
 }
 
 // =====================================================
-// GOOGLE FORMS SUBMISSION
+// CHAT MESSAGE SUBMIT
+// *** Sends a message to the Party Chat Google Form.
+// *** entry.335766847 = Name
+// *** entry.345897145 = Message
 // =====================================================
+async function sendChatMessage() {
+  const nameEl  = document.getElementById('chat-name');
+  const msgEl   = document.getElementById('chat-message');
+  const btn     = document.getElementById('btn-chat');
+  const sentEl  = document.getElementById('chat-sent');
 
-async function sendToGoogleForms(name, artist, song, snap, comment) {
-  // *** Build URL-encoded form data with all 5 entry IDs
-  const params = new URLSearchParams({
-    'entry.1627059384': name,
-    'entry.68806247':   artist,
-    'entry.1305392283': song,
-    'entry.606492518':  snap,
-    'entry.505222990':  comment
-  });
+  const message   = msgEl.value.trim();
+  const finalName = nameEl.value.trim() || document.getElementById('f-name').value.trim() || 'Party Guest';
 
-  // *** no-cors required — Google doesn't allow cross-origin reads
-  // *** Data still submits successfully even though we can't read the response
-  await fetch(FORM_ACTION, {
-    method: 'POST',
-    mode: 'no-cors',
+  if (!message) {
+    msgEl.style.borderColor = 'var(--red-bright)';
+    msgEl.placeholder = 'Type something first!';
+    return;
+  }
+
+  btn.textContent = 'SENDING...';
+  btn.disabled = true;
+
+  try {
+    await postToGoogleForm(CHAT_ACTION, {
+      'entry.335766847': finalName,
+      'entry.345897145': message
+    });
+    btn.style.display = 'none';
+    sentEl.classList.add('visible');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'DROP IT IN THE CHAT 💬';
+  }
+}
+
+// =====================================================
+// CORE POST HELPER
+// *** Single function that handles all Google Form
+// *** submissions. no-cors is required by Google.
+// *** Returns a promise that resolves on success and
+// *** rejects on actual network failure.
+// =====================================================
+function postToGoogleForm(url, fields) {
+  const params = new URLSearchParams(fields);
+  return fetch(url, {
+    method:  'POST',
+    mode:    'no-cors', // *** Required — Google blocks CORS reads but accepts posts
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params.toString()
+    body:    params.toString()
   });
 }
 
 // =====================================================
 // YOUTUBE SONG SEARCH
-// *** Searches YouTube for the song as user types
-// *** Shows a result card with thumbnail and found/not found badge
+// *** Searches as user types (debounced 800ms).
+// *** Shows thumbnail + found/not-found badge.
+// *** Does NOT block form submission if API fails.
 // =====================================================
-
 function searchYouTube() {
   const artist = document.getElementById('f-artist').value.trim();
   const song   = document.getElementById('f-song').value.trim();
 
-  // *** Clear previous timer (debounce — wait until user stops typing)
   clearTimeout(searchTimer);
-
-  // *** Reset UI
   document.getElementById('search-result').classList.remove('visible');
   document.getElementById('search-status').classList.remove('visible');
   songFound = null;
 
-  // *** Only search if we have both artist and song, and API key is set
-  if (!artist || !song || YT_API_KEY === 'YOUR_API_KEY') return;
-  if (song.length < 3) return;
+  // *** Need both fields and a real API key
+  if (!artist || !song || song.length < 2) return;
+  if (YT_API_KEY === 'YOUR_API_KEY') return;
 
-  // *** Wait 800ms after user stops typing before searching
+  // *** Debounce — wait 800ms after typing stops
   searchTimer = setTimeout(async () => {
     const statusEl = document.getElementById('search-status');
     statusEl.textContent = '🔍 Searching YouTube...';
     statusEl.classList.add('visible');
 
     try {
-      const query = encodeURIComponent(`${artist} ${song}`);
-      const url   = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=1&key=${YT_API_KEY}`;
-      const res   = await fetch(url);
-      const data  = await res.json();
+      const q   = encodeURIComponent(artist + ' ' + song);
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${YT_API_KEY}`;
+      const res = await fetch(url);
 
+      if (!res.ok) throw new Error('API error ' + res.status);
+
+      const data = await res.json();
       statusEl.classList.remove('visible');
 
       if (data.items && data.items.length > 0) {
-        const item    = data.items[0];
-        const title   = item.snippet.title;
-        const channel = item.snippet.channelTitle;
-        const thumb   = item.snippet.thumbnails.default.url;
-
-        // *** Show result card
-        document.getElementById('search-thumb').src     = thumb;
-        document.getElementById('search-title').textContent   = title;
-        document.getElementById('search-channel').textContent = channel;
-
+        const item = data.items[0];
+        document.getElementById('search-thumb').src          = item.snippet.thumbnails.default.url;
+        document.getElementById('search-title').textContent  = item.snippet.title;
+        document.getElementById('search-channel').textContent = item.snippet.channelTitle;
         const badge = document.getElementById('search-badge');
-        badge.textContent = '✓ FOUND';
-        badge.className   = 'search-badge found';
-
-        document.getElementById('search-result').classList.add('visible');
+        badge.textContent  = '✓ FOUND';
+        badge.className    = 'search-badge found';
         songFound = true;
-
       } else {
-        // *** Not found on YouTube
-        document.getElementById('search-thumb').src         = '';
-        document.getElementById('search-title').textContent = 'Not found on YouTube';
+        document.getElementById('search-thumb').src           = '';
+        document.getElementById('search-title').textContent   = 'Not found on YouTube';
         document.getElementById('search-channel').textContent = 'Sunny will do a manual check';
-
         const badge = document.getElementById('search-badge');
         badge.textContent = '⚠ CHECK';
         badge.className   = 'search-badge not-found';
-
-        document.getElementById('search-result').classList.add('visible');
         songFound = false;
       }
+      document.getElementById('search-result').classList.add('visible');
 
-    } catch (err) {
-      // *** API error — just hide search, don't block submission
+    } catch(e) {
+      // *** API failed — hide search quietly, don't block the form
       document.getElementById('search-status').classList.remove('visible');
       songFound = null;
+      console.warn('YouTube search error:', e);
     }
   }, 800);
 }
@@ -911,48 +573,54 @@ document.getElementById('f-song').addEventListener('input', searchYouTube);
 // =====================================================
 // PAGE SWITCHING
 // =====================================================
-
 function showPage(num) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(`page-${num}`).classList.add('active');
+  document.getElementById('page-' + num).classList.add('active');
 
-  // *** Update step dots
-  document.getElementById('dot-1').className = 'step-dot' + (num >= 1 ? (num > 1 ? ' done' : ' active') : '');
-  document.getElementById('dot-2').className = 'step-dot' + (num >= 2 ? ' active' : '');
+  document.getElementById('dot-1').className = 'step-dot' + (num === 1 ? ' active' : ' done');
+  document.getElementById('dot-2').className = 'step-dot' + (num === 2 ? ' active' : '');
   document.getElementById('step-label').textContent = num === 1
     ? 'Step 1 of 2 — Your Request'
     : 'Step 2 of 2 — Almost done!';
 
-  // *** Scroll to top on page change
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // =====================================================
 // RESET
 // =====================================================
-
 function resetAll() {
-  // *** Clear all fields and go back to step 1
-  ['f-name','f-artist','f-song','f-snap','f-comment'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  songFound = null;
+  ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+
+  submitted  = false;
+  songFound  = null;
+
   document.getElementById('search-result').classList.remove('visible');
   document.getElementById('search-status').classList.remove('visible');
-  document.getElementById('btn-submit').style.display = '';
-  document.getElementById('btn-submit').textContent = 'SEND IT 🎵';
-  document.getElementById('btn-submit').classList.remove('loading');
-  document.querySelector('#page-2 .btn-row').style.display = '';
-  document.getElementById('btn-another').style.display = 'none';
+  document.getElementById('chat-sent').classList.remove('visible');
   document.getElementById('c-found-row').style.display = 'none';
+
+  const btn = document.getElementById('btn-submit');
+  btn.style.display    = '';
+  btn.textContent      = 'DONE ✓';
+  btn.disabled         = false;
+
+  const chatBtn = document.getElementById('btn-chat');
+  chatBtn.style.display = '';
+  chatBtn.textContent   = 'DROP IT IN THE CHAT 💬';
+  chatBtn.disabled      = false;
+
+  document.querySelector('.btn-row').style.display   = '';
+  document.getElementById('btn-another').style.display = 'none';
+  document.querySelector('.confirm-sub').textContent = "Your song is in the queue — Sunny's got you!";
+
   showPage(1);
 }
 
 // =====================================================
 // FLOATING MUSIC NOTES
 // =====================================================
-
 function spawnNotes() {
   const container = document.getElementById('notes-bg');
   const chars = ['♩','♪','♫','♬','🎵','🎶'];
@@ -963,63 +631,12 @@ function spawnNotes() {
     el.style.left = Math.random() * 100 + 'vw';
     el.style.fontSize = (13 + Math.random() * 16) + 'px';
     const dur = 14 + Math.random() * 14;
-    el.style.animationDuration = dur + 's';
-    el.style.animationDelay = (-Math.random() * dur) + 's';
+    el.style.animationDuration  = dur + 's';
+    el.style.animationDelay     = (-Math.random() * dur) + 's';
     container.appendChild(el);
   }
 }
-
 spawnNotes();
-
-// =====================================================
-// PARTY CHAT FORM SUBMISSION
-// *** entry.335766847 = Name
-// *** entry.345897145 = Message
-// =====================================================
-const CHAT_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSdhzlA9tm7A6R5b3QECXoOMyJxLiuws8Pr5HB63NWv1pXo2tA/formResponse';
-
-async function sendChatMessage() {
-  const nameEl  = document.getElementById('chat-name');
-  const msgEl   = document.getElementById('chat-message');
-  const btn     = document.getElementById('btn-chat');
-  const sentEl  = document.getElementById('chat-sent');
-
-  const message = msgEl.value.trim();
-
-  if (!message) {
-    msgEl.style.borderColor = '#ff3333';
-    msgEl.placeholder = 'Type something first!';
-    return;
-  }
-
-  // *** Use song requester name if chat name is blank
-  const songName = document.getElementById('f-name') ? document.getElementById('f-name').value.trim() : '';
-  const finalName = (nameEl.value.trim()) || songName || 'Party Guest';
-
-  btn.textContent = 'SENDING...';
-  btn.disabled = true;
-
-  const params = new URLSearchParams({
-    'entry.335766847': finalName,
-    'entry.345897145': message
-  });
-
-  try {
-    // *** no-cors required — Google Forms blocks cross-origin reads
-    // *** but the data still submits successfully
-    await fetch(CHAT_FORM_ACTION, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString()
-    });
-    btn.style.display = 'none';
-    sentEl.classList.add('visible');
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'DROP IT IN THE CHAT 💬';
-  }
-}
 </script>
 </body>
 </html>
