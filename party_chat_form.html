@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0520">
+<title>Party Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* =====================================================
+   PARTY CHAT FORM
+   Vibe: Deep purple/pink — clearly different from the
+   green song request form so guests know which is which.
+   LARGE everything — easy for tipsy 2am party guests.
+===================================================== */
+:root {
+  --bg:        #0a0520;
+  --bg2:       #150830;
+  --pink:      #f472b6;
+  --pink-dim:  #c84d93;
+  --pink-glow: rgba(244,114,182,0.3);
+  --purple:    #a855f7;
+  --gold:      #f5c518;
+  --red:       #cc1111;
+  --white:     #ffffff;
+  --dim:       rgba(255,255,255,0.6);
+  --dim2:      rgba(255,255,255,0.35);
+  --card-bg:   rgba(0,0,0,0.5);
+  --font-d:    'Bebas Neue', sans-serif;
+  --font-b:    'Barlow Condensed', sans-serif;
+  --font-f:    'Barlow', sans-serif;
+  --tap-min:   60px; /* *** BIGGER than song form — easier for tipsy fingers *** */
+}
+
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--bg);
+  /* *** Deep purple starfield — totally different feel from green song form *** */
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% 0%, #2a0a4a 0%, var(--bg) 65%),
+    radial-gradient(ellipse 80% 40% at 80% 100%, #1a0535 0%, transparent 70%);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  font-family: var(--font-b);
+  color: var(--white);
+  overflow-x: hidden;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+  padding-top: env(safe-area-inset-top);
+}
+
+/* =====================================================
+   FLOATING BUBBLES BACKGROUND
+   *** Chat bubbles instead of music notes — signals "chat"
+===================================================== */
+.bubbles-bg {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0; overflow: hidden;
+}
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  animation: floatBubble linear infinite;
+}
+@keyframes floatBubble {
+  0%   { opacity: 0; transform: translateY(110vh) scale(0.5); }
+  8%   { opacity: 0.15; }
+  92%  { opacity: 0.08; }
+  100% { opacity: 0; transform: translateY(-10vh) scale(1.2); }
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+.header {
+  position: relative; z-index: 10;
+  text-align: center;
+  padding: 24px 16px 16px;
+  border-bottom: 2px solid var(--pink-dim);
+  border-top: 3px solid var(--purple);
+  background: linear-gradient(180deg, rgba(168,85,247,0.15) 0%, transparent 100%);
+}
+.header-eyebrow {
+  font-size: 12px; letter-spacing: 0.22em;
+  color: var(--purple); font-family: var(--font-f);
+  margin-bottom: 6px; text-transform: uppercase;
+}
+.header-title {
+  font-family: var(--font-d);
+  /* *** Extra large — visible even when tipsy *** */
+  font-size: clamp(48px, 14vw, 72px);
+  color: var(--pink);
+  letter-spacing: 0.06em;
+  line-height: 0.95;
+  text-shadow: 0 0 40px var(--pink-glow), 0 2px 0 rgba(0,0,0,0.6);
+}
+.header-sub {
+  font-size: 15px; color: var(--dim);
+  font-family: var(--font-f); margin-top: 8px;
+  line-height: 1.4;
+}
+.live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px;
+  font-size: 13px; font-family: var(--font-b); font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  background: rgba(244,114,182,0.12);
+  border: 1px solid rgba(244,114,182,0.4);
+  border-radius: 20px; padding: 4px 14px;
+  color: var(--pink);
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88;
+  animation: livePulse 1.5s infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* =====================================================
+   FORM AREA
+===================================================== */
+.form-wrap {
+  position: relative; z-index: 10;
+  max-width: 520px;
+  margin: 20px auto 0;
+  padding: 0 16px;
+}
+
+/* *** Field cards *** */
+.field-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(244,114,182,0.2);
+  border-left: 4px solid var(--pink);
+  border-radius: 6px;
+  padding: 18px 16px 14px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field-card:focus-within {
+  border-color: rgba(244,114,182,0.6);
+  box-shadow: 0 0 24px rgba(244,114,182,0.1);
+}
+.field-label {
+  font-family: var(--font-d);
+  /* *** BIG label — easy to read *** */
+  font-size: 26px;
+  color: var(--pink);
+  letter-spacing: 0.07em;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+.field-input {
+  width: 100%;
+  /* *** TALL input — big tap target *** */
+  min-height: var(--tap-min);
+  background: rgba(244,114,182,0.05);
+  border: none;
+  border-bottom: 2px solid rgba(244,114,182,0.35);
+  color: var(--white);
+  font-family: var(--font-b);
+  /* *** 22px — above iOS auto-zoom threshold *** */
+  font-size: 22px;
+  font-weight: 600;
+  padding: 10px 4px 8px;
+  outline: none;
+  transition: border-color 0.2s;
+  border-radius: 0;
+  -webkit-text-size-adjust: 100%;
+}
+.field-input::placeholder {
+  color: rgba(255,255,255,0.25);
+  font-weight: 400; font-size: 18px;
+}
+.field-input:focus { border-bottom-color: var(--pink); }
+
+/* *** Message textarea *** */
+textarea.field-input {
+  resize: none;
+  /* *** Tall textarea — room for a decent message *** */
+  min-height: 120px;
+  border: 1px solid rgba(244,114,182,0.25);
+  border-radius: 4px;
+  padding: 12px 14px;
+  font-size: 20px;
+  line-height: 1.5;
+  background: rgba(244,114,182,0.04);
+}
+textarea.field-input:focus { border-color: var(--pink); }
+
+/* =====================================================
+   SUBMIT BUTTON — massive, can't miss it
+===================================================== */
+.submit-btn {
+  display: block; width: 100%;
+  /* *** 70px tall — huge tap target for tipsy fingers *** */
+  min-height: 70px;
+  font-family: var(--font-d);
+  font-size: 32px;
+  letter-spacing: 0.1em;
+  color: #0a0520;
+  background: var(--pink);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: transform 0.12s, box-shadow 0.12s;
+  box-shadow: 0 6px 28px rgba(244,114,182,0.45), 0 0 0 2px rgba(244,114,182,0.2);
+  margin-top: 8px;
+}
+.submit-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 55%);
+  pointer-events: none;
+}
+.submit-btn:active { transform: scale(0.98); }
+.submit-btn:disabled { opacity: 0.5; pointer-events: none; }
+
+/* =====================================================
+   SUCCESS SCREEN
+===================================================== */
+.success-screen {
+  display: none;
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  animation: fadeIn 0.4s ease;
+}
+.success-screen.visible { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.success-icon {
+  font-size: 80px; margin-bottom: 20px;
+  animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.success-title {
+  font-family: var(--font-d);
+  font-size: clamp(42px, 10vw, 60px);
+  color: var(--pink);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 30px var(--pink-glow);
+  margin-bottom: 10px;
+}
+.success-sub {
+  font-size: 18px; color: var(--dim);
+  font-family: var(--font-f); line-height: 1.6;
+  max-width: 320px; margin-bottom: 16px;
+}
+.success-name {
+  font-family: var(--font-d);
+  font-size: 28px; color: var(--gold);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 20px rgba(245,197,24,0.4);
+  margin-bottom: 28px;
+}
+.btn-another {
+  font-family: var(--font-d); font-size: 24px;
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: 2px solid var(--pink);
+  color: var(--pink);
+  padding: 16px 32px; border-radius: 6px;
+  cursor: pointer; min-height: 60px;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 12px; width: 100%; max-width: 360px;
+}
+.btn-another:active { background: var(--pink); color: var(--bg); }
+.btn-song {
+  font-family: var(--font-d); font-size: 20px;
+  letter-spacing: 0.07em;
+  background: transparent;
+  border: 1px solid rgba(245,197,24,0.4);
+  color: var(--gold);
+  padding: 14px 28px; border-radius: 6px;
+  cursor: pointer; min-height: 56px;
+  width: 100%; max-width: 360px;
+}
+.btn-song:active { background: rgba(245,197,24,0.1); }
+
+/* Error */
+.error-box {
+  display: none; background: rgba(204,17,17,0.12);
+  border: 1px solid var(--red); border-radius: 4px;
+  padding: 12px 14px; margin-top: 12px;
+  font-size: 15px; color: #ff3333;
+  font-family: var(--font-f); text-align: center; line-height: 1.5;
+}
+.error-box.visible { display: block; }
+
+/* Footer */
+footer {
+  position: relative; z-index: 10;
+  border-top: 1px solid rgba(244,114,182,0.2);
+  margin-top: 32px; padding: 14px 20px;
+  text-align: center;
+}
+.footer-name {
+  font-family: var(--font-d); font-size: 18px;
+  color: var(--pink-dim); letter-spacing: 0.1em; margin-bottom: 3px;
+}
+.footer-sub { font-size: 12px; color: var(--dim2); font-family: var(--font-f); }
+</style>
+</head>
+<body>
+
+<!-- Floating bubbles background -->
+<div class="bubbles-bg" id="bubbles-bg"></div>
+
+<!-- =====================================================
+  SUCCESS SCREEN
+===================================================== -->
+<div class="success-screen" id="success-screen">
+  <div class="success-icon">💬</div>
+  <div class="success-title">MESSAGE SENT!</div>
+  <div class="success-name" id="success-name"></div>
+  <div class="success-sub">Your message is live on the display — everyone can see it right now!</div>
+  <button class="btn-another" onclick="resetForm()">SEND ANOTHER 💬</button>
+  <button class="btn-song" onclick="window.location.href='song_request_form.html'">
+    🎵 REQUEST A SONG TOO
+  </button>
+</div>
+
+<!-- =====================================================
+  HEADER
+===================================================== -->
+<div class="header">
+  <div class="header-eyebrow">✦ DJ SUNNY ✦</div>
+  <div class="header-title">PARTY<br>CHAT</div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    LIVE ON THE DISPLAY
+  </div>
+  <div class="header-sub">Say something — it shows up on the big screen!</div>
+</div>
+
+<!-- =====================================================
+  FORM
+===================================================== -->
+<div class="form-wrap">
+
+  <!-- Name -->
+  <div class="field-card">
+    <div class="field-label">YOUR NAME</div>
+    <input class="field-input" id="f-name" type="text"
+      placeholder="What's your name?"
+      autocomplete="given-name" autocorrect="off"
+      spellcheck="false" inputmode="text">
+  </div>
+
+  <!-- Message -->
+  <div class="field-card">
+    <div class="field-label">YOUR MESSAGE 💬</div>
+    <textarea class="field-input" id="f-message"
+      placeholder="Say something to the party... 🎉🔥"
+      rows="4"></textarea>
+  </div>
+
+  <div class="error-box" id="error-box">Please enter a message first!</div>
+
+  <button class="submit-btn" id="submit-btn" onclick="submitChat()">
+    DROP IT 💬
+  </button>
+
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-name">DJ SUNNY</div>
+  <div class="footer-sub">Messages appear live on the display · @eatitall</div>
+</footer>
+
+<!-- =====================================================
+  JAVASCRIPT
+===================================================== -->
+<script>
+// *** Google Forms endpoint for party chat
+// *** entry.335766847 = Name
+// *** entry.345897145 = Message
+const CHAT_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSdhzlA9tm7A6R5b3QECXoOMyJxLiuws8Pr5HB63NWv1pXo2tA/formResponse';
+
+async function submitChat() {
+  const nameEl  = document.getElementById('f-name');
+  const msgEl   = document.getElementById('f-message');
+  const btn     = document.getElementById('submit-btn');
+  const errEl   = document.getElementById('error-box');
+
+  const name    = nameEl.value.trim();
+  const message = msgEl.value.trim();
+
+  // *** Require a message — name is optional (shows as "Party Guest")
+  if (!message) {
+    errEl.classList.add('visible');
+    msgEl.focus();
+    return;
+  }
+  errEl.classList.remove('visible');
+
+  const finalName = name || 'Party Guest';
+
+  btn.textContent = 'SENDING...';
+  btn.disabled = true;
+
+  const params = new URLSearchParams({
+    'entry.335766847': finalName,
+    'entry.345897145': message
+  });
+
+  try {
+    // *** no-cors = required for Google Forms
+    // *** data submits even though we can't read the response
+    await fetch(CHAT_FORM, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+
+    // *** Show success
+    document.getElementById('success-name').textContent = finalName.toUpperCase() + ' IS IN THE CHAT!';
+    document.getElementById('success-screen').classList.add('visible');
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'DROP IT 💬';
+    errEl.textContent = 'Something went wrong. Try again!';
+    errEl.classList.add('visible');
+  }
+}
+
+function resetForm() {
+  // *** Clear and reset for another message
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-message').value = '';
+  document.getElementById('submit-btn').disabled = false;
+  document.getElementById('submit-btn').textContent = 'DROP IT 💬';
+  document.getElementById('error-box').classList.remove('visible');
+  document.getElementById('success-screen').classList.remove('visible');
+  document.getElementById('f-message').focus();
+}
+
+// *** Allow Enter key to submit (but Shift+Enter = new line in textarea)
+document.getElementById('f-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('f-message').focus(); }
+});
+
+// =====================================================
+// FLOATING BUBBLES BACKGROUND
+// *** Soap bubble effect — signals "chat" visually
+// *** Different from music notes on song request form
+// =====================================================
+function spawnBubbles() {
+  const container = document.getElementById('bubbles-bg');
+  const colors = [
+    'rgba(244,114,182,0.6)',
+    'rgba(168,85,247,0.5)',
+    'rgba(245,197,24,0.4)',
+    'rgba(255,255,255,0.3)',
+    'rgba(96,165,250,0.4)',
+  ];
+  for (let i = 0; i < 20; i++) {
+    const el = document.createElement('div');
+    el.className = 'bubble';
+    const size = 20 + Math.random() * 60;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    el.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      left: ${Math.random() * 100}vw;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.4), ${color} 60%, transparent);
+      border: 1px solid rgba(255,255,255,0.15);
+    `;
+    const dur = 16 + Math.random() * 20;
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay = (-Math.random() * dur) + 's';
+    container.appendChild(el);
+  }
+}
+
+spawnBubbles();
+</script>
+</body>
+</html>
