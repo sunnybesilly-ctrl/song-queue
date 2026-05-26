@@ -340,47 +340,39 @@ let submitted    = false; // *** prevents double-submit
 // *** Uses try/catch so a network hiccup never blocks
 // *** the user from seeing the confirmation screen.
 // =====================================================
-async function goToStep2() {
+function goToStep2() {
   const name   = document.getElementById('f-name').value.trim();
   const artist = document.getElementById('f-artist').value.trim();
   const song   = document.getElementById('f-song').value.trim();
   const errEl  = document.getElementById('error-1');
-  const btn    = document.querySelector('#page-1 .btn-primary');
 
   // *** Validate — all 3 required
   if (!name || !artist || !song) {
     errEl.classList.add('visible');
+    // *** Highlight empty fields
+    if (!name)   document.getElementById('f-name').style.borderBottomColor = '#ff3333';
+    if (!artist) document.getElementById('f-artist').style.borderBottomColor = '#ff3333';
+    if (!song)   document.getElementById('f-song').style.borderBottomColor = '#ff3333';
     return;
   }
   errEl.classList.remove('visible');
 
-  // *** Disable button to prevent double-tap
-  btn.textContent = 'SENDING...';
-  btn.disabled = true;
+  // *** Fire-and-forget submit — NEVER awaited so it NEVER blocks page transition
+  // *** If it fails, submitOptional() on page 2 will retry
+  postToGoogleForm(FORM_ACTION, {
+    'entry.1627059384': name,
+    'entry.68806247':   artist,
+    'entry.1305392283': song,
+    'entry.606492518':  '',
+    'entry.505222990':  ''
+  }).then(() => { submitted = true; }).catch(e => console.warn('Step 1 submit error:', e));
 
-  // *** Submit to Google Sheet — wrapped in try/catch
-  // *** If network fails we still move forward so guest
-  // *** sees confirmation. Second submit on "Done" will retry.
-  try {
-    await postToGoogleForm(FORM_ACTION, {
-      'entry.1627059384': name,
-      'entry.68806247':   artist,
-      'entry.1305392283': song,
-      'entry.606492518':  '',
-      'entry.505222990':  ''
-    });
-    submitted = true;
-  } catch(e) {
-    // *** Silent fail — still proceed to confirmation
-    console.warn('Step 1 submit failed, will retry on Done:', e);
-  }
-
-  // *** Populate confirmation card
+  // *** Populate confirmation card immediately
   document.getElementById('c-name').textContent   = name;
   document.getElementById('c-artist').textContent = artist;
   document.getElementById('c-song').textContent   = song;
 
-  // *** Show YouTube found badge if we searched
+  // *** Show YouTube found badge if we already have a result
   if (songFound !== null) {
     const row = document.getElementById('c-found-row');
     const el  = document.getElementById('c-found');
@@ -393,9 +385,7 @@ async function goToStep2() {
   // *** Pre-fill chat name with requester's name
   document.getElementById('chat-name').value = name;
 
-  // *** Reset button and go to page 2
-  btn.textContent = 'NEXT →';
-  btn.disabled = false;
+  // *** Go to page 2 immediately — no waiting on network
   showPage(2);
 }
 
@@ -531,8 +521,7 @@ function searchYouTube() {
       const q   = encodeURIComponent(artist + ' ' + song);
       const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${YT_API_KEY}`;
       const res = await fetch(url);
-
-      if (!res.ok) throw new Error('API error ' + res.status);
+      if (!res.ok) { throw new Error('API ' + res.status); }
 
       const data = await res.json();
       statusEl.classList.remove('visible');
