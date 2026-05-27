@@ -650,7 +650,11 @@
          Contains: date (left), title (center), count+dot (right)
     ====================================================== -->
     <div class="header">
-      <div class="title">✨ SONG REQUESTS ✨</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="title" id="mainTitle">✨ SONG REQUESTS ✨</div>
+        <!-- Time slot category label — updates automatically based on current time -->
+        <div id="slotLabel" style="font-family:-apple-system,sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;color:rgba(255,215,0,0.7);text-transform:uppercase;text-shadow:0 0 12px rgba(255,215,0,0.4);"></div>
+      </div>
       <div class="header-date" id="headerDate"></div>
       <div class="header-right">
         <div class="total-stat" id="totalCount">0</div>
@@ -979,7 +983,32 @@
           return;
         }
         if (songs.length > 0) debugKeys(songs[0]);
-        window.allSongs = songs.filter(s => getArtist(s) || getSongTitle(s));
+
+        // ==========================================================
+        // SLOT CHANGE CHECK
+        // Before displaying, check if the newest entry is in a new
+        // slot or new date. If yes — clearQueueAndChat() fires and
+        // we return early so the cleared state shows briefly before
+        // the next refresh populates with the new slot's songs.
+        // ==========================================================
+        const allValid = songs.filter(s => getArtist(s) || getSongTitle(s));
+        const cleared  = checkForSlotChange(allValid);
+
+        // Filter to only show songs from the active slot + active date
+        window.allSongs = allValid.filter(s => {
+          const ts = getTimestamp(s);
+          if (!ts) return true; // no timestamp — include it
+          const songDate    = new Date(ts);
+          const songDateStr = songDate.toDateString();
+          // Must match the active date
+          if (songDateStr !== activeDate) return false;
+          // Must fall within active slot hours
+          const songMins  = songDate.getHours() * 60 + songDate.getMinutes();
+          const slotStart = activeSlot.startHour * 60 + activeSlot.startMin;
+          const slotEnd   = activeSlot.endHour   * 60 + activeSlot.endMin;
+          return songMins >= slotStart && songMins <= slotEnd;
+        });
+
         window.allSongs.sort((a, b) => new Date(getTimestamp(a)||0) - new Date(getTimestamp(b)||0));
         document.getElementById("totalCount").textContent = window.allSongs.length;
         displayQueue();
@@ -1279,31 +1308,134 @@
     // night's requests don't carry over.
     // Also checks every 60 seconds for midnight crossover.
     // ==========================================================
-    const _now = new Date();
-    document.getElementById("headerDate").textContent = _now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
-    let currentDateKey = _now.toDateString();
-    const storedDate   = localStorage.getItem("partyDate");
-    if (storedDate && storedDate !== currentDateKey) {
-      // New party night detected — clear everything
-      window.allSongs = []; lastSongCount = 0; window.lastMessageCount = 0;
-      document.getElementById("tickerWrapper").innerHTML = '<div class="empty-state">Loading queue…</div>';
+    // ==========================================================
+    // TIME SLOT CATEGORIES
+    // 4 named time slots. Title and slot label only update when
+    // a NEW entry is submitted — not just because the clock changed.
+    //
+    // SLOT TIMES (24hr):
+    //   MIDNIGHT CLOSE:  00:00 – 01:59
+    //   LATE NIGHT VIBES: 02:00 – 07:00
+    //   DAY VIBES:        07:01 – 21:00
+    //   EVENING PARTY:    21:01 – 23:59
+    //
+    // To rename: change the "name" value.
+    // To retime: change startHour/startMin/endHour/endMin.
+    // ==========================================================
+    const TIME_SLOTS = [
+      { name: "✦ MIDNIGHT CLOSE ✦",   emoji: "🌙", color: "#a78bfa", startHour:  0, startMin: 0,  endHour:  1, endMin: 59 },
+      { name: "✦ LATE NIGHT VIBES ✦", emoji: "🌃", color: "#f472b6", startHour:  2, startMin: 0,  endHour:  7, endMin:  0 },
+      { name: "✦ DAY VIBES ✦",        emoji: "☀️",  color: "#FFD700", startHour:  7, startMin: 1,  endHour: 21, endMin:  0 },
+      { name: "✦ EVENING PARTY ✦",    emoji: "🎉", color: "#34d399", startHour: 21, startMin: 1,  endHour: 23, endMin: 59 },
+    ];
+
+    function getSlotForTime(date) {
+      // Returns which slot matches a given Date object
+      const h    = date.getHours();
+      const m    = date.getMinutes();
+      const mins = h * 60 + m;
+      for (const slot of TIME_SLOTS) {
+        const start = slot.startHour * 60 + slot.startMin;
+        const end   = slot.endHour   * 60 + slot.endMin;
+        if (mins >= start && mins <= end) return slot;
+      }
+      return TIME_SLOTS[3]; // fallback
+    }
+
+    function getCurrentSlot() { return getSlotForTime(new Date()); }
+
+    // ==========================================================
+    // ACTIVE SLOT STATE
+    // activeSlot: the slot currently being DISPLAYED.
+    //   Starts as whatever slot is active right now.
+    //   Only updates when a new song is submitted in a new slot/date.
+    // activeDate: the date string of the last submission.
+    //   Only updates when a new entry arrives on a new date.
+    //
+    // KEY RULE: The display NEVER clears just because the clock
+    // crossed a slot boundary. It only clears when a new entry
+    // arrives and that entry is in a different slot or date.
+    // ==========================================================
+    let activeSlot = getCurrentSlot();
+    let activeDate = new Date().toDateString();
+
+    // Restore from localStorage if available
+    const _savedSlotName = localStorage.getItem("activeSlotName");
+    const _savedDate     = localStorage.getItem("activeDate");
+    if (_savedSlotName) {
+      const found = TIME_SLOTS.find(s => s.name === _savedSlotName);
+      if (found) activeSlot = found;
+    }
+    if (_savedDate) activeDate = _savedDate;
+
+    function updateSlotDisplay() {
+      // Update the slot label under the title
+      const el = document.getElementById("slotLabel");
+      if (!el) return;
+      el.textContent  = activeSlot.emoji + "  " + activeSlot.name + "  " + activeSlot.emoji;
+      el.style.color  = activeSlot.color;
+      el.style.textShadow = "0 0 16px " + activeSlot.color + "88";
+    }
+
+    function clearQueueAndChat() {
+      // Clears BOTH queue and chat — called only when a new entry
+      // arrives in a new slot or new date
+      window.allSongs       = [];
+      lastSongCount         = 0;
+      window.lastMessageCount = 0;
+      firstChatLoad         = true; // reset so baseline resets too
+      document.getElementById("tickerWrapper").innerHTML = '<div class="empty-state">Waiting for first request…</div>';
       document.getElementById("chatMessages").innerHTML  = '<div class="empty-state">No messages yet…</div>';
       document.getElementById("totalCount").textContent  = "0";
+      document.getElementById("headerDate").textContent  =
+        new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
     }
-    localStorage.setItem("partyDate", currentDateKey);
-    // Midnight crossover check — runs every 60 seconds
-    setInterval(() => {
-      const nowCheck = new Date().toDateString();
-      if (nowCheck !== currentDateKey) {
-        currentDateKey = nowCheck;
-        localStorage.setItem("partyDate", currentDateKey);
-        window.allSongs = []; lastSongCount = 0; window.lastMessageCount = 0;
-        document.getElementById("headerDate").textContent = new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
-        document.getElementById("tickerWrapper").innerHTML = '<div class="empty-state">No requests yet…</div>';
-        document.getElementById("chatMessages").innerHTML  = '<div class="empty-state">No messages yet…</div>';
-        document.getElementById("totalCount").textContent  = "0";
+
+    // ==========================================================
+    // ENTRY WATCHER
+    // Called every time fetchSongQueue gets new data.
+    // Compares the NEWEST song's timestamp against activeSlot/activeDate.
+    // If the newest song is in a new slot or new date → clear + update.
+    // If same slot/date → just display normally, no clear.
+    // ==========================================================
+    function checkForSlotChange(songs) {
+      if (!songs || !songs.length) return false;
+
+      // Get the timestamp of the most recently submitted song
+      const sorted  = [...songs].sort((a,b) => new Date(getTimestamp(b)||0) - new Date(getTimestamp(a)||0));
+      const newest  = sorted[0];
+      const ts      = getTimestamp(newest);
+      if (!ts) return false;
+
+      const newestDate = new Date(ts);
+      const newestDateStr = newestDate.toDateString();
+      const newestSlot = getSlotForTime(newestDate);
+
+      const isNewDate = newestDateStr !== activeDate;
+      const isNewSlot = newestSlot.name !== activeSlot.name;
+
+      if (isNewDate || isNewSlot) {
+        // New entry in new date or new slot — clear everything and update
+        console.log("New slot/date detected — clearing queue and chat");
+        console.log("Old:", activeSlot.name, activeDate, "→ New:", newestSlot.name, newestDateStr);
+
+        activeSlot = newestSlot;
+        activeDate = newestDateStr;
+        localStorage.setItem("activeSlotName", activeSlot.name);
+        localStorage.setItem("activeDate",     activeDate);
+
+        clearQueueAndChat();
+        updateSlotDisplay();
+        return true; // signal that a clear happened
       }
-    }, 60000);
+      return false;
+    }
+
+    // Initial display on load
+    const _now = new Date();
+    document.getElementById("headerDate").textContent =
+      _now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+    updateSlotDisplay();
 
     // ==========================================================
     // MAIN FETCH + REFRESH LOOP
