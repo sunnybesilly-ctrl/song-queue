@@ -329,9 +329,12 @@ const FORM_ACTION  = 'https://docs.google.com/forms/d/e/1FAIpQLSeq1jXqVkA0-noEeS
 const CHAT_ACTION  = 'https://docs.google.com/forms/d/e/1FAIpQLSdhzlA9tm7A6R5b3QECXoOMyJxLiuws8Pr5HB63NWv1pXo2tA/formResponse';
 const YT_API_KEY   = 'AIzaSyDmIRaQ2Mb4iLiNxqgbl_lMGH_shUHS01I';
 
-let songFound    = null;
-let searchTimer  = null;
-let submitted    = false; // *** prevents double-submit
+let songFound        = null;
+let searchTimer      = null;
+let submitted        = false; // *** prevents double-submit
+let ytVideoId        = null;  // *** YouTube video ID when found
+let ytCorrectedTitle  = null;  // *** YouTube corrected song title
+let ytCorrectedArtist = null;  // *** YouTube corrected artist/channel
 
 // =====================================================
 // STEP 1 → STEP 2
@@ -357,20 +360,23 @@ function goToStep2() {
   }
   errEl.classList.remove('visible');
 
+  // *** Use YouTube corrected title/artist if found — fixes typos automatically
+  const finalArtist = (songFound && ytCorrectedArtist) ? ytCorrectedArtist : artist;
+  const finalSong   = (songFound && ytCorrectedTitle)  ? ytCorrectedTitle  : song;
+
   // *** Fire-and-forget submit — NEVER awaited so it NEVER blocks page transition
-  // *** If it fails, submitOptional() on page 2 will retry
   postToGoogleForm(FORM_ACTION, {
     'entry.1627059384': name,
-    'entry.68806247':   artist,
-    'entry.1305392283': song,
+    'entry.68806247':   finalArtist,
+    'entry.1305392283': finalSong,
     'entry.606492518':  '',
-    'entry.505222990':  ''
+    'entry.505222990':  ytVideoId || ''
   }).then(() => { submitted = true; }).catch(e => console.warn('Step 1 submit error:', e));
 
-  // *** Populate confirmation card immediately
+  // *** Populate confirmation card with corrected data
   document.getElementById('c-name').textContent   = name;
-  document.getElementById('c-artist').textContent = artist;
-  document.getElementById('c-song').textContent   = song;
+  document.getElementById('c-artist').textContent = finalArtist;
+  document.getElementById('c-song').textContent   = finalSong;
 
   // *** Show YouTube found badge if we already have a result
   if (songFound !== null) {
@@ -410,6 +416,10 @@ async function submitOptional() {
   const btn     = document.getElementById('btn-submit');
   const errEl   = document.getElementById('error-2');
 
+  // *** Use YouTube corrected data if available
+  const finalArtist2 = (songFound && ytCorrectedArtist) ? ytCorrectedArtist : artist;
+  const finalSong2   = (songFound && ytCorrectedTitle)  ? ytCorrectedTitle  : song;
+
   // *** If snap or comment filled, submit again with private fields
   // *** Also retry if first submit failed
   if (snap || comment || !submitted) {
@@ -418,8 +428,8 @@ async function submitOptional() {
     try {
       await postToGoogleForm(FORM_ACTION, {
         'entry.1627059384': name,
-        'entry.68806247':   artist,
-        'entry.1305392283': song,
+        'entry.68806247':   finalArtist2,
+        'entry.1305392283': finalSong2,
         'entry.606492518':  snap,
         'entry.505222990':  comment
       });
@@ -528,12 +538,17 @@ function searchYouTube() {
 
       if (data.items && data.items.length > 0) {
         const item = data.items[0];
-        document.getElementById('search-thumb').src          = item.snippet.thumbnails.default.url;
-        document.getElementById('search-title').textContent  = item.snippet.title;
+        // *** Store YouTube corrected data globally for submission
+        ytVideoId      = item.id.videoId;
+        ytCorrectedTitle   = item.snippet.title;
+        ytCorrectedArtist  = item.snippet.channelTitle;
+
+        document.getElementById('search-thumb').src           = item.snippet.thumbnails.default.url;
+        document.getElementById('search-title').textContent   = item.snippet.title;
         document.getElementById('search-channel').textContent = item.snippet.channelTitle;
         const badge = document.getElementById('search-badge');
-        badge.textContent  = '✓ FOUND';
-        badge.className    = 'search-badge found';
+        badge.textContent = '✓ FOUND';
+        badge.className   = 'search-badge found';
         songFound = true;
       } else {
         document.getElementById('search-thumb').src           = '';
@@ -582,8 +597,11 @@ function resetAll() {
   ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
-  submitted  = false;
-  songFound  = null;
+  submitted         = false;
+  songFound         = null;
+  ytVideoId         = null;
+  ytCorrectedTitle  = null;
+  ytCorrectedArtist = null;
 
   document.getElementById('search-result').classList.remove('visible');
   document.getElementById('search-status').classList.remove('visible');

@@ -244,29 +244,48 @@
 
     // =====================================================
     // SMART FIELD READER
-    // *** Google Sheets can return columns in any order
-    // *** with slightly different header names depending
-    // *** on how the form was set up. This tries every
-    // *** known variation so nothing shows as a timestamp.
+    // *** Tries every known column name variation.
+    // *** Skips timestamps, pure numbers used as IDs,
+    // *** and 1899 Excel epoch dates from Google Sheets.
     // =====================================================
     function getField(song, ...keys) {
       for (const k of keys) {
         const val = song[k];
         if (val !== undefined && val !== null && val !== '') {
-          // *** Skip if it looks like a timestamp (ISO date string)
-          if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) continue;
-          return String(val).trim();
+          const s = String(val).trim();
+          if (!s) continue;
+          // *** Skip ISO timestamps (2026-05-27T... or 1899-12-30T...)
+          if (/^\d{4}-\d{2}-\d{2}T/.test(s)) continue;
+          // *** Skip Excel serial date numbers (e.g. 46203)
+          if (/^4[4-9]\d{3}$/.test(s)) continue;
+          return s;
         }
       }
       return '';
     }
 
+    // *** Log actual keys on first load so we can debug field mapping
+    function debugKeys(song) {
+      if (window._keysLogged) return;
+      window._keysLogged = true;
+      console.log('=== SHEET FIELD KEYS ===');
+      Object.keys(song).forEach(k => console.log(repr(k) + ':', repr(String(song[k]).substring(0,40))));
+      console.log('========================');
+    }
+    function repr(s) { return JSON.stringify(s); }
+
     function getSongName(song) {
-      return getField(song,
-        "WHAT'S YOUR NAME?", "What's your name?", "Name", "name",
+      const raw = getField(song,
+        "WHAT'S YOUR NAME?", "What's your name?", "WHAT IS YOUR NAME?",
+        "What is your name?", "Name", "name", "NAME",
         "YOUR NAME", "Your Name", "Requester", "requester",
-        "WHO'S REQUESTING?", "Requested By"
+        "WHO'S REQUESTING?", "Requested By", "requested_by"
       );
+      // *** If blank, all numbers, or very short — show nothing (handled by caller)
+      if (!raw) return '';
+      if (/^\d+$/.test(raw)) return ''; // *** pure numbers = not a name
+      if (raw.length < 2) return '';
+      return raw;
     }
     function getArtist(song) {
       return getField(song,
@@ -300,6 +319,7 @@
           return;
         }
         // *** Filter to rows that have at least a song title or artist
+        if (songs.length > 0) debugKeys(songs[0]);
         window.allSongs = songs.filter(s => getArtist(s) || getSongTitle(s));
         // *** Sort by timestamp ascending (oldest first)
         window.allSongs.sort((a, b) => new Date(getTimestamp(a)||0) - new Date(getTimestamp(b)||0));
@@ -339,7 +359,9 @@
 
     function createSongCard(song, idx) {
       // *** Use smart field reader — never shows a timestamp as a name
-      const name      = getSongName(song) || 'Guest';
+      const rawName   = getSongName(song);
+      // *** Only show Guest if name is truly blank — never show numbers
+      const name      = rawName || 'Guest';
       const artist    = getArtist(song)   || '—';
       const title     = getSongTitle(song) || '—';
       const videoId   = getVideoId(song);
