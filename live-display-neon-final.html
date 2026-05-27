@@ -232,7 +232,7 @@
     ========================================================== */
     .ticker-wrapper {
       display: flex;
-      animation: scroll 45s linear infinite;
+      animation: scroll 58s linear infinite; /* SPEED CONTROL: 58s = 30% slower than before. Lower = faster, Higher = slower */
       gap: 32px;
       align-items: center;
       will-change: transform;
@@ -353,10 +353,12 @@
       backdrop-filter: blur(16px);
       border-top: 4px solid #FFD700;
       box-shadow: 0 -2px 0 #c8102e, 0 -8px 40px rgba(255,215,0,0.15);
-      padding: 12px 16px;
+      /* padding: top/bottom side — increase side padding to give QR codes breathing room */
+      padding: 10px 12px;
       display: flex;
       justify-content: space-evenly;
       align-items: center;
+      /* gap: space between each QR section */
       gap: 8px;
       overflow: hidden;
     }
@@ -372,10 +374,12 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       flex: 1;
       min-width: 0;
-      padding: 0 4px;
+      max-width: 25%; /* never wider than 1/4 of the footer */
+      padding: 0;
+      overflow: hidden;
     }
 
     /* ==========================================================
@@ -389,8 +393,12 @@
        object-fit: cover fills the square without distortion.
     ========================================================== */
     .qr-code {
-      width:  min(260px, calc(24vw - 10px));
-      height: min(260px, calc(24vw - 10px));
+      /* SIZE CONTROL: change min(240px...) to resize all 4 QR codes equally.
+         Formula: left panel ≈ 57% of viewport. Divide by 4 codes minus gaps.
+         14vw = ~268px on 1920 wide. -20px accounts for padding and borders.
+         Decrease 14vw if still overlapping. Increase 240px cap for bigger QR. */
+      width:  min(240px, calc(14vw - 20px));
+      height: min(240px, calc(14vw - 20px));
       background: white;
       padding: 5px;
       border-radius: 10px;
