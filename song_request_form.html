@@ -360,9 +360,11 @@ function goToStep2() {
   }
   errEl.classList.remove('visible');
 
-  // *** Use YouTube corrected title/artist if found — fixes typos automatically
-  const finalArtist = (songFound && ytCorrectedArtist) ? ytCorrectedArtist : artist;
-  const finalSong   = (songFound && ytCorrectedTitle)  ? ytCorrectedTitle  : song;
+  // *** Keep artist and song as typed by guest — YouTube title often includes
+  // *** "(Official Video)", "ft.", remix info etc that clutters the display.
+  // *** We only use YouTube to CONFIRM the song exists and get the video ID.
+  const finalArtist = artist;  // always use what guest typed
+  const finalSong   = song;    // always use what guest typed
 
   // *** Fire-and-forget submit — NEVER awaited so it NEVER blocks page transition
   postToGoogleForm(FORM_ACTION, {
@@ -416,9 +418,9 @@ async function submitOptional() {
   const btn     = document.getElementById('btn-submit');
   const errEl   = document.getElementById('error-2');
 
-  // *** Use YouTube corrected data if available
-  const finalArtist2 = (songFound && ytCorrectedArtist) ? ytCorrectedArtist : artist;
-  const finalSong2   = (songFound && ytCorrectedTitle)  ? ytCorrectedTitle  : song;
+  // *** Keep original guest input — don't override with YouTube title
+  const finalArtist2 = artist;
+  const finalSong2   = song;
 
   // *** If snap or comment filled, submit again with private fields
   // *** Also retry if first submit failed
@@ -538,10 +540,13 @@ function searchYouTube() {
 
       if (data.items && data.items.length > 0) {
         const item = data.items[0];
-        // *** Store YouTube corrected data globally for submission
-        ytVideoId      = item.id.videoId;
+        // *** Store YouTube data globally for submission
+        ytVideoId          = item.id.videoId;
         ytCorrectedTitle   = item.snippet.title;
-        ytCorrectedArtist  = item.snippet.channelTitle;
+        // *** Do NOT autocorrect artist — channelTitle is often "Artist - Topic"
+        // *** which is a YouTube channel name, not the real artist name.
+        // *** Keep the artist the guest typed. Only correct the song title.
+        ytCorrectedArtist  = null;
 
         document.getElementById('search-thumb').src           = item.snippet.thumbnails.default.url;
         document.getElementById('search-title').textContent   = item.snippet.title;
