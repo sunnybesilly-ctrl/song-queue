@@ -1018,8 +1018,12 @@
       setTimeout(()=>{ overlay.classList.add('leaving'); setTimeout(()=>overlay.classList.remove('visible','leaving'),700); }, 3000);
     }
 
-    /* *** UPDATED engagement rotator — Request Song QR now points to custom form *** */
+    // =====================================================
+    // ENGAGEMENT POPUPS — 24 total, rotating every 5 min
+    // Every 15 min a personalized name callout fires
+    // =====================================================
     const ENGAGEMENTS = [
+      // *** ORIGINAL 4 ***
       {
         emoji: '🎵', text: 'Add to the Vibe',
         sub: "Got a song that NEEDS to be played tonight? Don't hold back — put it in the queue!",
@@ -1046,8 +1050,229 @@
         cta: '📱 Send a Tip',
         color: '#34d399', bg: 'rgba(0,20,10,0.92)', borderColor: '#34d399',
         qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://cash.app/$sunnyaubade'
-      }
+      },
+      // *** 20 NEW ONES ***
+      {
+        emoji: '🔥', text: 'Keep It Going',
+        sub: "The night is young and the queue needs YOU. What song defines your vibe right now?",
+        cta: '📱 Request Song',
+        color: '#fb923c', bg: 'rgba(30,10,0,0.92)', borderColor: '#fb923c',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '🎤', text: "Don't Sleep On It",
+        sub: "That song stuck in your head all week? PUT IT IN THE QUEUE before someone else does!",
+        cta: '📱 Request Now',
+        color: '#a78bfa', bg: 'rgba(20,5,40,0.92)', borderColor: '#a78bfa',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '💃', text: 'Floor Needs You',
+        sub: "The dance floor is waiting. Request the song that gets you moving and watch what happens.",
+        cta: '📱 Request Song',
+        color: '#f472b6', bg: 'rgba(30,5,20,0.92)', borderColor: '#f472b6',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '👑', text: 'Be The Main Character',
+        sub: "Request YOUR song. When it drops, everyone will know it was you. That's the move.",
+        cta: '📱 Make Your Move',
+        color: '#FFD700', bg: 'rgba(10,30,10,0.92)', borderColor: '#FFD700',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '📣', text: 'Say Something!',
+        sub: "Got something to say to the room? Drop it in the party chat — it shows on THIS screen!",
+        cta: '📱 Open Chat',
+        color: '#60a5fa', bg: 'rgba(0,10,30,0.92)', borderColor: '#60a5fa',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html'
+      },
+      {
+        emoji: '🌶️', text: 'Drop a Hot Take',
+        sub: "Best song of the night so far? Worst? Tell the whole party. They're watching this screen.",
+        cta: '📱 Chat Now',
+        color: '#f87171', bg: 'rgba(30,5,5,0.92)', borderColor: '#f87171',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html'
+      },
+      {
+        emoji: '🫶', text: 'Show Some Love',
+        sub: "Having a good time? Tell everyone! Drop a message in the chat — the whole room sees it.",
+        cta: '📱 Send Love',
+        color: '#fb923c', bg: 'rgba(30,10,0,0.92)', borderColor: '#fb923c',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html'
+      },
+      {
+        emoji: '👀', text: 'We See You Vibing',
+        sub: "Don't be shy — say something in the chat. We KNOW you've got something to say.",
+        cta: '📱 Jump In',
+        color: '#a78bfa', bg: 'rgba(20,5,40,0.92)', borderColor: '#a78bfa',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html'
+      },
+      {
+        emoji: '💰', text: 'Skip The Line',
+        sub: "Want your song played RIGHT NOW? Skip the queue for $12. Skip everything for $40. Worth it.",
+        cta: '💸 $SUNNYAUBADE',
+        color: '#34d399', bg: 'rgba(0,20,10,0.92)', borderColor: '#34d399',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://cash.app/$sunnyaubade'
+      },
+      {
+        emoji: '🙏', text: 'Tips Keep the Vibe Alive',
+        sub: "Every tip helps Sunny keep the energy going all night. Even $1 is love. Cash App below.",
+        cta: '💸 Send a Tip',
+        color: '#34d399', bg: 'rgba(0,20,10,0.92)', borderColor: '#34d399',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://cash.app/$sunnyaubade'
+      },
+      {
+        emoji: '⚡', text: 'Priority Play',
+        sub: "Your song, played immediately, no waiting. $40 gets you instant play. Cashapp $SUNNYAUBADE.",
+        cta: '💸 Go Ahead',
+        color: '#FFD700', bg: 'rgba(10,30,10,0.92)', borderColor: '#FFD700',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://cash.app/$sunnyaubade'
+      },
+      {
+        emoji: '👻', text: 'Stay Connected',
+        sub: "Tonight was just the beginning. Add Sunny on Snapchat — next party you'll be first to know.",
+        cta: '📱 Add @eatitall',
+        color: '#FFFC00', bg: 'rgba(30,28,0,0.92)', borderColor: '#FFFC00',
+        qrSnapchat: true
+      },
+      {
+        emoji: '🎶', text: 'Request Your Era',
+        sub: "80s? 90s? 2000s? New school? Old school? Sunny plays it all — just ask. Queue is open.",
+        cta: '📱 Request Song',
+        color: '#f472b6', bg: 'rgba(30,5,20,0.92)', borderColor: '#f472b6',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '🚨', text: 'Queue Is Open',
+        sub: "No waitlist. No limits. Request as many songs as you want. Sunny's got all night.",
+        cta: '📱 Add to Queue',
+        color: '#f87171', bg: 'rgba(30,5,5,0.92)', borderColor: '#f87171',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '🥂', text: "It's Giving Vibe",
+        sub: "The energy in here is immaculate. Keep it going — request a song and keep this feeling alive.",
+        cta: '📱 Request Song',
+        color: '#60a5fa', bg: 'rgba(0,10,30,0.92)', borderColor: '#60a5fa',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '🌙', text: 'Late Night Energy',
+        sub: "It's late. The vibe is right. This is the moment. What song makes THIS moment perfect?",
+        cta: '📱 Request It',
+        color: '#a78bfa', bg: 'rgba(20,5,40,0.92)', borderColor: '#a78bfa',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '😤', text: 'Heard That Song Yet?',
+        sub: "If Sunny hasn't played your song yet — REQUEST IT. The queue is right there. No excuses.",
+        cta: '📱 Put It In',
+        color: '#fb923c', bg: 'rgba(30,10,0,0.92)', borderColor: '#fb923c',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
+      {
+        emoji: '💌', text: 'Shout Someone Out',
+        sub: "Got a friend here tonight? Birthday? Anniversary? Tell the whole party! Drop it in the chat.",
+        cta: '📱 Send Shoutout',
+        color: '#f472b6', bg: 'rgba(30,5,20,0.92)', borderColor: '#f472b6',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html'
+      },
+      {
+        emoji: '🏆', text: 'Song of the Night?',
+        sub: "What's been the best song Sunny played tonight? Tell the room in the chat — they want to know!",
+        cta: '📱 Vote in Chat',
+        color: '#FFD700', bg: 'rgba(10,30,10,0.92)', borderColor: '#FFD700',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html'
+      },
+      {
+        emoji: '🎯', text: 'Make Your Request Count',
+        sub: "One song. Right now. Could be YOUR song that gets the whole room going. What's it gonna be?",
+        cta: '📱 Request Now',
+        color: '#34d399', bg: 'rgba(0,20,10,0.92)', borderColor: '#34d399',
+        qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html'
+      },
     ];
+
+    // =====================================================
+    // PERSONALIZED NAME CALLOUTS
+    // *** Every 15 min, picks a real guest name from the
+    // *** song queue or party chat and calls them out
+    // *** personally on the engagement popup
+    // =====================================================
+    const NAME_CALLOUTS = [
+      { emoji: '🎵', template: '{name}, when are you adding more songs?', sub: "The queue needs your energy! Drop another request — keep the vibe going all night.", cta: '📱 Request Song', color: '#FFD700', bg: 'rgba(10,30,10,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html' },
+      { emoji: '👀', template: "{name}, we see you over there!", sub: "Don't be shy — get in the chat and say something. The whole party is watching this screen.", cta: '📱 Join Chat', color: '#f472b6', bg: 'rgba(30,5,20,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html' },
+      { emoji: '🎤', template: "{name}, what's your next request?", sub: "You've got good taste — don't stop now. What song needs to be played before the night is over?", cta: '📱 Request It', color: '#a78bfa', bg: 'rgba(20,5,40,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html' },
+      { emoji: '🔥', template: "{name} is feeling the vibe!", sub: "Keep that energy going — request another song or drop something in the chat for the room!", cta: '📱 Keep It Going', color: '#fb923c', bg: 'rgba(30,10,0,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html' },
+      { emoji: '💬', template: "{name}, say something to the party!", sub: "Your message shows live on this screen for everyone to see. Drop something — we're waiting!", cta: '📱 Chat Now', color: '#60a5fa', bg: 'rgba(0,10,30,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html' },
+      { emoji: '👑', template: "{name} knows what's up!", sub: "Prove it — request the song that defines tonight. Main character energy only.", cta: '📱 Request Song', color: '#FFD700', bg: 'rgba(10,30,10,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html' },
+      { emoji: '🥂', template: "Shoutout to {name}!", sub: "You're making tonight special. Tip Sunny if you're feeling it — every bit helps!", cta: '💸 $SUNNYAUBADE', color: '#34d399', bg: 'rgba(0,20,10,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://cash.app/$sunnyaubade' },
+      { emoji: '😤', template: "{name}, still waiting on your next song!", sub: "You've been quiet. The queue is empty. Don't make Sunny pick — request something NOW.", cta: '📱 Request It', color: '#f87171', bg: 'rgba(30,5,5,0.92)', qrSrc: 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html' },
+    ];
+
+    function getCalloutName() {
+      // *** Pull names from song queue first, then chat messages
+      const allNames = [];
+      if (window.allSongs && window.allSongs.length > 0) {
+        window.allSongs.forEach(s => {
+          const n = (s["WHAT'S YOUR NAME?"] || '').trim().split(' ')[0];
+          if (n && n.length > 1) allNames.push(n);
+        });
+      }
+      if (allNames.length === 0) return null;
+      // *** Pick a random name — avoid repeating the last one
+      return allNames[Math.floor(Math.random() * allNames.length)];
+    }
+
+    let lastCalloutName = null;
+
+    function showNameCallout() {
+      const name = getCalloutName();
+      if (!name || name === lastCalloutName) return;
+      lastCalloutName = name;
+
+      const hypeEl = document.getElementById('hypeOverlay');
+      if (engageActive || (hypeEl && hypeEl.classList.contains('visible'))) return;
+
+      const overlay = document.getElementById('engageOverlay');
+      const card    = document.getElementById('engageCard');
+      if (!overlay || !card) return;
+
+      engageActive = true;
+      const template = NAME_CALLOUTS[Math.floor(Math.random() * NAME_CALLOUTS.length)];
+      const headlineText = template.template.replace('{name}', name.toUpperCase());
+
+      document.getElementById('engageEmoji').textContent = template.emoji;
+      const textEl = document.getElementById('engageText');
+      textEl.textContent = headlineText;
+      // *** Slightly smaller font for longer personalized text
+      textEl.style.fontSize = headlineText.length > 24 ? '44px' : '64px';
+      textEl.style.color = template.color;
+      textEl.style.textShadow = '0 0 40px '+template.color+', 0 0 80px '+template.color+'44';
+      document.getElementById('engageSub').textContent = template.sub;
+      const ctaEl = document.getElementById('engageCta');
+      ctaEl.textContent = template.cta;
+      ctaEl.style.color = template.color;
+      card.style.background   = template.bg;
+      card.style.borderColor  = template.color;
+      card.style.boxShadow    = '0 0 80px '+template.color+'55, 0 30px 80px rgba(0,0,0,0.8)';
+      const qrEl = document.getElementById('engageQR');
+      qrEl.style.borderColor = template.color;
+      qrEl.src = template.qrSrc;
+      overlay.style.background = 'rgba(0,0,0,0.6)';
+      overlay.classList.remove('leaving');
+      overlay.classList.add('visible');
+      setTimeout(()=>{ if (typeof launchFirework==='function') { launchFirework(window.innerWidth*0.25,window.innerHeight*0.3); setTimeout(()=>launchFirework(window.innerWidth*0.75,window.innerHeight*0.3),300); } }, 600);
+      setTimeout(()=>{ overlay.classList.add('leaving'); setTimeout(()=>{ overlay.classList.remove('visible','leaving'); engageActive=false; }, 950); }, 10000);
+    }
+
+    // *** Schedule name callouts every 15 minutes
+    function scheduleNameCallouts() {
+      setTimeout(() => { showNameCallout(); scheduleNameCallouts(); }, 900000); // 15 min
+    }
+    // *** First callout at 15 min
+    setTimeout(scheduleNameCallouts, 900000);
 
     let engageIdx = 0;
     let engageActive = false;
