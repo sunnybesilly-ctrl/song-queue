@@ -232,7 +232,7 @@
     ========================================================== */
     .ticker-wrapper {
       display: flex;
-      animation: scroll 58s linear infinite; /* SPEED CONTROL: 58s = 30% slower than before. Lower = faster, Higher = slower */
+      animation: scroll 70s linear infinite; /* SPEED CONTROL: 70s = 20% slower than 58s. Lower = faster, Higher = slower */
       gap: 32px;
       align-items: center;
       will-change: transform;
@@ -864,47 +864,99 @@
     function debugKeys(song) {
       if (window._keysLogged) return;
       window._keysLogged = true;
-      console.log('=== SHEET FIELD KEYS ===');
-      Object.keys(song).forEach(k => console.log(JSON.stringify(k) + ':', JSON.stringify(String(song[k]).substring(0,40))));
-      console.log('========================');
+      console.log('%c=== SHEET FIELD KEYS ===', 'color:gold;font-size:16px;font-weight:bold');
+      Object.keys(song).forEach((k,i) => {
+        const v = String(song[k]).substring(0,60);
+        console.log('%c['+i+'] KEY: '+JSON.stringify(k)+' → VALUE: '+JSON.stringify(v), 'color:cyan');
+      });
+      console.log('%c========================', 'color:gold;font-size:16px');
+      // Also try to find the name field automatically
+      const nameGuess = Object.keys(song).find(k => {
+        const v = String(song[k]||'').trim();
+        // A name field: not a timestamp, not a number, not empty, not too long
+        return v && v.length > 1 && v.length < 50
+          && !/^\d{4}-\d{2}-\d{2}T/.test(v)
+          && !/^\d+$/.test(v)
+          && !/^(yes|no|true|false)$/i.test(v)
+          && k.toLowerCase() !== 'timestamp';
+      });
+      if (nameGuess) {
+        console.log('%cBEST GUESS FOR NAME FIELD: '+JSON.stringify(nameGuess)+' = '+JSON.stringify(String(song[nameGuess]).substring(0,40)), 'color:lime;font-size:14px;font-weight:bold');
+        window._detectedNameKey = nameGuess;
+      }
     }
 
-    // Guest name — tries all known header variations
+    // Guest name — HARDCODED exact keys confirmed from Google Sheet console log
     function getSongName(song) {
-      const raw = getField(song,
-        "WHAT'S YOUR NAME?", "What's your name?", "WHAT IS YOUR NAME?",
-        "What is your name?", "Name", "name", "NAME",
-        "YOUR NAME", "Your Name", "Requester", "requester",
-        "WHO'S REQUESTING?", "Requested By", "requested_by"
-      );
-      if (!raw) return '';
-      if (/^\d+$/.test(raw)) return ''; // pure numbers are not names
-      if (raw.length < 2)    return ''; // single char is not a name
-      return raw;
+      const keys = [
+        "WHAT’S YOUR NAME?",   // curly apostrophe — CONFIRMED from sheet
+        "WHAT'S YOUR NAME?",          // straight apostrophe fallback
+        "What’s your name?",
+        "What's your name?",
+        "Name", "name", "NAME",
+        "YOUR NAME", "Your Name",
+        "Requester", "requester",
+        "Guest Name", "guest name"
+      ];
+      for (const k of keys) {
+        const v = (song[k] || '').toString().trim();
+        if (!v || v.length < 2) continue;
+        if (/^\d{4}-\d{2}-\d{2}T/.test(v)) continue; // skip timestamps
+        if (/^\d+$/.test(v)) continue;                      // skip pure numbers
+        return v;
+      }
+      return '';
     }
 
-    // Artist name
+    // Artist name — HARDCODED exact keys confirmed from Google Sheet console log
     function getArtist(song) {
-      return getField(song,
-        "WHO'S THE ARTIST?", "Who's the artist?", "Artist", "artist",
-        "ARTIST", "Artist Name", "Band", "band"
-      );
+      const keys = [
+        "WHO’S THE ARTIST?",  // curly apostrophe — CONFIRMED from sheet
+        "WHO'S THE ARTIST?",          // straight apostrophe fallback
+        "Who’s the artist?",
+        "Who's the artist?",
+        "Artist", "artist", "ARTIST", "Artist Name", "Band"
+      ];
+      for (const k of keys) {
+        const v = (song[k] || '').toString().trim();
+        if (v && !/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
+      }
+      return '';
     }
 
-    // Song title
+    // Song title — hardcoded exact keys from sheet
     function getSongTitle(song) {
-      return getField(song,
-        "SONG TITLE?", "Song Title?", "Song", "song",
-        "SONG TITLE", "Song Title", "Track", "track"
-      );
+      const exactKeys = [
+        "SONG TITLE?",  // confirmed from sheet
+        "Song Title?", "SONG TITLE", "Song Title",
+        "Song", "song", "SONG", "Track", "track"
+      ];
+      for (const k of exactKeys) {
+        const v = (song[k] || '').toString().trim();
+        if (v && !/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
+      }
+      return '';
     }
 
-    // YouTube video ID (for thumbnails)
+    // YouTube video ID — confirmed key from sheet: "Video ID"
+    // Also checks comment/note fields in case video ID was stored there
     function getVideoId(song) {
-      return getField(song,
-        "Video ID", "video id", "videoId", "VIDEO ID",
-        "VideoID", "video_id", "Youtube ID", "YouTube ID"
-      );
+      const exactKeys = [
+        "Video ID",   // confirmed from sheet
+        "video id", "videoId", "VIDEO ID", "VideoID",
+        "video_id", "Youtube ID", "YouTube ID"
+      ];
+      for (const k of exactKeys) {
+        const v = (song[k] || '').toString().trim();
+        // A valid YouTube video ID is 11 chars, alphanumeric + - and _
+        if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+      }
+      // *** Also scan all fields for anything that looks like a YouTube video ID
+      for (const k of Object.keys(song)) {
+        const v = (song[k] || '').toString().trim();
+        if (/^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+      }
+      return '';
     }
 
     // Timestamp (for sorting oldest→newest)
@@ -1025,12 +1077,25 @@
     // Fetches latest party chat messages from Apps Script.
     // Detects new messages to trigger flash + hype overlay.
     // ==========================================================
+    // *** firstChatLoad: on the very first fetch we set the baseline
+    // *** so existing messages never trigger the hype overlay or flash
+    let firstChatLoad = true;
+
     async function fetchChatMessages() {
       try {
         const res      = await fetch(CHAT_SHEET_URL, { redirect: "follow" });
         const messages = await res.json();
         if (!messages || !messages.length) {
           document.getElementById("chatMessages").innerHTML = '<div class="empty-state">No messages yet…</div>';
+          firstChatLoad = false;
+          return;
+        }
+        // *** On first load: set baseline counts silently, no flash/hype
+        if (firstChatLoad) {
+          window.lastMessageCount = messages.length;
+          lastHypeCount           = messages.length; // baseline — never fire for old messages
+          firstChatLoad           = false;
+          displayChat(messages, false); // false = no auto-scroll flash
           return;
         }
         const isNew = messages.length > window.lastMessageCount;
@@ -1246,7 +1311,18 @@
     // When new songs are detected: fires fireworks + spotlight.
     // REFRESH_INTERVAL: defined at top of script (currently 10s).
     // ==========================================================
-    fetchSongQueue();
+    // *** firstSongLoad: set baseline on first fetch so existing songs
+    // *** don't trigger spotlight/fireworks when page first opens
+    let firstSongLoad = true;
+    const _origFetchSongQueue = fetchSongQueue;
+    const _patchedFetchSongQueue = async function() {
+      await _origFetchSongQueue();
+      if (firstSongLoad) {
+        lastSongCount  = window.allSongs ? window.allSongs.length : 0;
+        firstSongLoad  = false;
+      }
+    };
+    _patchedFetchSongQueue();
     fetchChatMessages();
     setInterval(() => {
       fetchSongQueue();
