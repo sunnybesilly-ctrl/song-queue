@@ -1308,20 +1308,22 @@
     // night's requests don't carry over.
     // Also checks every 60 seconds for midnight crossover.
     // ==========================================================
-    // ==========================================================
-    // TIME SLOT CATEGORIES
-    // 4 named time slots. Title and slot label only update when
-    // a NEW entry is submitted — not just because the clock changed.
-    //
-    // SLOT TIMES (24hr):
-    //   MIDNIGHT CLOSE:  00:00 – 01:59
-    //   LATE NIGHT VIBES: 02:00 – 07:00
-    //   DAY VIBES:        07:01 – 21:00
-    //   EVENING PARTY:    21:01 – 23:59
-    //
-    // To rename: change the "name" value.
-    // To retime: change startHour/startMin/endHour/endMin.
-    // ==========================================================
+    // ###########################################################
+    // ### TIME SLOT CATEGORIES
+    // ### Defines 4 named time-based playlist categories.
+    // ### The display title updates to show whichever slot
+    // ### is currently active based on the clock.
+    // ###
+    // ### TO RENAME A SLOT: change the "name" value
+    // ### TO RETIME A SLOT: change startHour/startMin/endHour/endMin
+    // ### TO RECOLOR: change the "color" hex value
+    // ###
+    // ### SLOT SCHEDULE (24hr format):
+    // ###   🌙 MIDNIGHT CLOSE  — 00:00 to 01:59
+    // ###   🌃 LATE NIGHT VIBES — 02:00 to 07:00
+    // ###   ☀️  DAY VIBES        — 07:01 to 21:00
+    // ###   🎉 EVENING PARTY    — 21:01 to 23:59
+    // ###########################################################
     const TIME_SLOTS = [
       { name: "✦ MIDNIGHT CLOSE ✦",   emoji: "🌙", color: "#a78bfa", startHour:  0, startMin: 0,  endHour:  1, endMin: 59 },
       { name: "✦ LATE NIGHT VIBES ✦", emoji: "🌃", color: "#f472b6", startHour:  2, startMin: 0,  endHour:  7, endMin:  0 },
@@ -1329,8 +1331,13 @@
       { name: "✦ EVENING PARTY ✦",    emoji: "🎉", color: "#34d399", startHour: 21, startMin: 1,  endHour: 23, endMin: 59 },
     ];
 
+    // ###########################################################
+    // ### SLOT LOOKUP HELPERS
+    // ### getSlotForTime(date) — returns the slot object that
+    // ###   matches any given Date object's hour+minute.
+    // ### getCurrentSlot() — shortcut for right now.
+    // ###########################################################
     function getSlotForTime(date) {
-      // Returns which slot matches a given Date object
       const h    = date.getHours();
       const m    = date.getMinutes();
       const mins = h * 60 + m;
@@ -1339,27 +1346,28 @@
         const end   = slot.endHour   * 60 + slot.endMin;
         if (mins >= start && mins <= end) return slot;
       }
-      return TIME_SLOTS[3]; // fallback
+      return TIME_SLOTS[3]; // fallback to EVENING PARTY if nothing matches
     }
-
     function getCurrentSlot() { return getSlotForTime(new Date()); }
 
-    // ==========================================================
-    // ACTIVE SLOT STATE
-    // activeSlot: the slot currently being DISPLAYED.
-    //   Starts as whatever slot is active right now.
-    //   Only updates when a new song is submitted in a new slot/date.
-    // activeDate: the date string of the last submission.
-    //   Only updates when a new entry arrives on a new date.
-    //
-    // KEY RULE: The display NEVER clears just because the clock
-    // crossed a slot boundary. It only clears when a new entry
-    // arrives and that entry is in a different slot or date.
-    // ==========================================================
+    // ###########################################################
+    // ### ACTIVE SLOT STATE
+    // ### activeSlot — the slot currently shown on the display.
+    // ###   Starts as the current clock slot on page load.
+    // ###   ONLY updates when a new song entry arrives in a
+    // ###   different slot or on a new date — never just from
+    // ###   the clock crossing a boundary.
+    // ###
+    // ### activeDate — the date string of the last submission
+    // ###   (e.g. "Wed May 27 2026"). Used to detect new days.
+    // ###
+    // ### Both are saved to localStorage so they survive
+    // ### page refreshes without losing the display state.
+    // ###########################################################
     let activeSlot = getCurrentSlot();
     let activeDate = new Date().toDateString();
 
-    // Restore from localStorage if available
+    // ### Restore last known slot+date from localStorage on page load
     const _savedSlotName = localStorage.getItem("activeSlotName");
     const _savedDate     = localStorage.getItem("activeDate");
     if (_savedSlotName) {
@@ -1368,57 +1376,86 @@
     }
     if (_savedDate) activeDate = _savedDate;
 
+    // ###########################################################
+    // ### UPDATE SLOT DISPLAY
+    // ### Refreshes the slot label under the main title with
+    // ### the current activeSlot name, emoji, and color.
+    // ### Called on load and whenever a new slot is detected.
+    // ### TO CHANGE LABEL STYLE: edit the slotLabel div in HTML
+    // ###   or adjust font-size/letter-spacing in the style attr.
+    // ###########################################################
     function updateSlotDisplay() {
-      // Update the slot label under the title
       const el = document.getElementById("slotLabel");
       if (!el) return;
-      el.textContent  = activeSlot.emoji + "  " + activeSlot.name + "  " + activeSlot.emoji;
-      el.style.color  = activeSlot.color;
+      el.textContent      = activeSlot.emoji + "  " + activeSlot.name + "  " + activeSlot.emoji;
+      el.style.color      = activeSlot.color;
       el.style.textShadow = "0 0 16px " + activeSlot.color + "88";
     }
 
+    // ###########################################################
+    // ### CLEAR QUEUE AND CHAT
+    // ### Wipes BOTH the song queue ticker AND the party chat.
+    // ### Called ONLY when a new entry is detected in a new
+    // ### slot or on a new date — not by the clock alone.
+    // ###
+    // ### After clearing, the next fetchSongQueue() call
+    // ### (10 seconds later) will repopulate with the new
+    // ### slot's songs automatically.
+    // ###########################################################
     function clearQueueAndChat() {
-      // Clears BOTH queue and chat — called only when a new entry
-      // arrives in a new slot or new date
-      window.allSongs       = [];
-      lastSongCount         = 0;
+      window.allSongs         = [];
+      lastSongCount           = 0;
       window.lastMessageCount = 0;
-      firstChatLoad         = true; // reset so baseline resets too
+      firstChatLoad           = true; // ### reset chat baseline so no false hype fires
       document.getElementById("tickerWrapper").innerHTML = '<div class="empty-state">Waiting for first request…</div>';
       document.getElementById("chatMessages").innerHTML  = '<div class="empty-state">No messages yet…</div>';
       document.getElementById("totalCount").textContent  = "0";
+      // ### Update header date to today
       document.getElementById("headerDate").textContent  =
         new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
     }
 
-    // ==========================================================
-    // ENTRY WATCHER
-    // Called every time fetchSongQueue gets new data.
-    // Compares the NEWEST song's timestamp against activeSlot/activeDate.
-    // If the newest song is in a new slot or new date → clear + update.
-    // If same slot/date → just display normally, no clear.
-    // ==========================================================
+    // ###########################################################
+    // ### SLOT CHANGE CHECKER
+    // ### Called every time new song data arrives from the sheet.
+    // ### Looks at the NEWEST song's timestamp and compares it
+    // ### to activeSlot + activeDate.
+    // ###
+    // ### TRIGGERS A CLEAR when BOTH are true:
+    // ###   1. There is at least one song in the new data
+    // ###   2. The newest song's timestamp is in a DIFFERENT
+    // ###      slot or a DIFFERENT date than what's displayed
+    // ###
+    // ### DOES NOT trigger a clear when:
+    // ###   - No new songs have arrived
+    // ###   - The newest song is in the same slot + same date
+    // ###   - The clock just crossed a slot boundary with no new entries
+    // ###
+    // ### Returns true if a clear happened, false otherwise.
+    // ###########################################################
     function checkForSlotChange(songs) {
       if (!songs || !songs.length) return false;
 
-      // Get the timestamp of the most recently submitted song
-      const sorted  = [...songs].sort((a,b) => new Date(getTimestamp(b)||0) - new Date(getTimestamp(a)||0));
-      const newest  = sorted[0];
-      const ts      = getTimestamp(newest);
+      // ### Sort all songs newest-first, look at the very latest submission
+      const sorted     = [...songs].sort((a,b) => new Date(getTimestamp(b)||0) - new Date(getTimestamp(a)||0));
+      const newest     = sorted[0];
+      const ts         = getTimestamp(newest);
       if (!ts) return false;
 
-      const newestDate = new Date(ts);
+      const newestDate    = new Date(ts);
       const newestDateStr = newestDate.toDateString();
-      const newestSlot = getSlotForTime(newestDate);
+      const newestSlot    = getSlotForTime(newestDate);
 
-      const isNewDate = newestDateStr !== activeDate;
-      const isNewSlot = newestSlot.name !== activeSlot.name;
+      const isNewDate = newestDateStr !== activeDate;       // ### different calendar day?
+      const isNewSlot = newestSlot.name !== activeSlot.name; // ### different time slot?
 
       if (isNewDate || isNewSlot) {
-        // New entry in new date or new slot — clear everything and update
-        console.log("New slot/date detected — clearing queue and chat");
-        console.log("Old:", activeSlot.name, activeDate, "→ New:", newestSlot.name, newestDateStr);
+        // ### New entry detected in a new slot or new date — clear and update
+        console.log("Slot/date change detected");
+        console.log("Was:", activeSlot.name, activeDate);
+        console.log("Now:", newestSlot.name, newestDateStr);
 
+        // ### Update active state and persist to localStorage
         activeSlot = newestSlot;
         activeDate = newestDateStr;
         localStorage.setItem("activeSlotName", activeSlot.name);
@@ -1426,12 +1463,12 @@
 
         clearQueueAndChat();
         updateSlotDisplay();
-        return true; // signal that a clear happened
+        return true;
       }
       return false;
     }
 
-    // Initial display on load
+    // ### Set header date and slot label on initial page load
     const _now = new Date();
     document.getElementById("headerDate").textContent =
       _now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
