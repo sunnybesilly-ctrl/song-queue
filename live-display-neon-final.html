@@ -244,7 +244,7 @@
     ========================================================== */
     .ticker-wrapper {
       display: flex;
-      animation: scroll 70s linear infinite; /* SPEED CONTROL: 70s = 20% slower than 58s. Lower = faster, Higher = slower */
+      animation: scroll 45s linear infinite; /* SPEED CONTROL: 45s = faster scroll. Lower = faster, Higher = slower */
       gap: 32px;
       align-items: center;
       will-change: transform;
@@ -285,9 +285,9 @@
       display: flex;
       align-items: center;
       gap: 18px;
-      min-width: 640px;
-      max-width: 700px;
-      height: 370px;
+      min-width: 680px;
+      max-width: 740px;
+      height: 340px;
       flex-shrink: 0;
     }
 
@@ -298,12 +298,13 @@
        object-fit: cover fills the square without distortion.
     ========================================================== */
     .thumbnail {
-      width: 200px;
-      height: 200px;
+      width: 280px;
+      height: 158px;
       border-radius: 10px;
       object-fit: cover;
       flex-shrink: 0;
       display: block;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
     }
 
     /* ==========================================================
@@ -667,25 +668,25 @@
          • STOP the auto-scroll ticker and lay cards out in a
            normal vertical scroll, so guests can find their song
          • hide the duplicate card set (only needed for desktop loop)
-         • shrink the header and QR codes to fit
+         • shrink ALL text, thumbnails, overlays, and QR codes to fit
        A 4K projector never matches max-width:700px, so it's safe.
     ========================================================== */
     @media (max-width: 700px) {
       html, body { overflow-y: auto; height: auto; }
       .container { height: auto; min-height: 100vh; }
 
-      /* Header: smaller, wraps nicely */
+      /* ---- HEADER ---- */
       .header { padding: 12px 16px; flex-wrap: wrap; gap: 4px; }
-      .title { font-size: 30px !important; white-space: normal; }
-      .title-sub { font-size: 15px !important; }
+      .title { font-size: 26px !important; white-space: normal; letter-spacing: 1px !important; }
+      .title-sub { font-size: 13px !important; }
+      .header-date { position: relative !important; left: auto !important; font-size: 13px !important; width: 100%; text-align: center; }
+      .header-right { position: relative !important; right: auto !important; }
 
-      /* Main content stacks vertically instead of side-by-side */
+      /* ---- LAYOUT: stack vertically ---- */
       .main-content { flex-direction: column; overflow: visible; }
-
-      /* QUEUE: kill the horizontal auto-scroll, go vertical */
       .left-panel { min-width: 0; width: 100%; }
 
-      /* Find My Song bar — visible on mobile, sticky at the top */
+      /* ---- FIND MY SONG (mobile-only search bar) ---- */
       .find-song {
         display: block;
         position: sticky;
@@ -716,17 +717,19 @@
         min-height: 20px;
         text-align: center;
       }
+
+      /* ---- TICKER / QUEUE ---- */
       .ticker-section { overflow: visible; padding: 10px; }
       .ticker-wrapper {
-        animation: none !important;       /* stop the marquee */
-        flex-direction: column;           /* stack cards top-to-bottom */
-        gap: 14px;
+        animation: none !important;
+        flex-direction: column;
+        gap: 12px;
         transform: none !important;
         width: 100%;
       }
-      .ticker-dupe { display: none !important; }  /* hide duplicate set */
+      .ticker-dupe { display: none !important; }
 
-      /* Cards: full width, shorter, readable on a phone */
+      /* ---- SONG CARDS ---- */
       .song-card {
         min-width: 0 !important;
         max-width: 100% !important;
@@ -734,29 +737,66 @@
         height: auto !important;
         flex-direction: row;
         align-items: center;
-        padding: 12px 14px;
+        padding: 12px;
+        gap: 12px !important;
+        border-radius: 10px !important;
       }
-      .thumbnail { width: 90px !important; height: 90px !important; flex-shrink: 0; }
+      .thumbnail {
+        width: 110px !important;
+        height: 62px !important;
+        flex-shrink: 0;
+        border-radius: 8px !important;
+      }
 
-      /* CHAT: full-width panel below the queue, fixed sensible height */
+      /* ---- CARD TEXT (scaled for phone) ---- */
+      .card-requester { font-size: 18px !important; }
+      .card-song      { font-size: 15px !important; -webkit-line-clamp: 1 !important; }
+      .card-artist    { font-size: 13px !important; }
+      .card-hype      { font-size: 12px !important; }
+      .card-meta      { font-size: 11px !important; }
+      .newest-badge   { font-size: 12px !important; padding: 3px 10px !important; }
+      .song-info      { gap: 4px !important; }
+
+      /* ---- CHAT PANEL ---- */
       .chat-section {
         width: 100% !important;
         border-left: none;
         border-top: 4px solid #FFD700;
-        height: 60vh;
+        height: 50vh;
       }
-      .chat-header { font-size: 22px; padding: 14px; letter-spacing: 2px; }
+      .chat-header { font-size: 20px !important; padding: 12px !important; letter-spacing: 1px !important; }
+      .chat-name   { font-size: 18px !important; }
+      .chat-time   { font-size: 12px !important; }
+      .chat-text   { font-size: 16px !important; line-height: 1.4 !important; }
+      .chat-message { padding: 12px !important; margin: 6px 10px !important; }
 
-      /* QR footer: 2x2 grid instead of a single cramped row */
+      /* ---- QR FOOTER ---- */
       .qr-footer { flex-wrap: wrap; gap: 10px; padding: 14px 10px; }
       .qr-section { max-width: 46% !important; flex: 0 0 46% !important; }
-      .qr-code { width: 40vw !important; height: 40vw !important; max-width: 200px; max-height: 200px; }
+      .qr-code { width: 36vw !important; height: 36vw !important; max-width: 160px !important; max-height: 160px !important; }
+      .qr-label { font-size: 10px !important; }
 
-      /* Overlays: keep them readable, never wider than the screen */
-      .spotlight-card, .engage-card { max-width: 94% !important; padding: 28px 22px !important; }
-      .spotlight-requester { font-size: 48px !important; }
-      .spotlight-song { font-size: 32px !important; }
-      .hype-text { font-size: 44px !important; padding: 0 20px !important; }
+      /* ---- SPOTLIGHT OVERLAY ---- */
+      .spotlight-card, .engage-card {
+        max-width: 94% !important;
+        padding: 24px 18px !important;
+        border-radius: 16px !important;
+      }
+      .spotlight-requester { font-size: 36px !important; }
+      .spotlight-song      { font-size: 24px !important; }
+      .spotlight-artist    { font-size: 18px !important; }
+      .spotlight-message   { font-size: 14px !important; }
+
+      /* ---- ENGAGEMENT OVERLAY ---- */
+      .engage-card { max-width: 92% !important; }
+      .engage-sub  { font-size: 18px !important; }
+      .engage-qr   { width: 180px !important; height: 180px !important; padding: 8px !important; }
+
+      /* ---- HYPE TEXT OVERLAY ---- */
+      .hype-text { font-size: 36px !important; padding: 0 16px !important; }
+
+      /* ---- SCANLINE: hide on mobile (wastes GPU) ---- */
+      .scanline-overlay { display: none !important; }
     }
 
   </style>
@@ -772,7 +812,7 @@
   </svg>
 
   <!-- Scanline overlay — the retro horizontal lines across the screen -->
-  <div style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);animation:scanMove 8s linear infinite;"></div>
+  <div class="scanline-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);animation:scanMove 8s linear infinite;"></div>
 
   <!-- Floating music notes canvas — animated in JS below -->
   <canvas id="notesCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.55;"></canvas>
