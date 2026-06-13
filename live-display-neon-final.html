@@ -259,6 +259,17 @@
        (so the seamless scroll still works), but can be hidden on mobile. */
     .ticker-dupe { display: contents; }
 
+    /* FIND MY SONG — hidden on desktop/projector, shown on mobile only. */
+    .find-song { display: none; }
+    .song-card.found-highlight {
+      animation: foundPulse 1s ease-in-out 3 !important;
+      border-width: 4px !important;
+    }
+    @keyframes foundPulse {
+      0%,100% { box-shadow: 0 0 30px #FFD700aa, 0 4px 16px rgba(0,0,0,0.5); transform: scale(1); }
+      50%     { box-shadow: 0 0 70px #FFD700, 0 0 120px #f472b6aa; transform: scale(1.02); }
+    }
+
     /* ==========================================================
        SONG CARD
        Each individual request card that scrolls across the screen.
@@ -673,6 +684,38 @@
 
       /* QUEUE: kill the horizontal auto-scroll, go vertical */
       .left-panel { min-width: 0; width: 100%; }
+
+      /* Find My Song bar — visible on mobile, sticky at the top */
+      .find-song {
+        display: block;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        padding: 12px;
+        background: rgba(0,0,0,0.9);
+        backdrop-filter: blur(10px);
+        border-bottom: 2px solid #FFD700;
+      }
+      .find-song input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px 16px;
+        font-size: 17px;
+        border-radius: 12px;
+        border: 2px solid #FFD700;
+        background: rgba(255,255,255,0.07);
+        color: #fff;
+        outline: none;
+      }
+      .find-song input::placeholder { color: rgba(255,255,255,0.55); }
+      .find-result {
+        margin-top: 8px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #FFD700;
+        min-height: 20px;
+        text-align: center;
+      }
       .ticker-section { overflow: visible; padding: 10px; }
       .ticker-wrapper {
         animation: none !important;       /* stop the marquee */
@@ -763,6 +806,12 @@
 
       <!-- LEFT: song ticker + QR footer stacked vertically -->
       <div class="left-panel">
+
+        <!-- Find My Song — only visible on phones (see mobile media query) -->
+        <div class="find-song" id="findSong">
+          <input type="text" id="findInput" placeholder="🔎 Type your name to find your song" autocomplete="off">
+          <div class="find-result" id="findResult"></div>
+        </div>
 
         <!-- Scrolling song cards -->
         <div class="ticker-section">
@@ -1194,7 +1243,7 @@
       const hype      = HYPE_CAPTIONS[idx % HYPE_CAPTIONS.length];
 
       return `
-        <div class="song-card" style="border-color:${p.border}; box-shadow: 0 0 ${isNewest?"60px":"28px"} ${p.border}${isNewest?"cc":"44"}, 0 4px 16px rgba(0,0,0,0.5); ${newestStyle}">
+        <div class="song-card" data-name="${escapeHtml(name.toLowerCase())}" data-pos="${idx+1}" style="border-color:${p.border}; box-shadow: 0 0 ${isNewest?"60px":"28px"} ${p.border}${isNewest?"cc":"44"}, 0 4px 16px rgba(0,0,0,0.5); ${newestStyle}">
           ${thumb ? `<img class="thumbnail" src="${thumb}" alt="" loading="eager" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src='${thumbFallback}';}">` : ""}
           <div class="song-info">
             ${badge}
@@ -1981,6 +2030,52 @@
       requestAnimationFrame(animateNotes);
     }
     animateNotes();
+
+    // ==========================================================
+    // FIND MY SONG (mobile)
+    // Guest types their name → matching card highlights, scrolls
+    // into view, and we tell them their spot in line.
+    // ==========================================================
+    (function setupFindSong(){
+      const input  = document.getElementById("findInput");
+      const result = document.getElementById("findResult");
+      if (!input) return;
+      let debounce = null;
+
+      function runFind(){
+        const q = input.value.trim().toLowerCase();
+        // clear previous highlights
+        document.querySelectorAll(".song-card.found-highlight")
+          .forEach(c => c.classList.remove("found-highlight"));
+        if (!q){ result.textContent = ""; return; }
+
+        // only search the primary (non-duplicate) cards
+        const cards = Array.from(document.querySelectorAll(".song-card"))
+          .filter(c => !c.closest(".ticker-dupe"));
+        const matches = cards.filter(c => (c.dataset.name||"").includes(q));
+
+        if (!matches.length){
+          result.textContent = "No song found under that name yet 🤔";
+          return;
+        }
+        // highlight + scroll to the first match
+        const first = matches[0];
+        first.classList.add("found-highlight");
+        first.scrollIntoView({ behavior: "smooth", block: "center" });
+        const pos = first.dataset.pos;
+        const total = cards.length;
+        if (matches.length === 1){
+          result.textContent = `Found it! You're #${pos} of ${total} in line 🎶`;
+        } else {
+          result.textContent = `Found ${matches.length} — closest is #${pos} of ${total} 🎶`;
+        }
+      }
+
+      input.addEventListener("input", () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(runFind, 250);
+      });
+    })();
   </script>
 
   <!-- ======================================================
