@@ -255,6 +255,9 @@
       0%   { transform: translateX(0) translateZ(0); }
       100% { transform: translateX(-50%) translateZ(0); }
     }
+    /* The duplicate card set is transparent to the flex layout on desktop
+       (so the seamless scroll still works), but can be hidden on mobile. */
+    .ticker-dupe { display: contents; }
 
     /* ==========================================================
        SONG CARD
@@ -645,6 +648,73 @@
     @keyframes engageQRPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
     .engage-cta  { font-size: 28px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; animation: engageCtaBlink 1.2s ease-in-out infinite; }
     @keyframes engageCtaBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    /* ==========================================================
+       MOBILE LAYOUT  (phones / narrow screens ≤ 700px)
+       The projector/desktop layout above is UNTOUCHED. These rules
+       only apply on small screens. On a phone we:
+         • stack the queue and chat vertically (no side-by-side)
+         • STOP the auto-scroll ticker and lay cards out in a
+           normal vertical scroll, so guests can find their song
+         • hide the duplicate card set (only needed for desktop loop)
+         • shrink the header and QR codes to fit
+       A 4K projector never matches max-width:700px, so it's safe.
+    ========================================================== */
+    @media (max-width: 700px) {
+      html, body { overflow-y: auto; height: auto; }
+      .container { height: auto; min-height: 100vh; }
+
+      /* Header: smaller, wraps nicely */
+      .header { padding: 12px 16px; flex-wrap: wrap; gap: 4px; }
+      .title { font-size: 30px !important; white-space: normal; }
+      .title-sub { font-size: 15px !important; }
+
+      /* Main content stacks vertically instead of side-by-side */
+      .main-content { flex-direction: column; overflow: visible; }
+
+      /* QUEUE: kill the horizontal auto-scroll, go vertical */
+      .left-panel { min-width: 0; width: 100%; }
+      .ticker-section { overflow: visible; padding: 10px; }
+      .ticker-wrapper {
+        animation: none !important;       /* stop the marquee */
+        flex-direction: column;           /* stack cards top-to-bottom */
+        gap: 14px;
+        transform: none !important;
+        width: 100%;
+      }
+      .ticker-dupe { display: none !important; }  /* hide duplicate set */
+
+      /* Cards: full width, shorter, readable on a phone */
+      .song-card {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        height: auto !important;
+        flex-direction: row;
+        align-items: center;
+        padding: 12px 14px;
+      }
+      .thumbnail { width: 90px !important; height: 90px !important; flex-shrink: 0; }
+
+      /* CHAT: full-width panel below the queue, fixed sensible height */
+      .chat-section {
+        width: 100% !important;
+        border-left: none;
+        border-top: 4px solid #FFD700;
+        height: 60vh;
+      }
+      .chat-header { font-size: 22px; padding: 14px; letter-spacing: 2px; }
+
+      /* QR footer: 2x2 grid instead of a single cramped row */
+      .qr-footer { flex-wrap: wrap; gap: 10px; padding: 14px 10px; }
+      .qr-section { max-width: 46% !important; flex: 0 0 46% !important; }
+      .qr-code { width: 40vw !important; height: 40vw !important; max-width: 200px; max-height: 200px; }
+
+      /* Overlays: keep them readable, never wider than the screen */
+      .spotlight-card, .engage-card { max-width: 94% !important; padding: 28px 22px !important; }
+      .spotlight-requester { font-size: 48px !important; }
+      .spotlight-song { font-size: 32px !important; }
+      .hype-text { font-size: 44px !important; padding: 0 20px !important; }
+    }
 
   </style>
 </head>
@@ -1058,7 +1128,9 @@
         return;
       }
       const html = window.allSongs.map((s, i) => createSongCard(s, i)).join("");
-      wrapper.innerHTML = html + html; // doubled for seamless infinite loop
+      // Doubled for the seamless desktop scroll loop. The second copy is
+      // wrapped so it can be hidden on mobile (where we scroll vertically).
+      wrapper.innerHTML = html + '<div class="ticker-dupe">' + html + '</div>';
     }
 
     // ==========================================================
