@@ -433,9 +433,25 @@ async function submitChat() {
       body: params.toString()
     });
 
-    // *** Show success
+    // *** Show success — with a randomized confirmation line + celebration
+    const CHAT_CONFIRMS = [
+      "Posting right now…",
+      "Your message is live on the big screen!",
+      "Boom — everyone can see that!",
+      "You're on the wall! 🔥",
+      "Message dropped into the party!",
+      "That just hit the display!",
+      "Sent! The room can see you now 👀",
+      "Locked in and live!",
+      "Your words are up in lights ✨",
+      "Delivered to the dance floor! 💃"
+    ];
+    const line = CHAT_CONFIRMS[Math.floor(Math.random()*CHAT_CONFIRMS.length)];
     document.getElementById('success-name').textContent = finalName.toUpperCase() + ' IS IN THE CHAT!';
+    const subEl = document.querySelector('#success-screen .success-sub');
+    if (subEl) subEl.textContent = line;
     document.getElementById('success-screen').classList.add('visible');
+    if (typeof window.celebrateRequest === "function") window.celebrateRequest();
 
   } catch(e) {
     btn.disabled = false;
@@ -495,6 +511,153 @@ function spawnBubbles() {
 }
 
 spawnBubbles();
+</script>
+<!-- ============================================================
+     FULL-SCREEN ON-DEVICE CELEBRATION ENGINE (iMessage-style)
+     10 randomized effects with full-screen coverage + strong haptics.
+     Call celebrateRequest() with no argument for a random effect,
+     or pass an effect name to force one.
+     Effects: confetti, fireworks, hearts, stars, balloons,
+              celebration, bubbles, sparkleRain, emojiBlast, spiral
+============================================================ -->
+<script>
+(function(){
+  let cv, ctx, parts = [], running = false, lastFx = "";
+  const COLORS = ["#f5c518","#f472b6","#a78bfa","#34d399","#fb923c","#60a5fa","#fff","#ff5e7e","#22d3ee"];
+  function ensure(){
+    if (cv) return;
+    cv = document.createElement("canvas");
+    cv.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;";
+    document.body.appendChild(cv);
+    ctx = cv.getContext("2d");
+    resize(); window.addEventListener("resize", resize);
+  }
+  function resize(){ if(!cv) return; cv.width = innerWidth; cv.height = innerHeight; }
+  const W = ()=>innerWidth, H = ()=>innerHeight;
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+  // Strong, varied haptic patterns (where supported).
+  function buzz(){
+    if (!navigator.vibrate) return;
+    const patterns = [[30,40,30,40,60],[60,30,120],[20,20,20,20,20,20,100],[200],[40,60,40,60,40,120]];
+    navigator.vibrate(pick(patterns));
+  }
+
+  // ---- 10 effect builders (all tuned for FULL-SCREEN coverage) ----
+  function fxConfetti(){
+    for(let i=0;i<220;i++) parts.push({type:"rect",
+      x: rnd(0,W()), y: -20 - rnd(0,H()),
+      vx: rnd(-3,3), vy: rnd(3,8), w: rnd(10,20), h: rnd(14,28),
+      rot: rnd(0,6.28), vr: rnd(-0.35,0.35), color: pick(COLORS),
+      alpha:1, decay: rnd(0.003,0.006), sway: rnd(0,6.28), swaySpeed: rnd(0.03,0.07)});
+  }
+  function fxFireworks(){
+    for(let b=0;b<6;b++){
+      const cx = rnd(W()*0.1, W()*0.9), cy = rnd(H()*0.1, H()*0.6), n = 60;
+      const col = pick(COLORS), col2 = pick(COLORS);
+      setTimeout(()=>{ for(let i=0;i<n;i++){ const a=(6.28/n)*i, s=rnd(3,10);
+        parts.push({type:"dot", x:cx, y:cy, vx:Math.cos(a)*s, vy:Math.sin(a)*s,
+          size:rnd(3,7), color: Math.random()>0.5?col:col2, alpha:1,
+          decay:rnd(0.01,0.02), gravity:0.09}); } if(!running){running=true;loop();} }, b*150);
+    }
+  }
+  function fxHearts(){
+    for(let i=0;i<60;i++) parts.push({type:"emoji", glyph: pick(["❤️","💖","💕","💗"]),
+      x: rnd(0,W()), y: H()+rnd(0,H()*0.5), vx: rnd(-0.8,0.8), vy: -rnd(2.5,6),
+      size: rnd(34,68), alpha:1, decay: rnd(0.004,0.009), sway: rnd(0,6.28), swaySpeed: rnd(0.04,0.08)});
+  }
+  function fxStars(){
+    for(let i=0;i<80;i++) parts.push({type:"emoji", glyph: pick(["⭐","✨","🌟","💫"]),
+      x: rnd(0,W()), y: rnd(-H()*0.2,H()), vx: rnd(-0.5,0.5), vy: rnd(0.6,2.2),
+      size: rnd(26,56), alpha:1, decay: rnd(0.006,0.013), sway: rnd(0,6.28), swaySpeed: rnd(0.05,0.1)});
+  }
+  function fxBalloons(){
+    for(let i=0;i<34;i++) parts.push({type:"emoji", glyph: pick(["🎈","🎈","🎉","🎊"]),
+      x: rnd(0,W()), y: H()+rnd(20,H()*0.6), vx: rnd(-0.5,0.5), vy: -rnd(1.6,3.4),
+      size: rnd(44,72), alpha:1, decay: rnd(0.002,0.005), sway: rnd(0,6.28), swaySpeed: rnd(0.03,0.06)});
+  }
+  function fxCelebration(){
+    for(let i=0;i<140;i++){ const a=-1.57+rnd(-0.9,0.9), s=rnd(5,14);
+      parts.push({type:"dot", x: rnd(W()*0.2,W()*0.8), y: H()+10,
+        vx: Math.cos(a)*s, vy: Math.sin(a)*s, size: rnd(3,8),
+        color: pick(["#f5c518","#f472b6","#fff","#a78bfa"]), alpha:1, decay: rnd(0.008,0.016), gravity:0.13}); }
+  }
+  function fxBubbles(){
+    for(let i=0;i<70;i++) parts.push({type:"bubble",
+      x: rnd(0,W()), y: H()+rnd(0,H()*0.6), vx: rnd(-0.6,0.6), vy: -rnd(1.5,4),
+      size: rnd(14,46), color: pick(COLORS), alpha:rnd(0.4,0.85), decay: rnd(0.004,0.009),
+      sway: rnd(0,6.28), swaySpeed: rnd(0.04,0.09)});
+  }
+  function fxSparkleRain(){
+    for(let i=0;i<160;i++) parts.push({type:"dot",
+      x: rnd(0,W()), y: -rnd(0,H()), vx: rnd(-0.5,0.5), vy: rnd(4,9),
+      size: rnd(2,5), color: pick(["#fff","#f5c518","#22d3ee","#f472b6"]), alpha:1,
+      decay: rnd(0.004,0.01)});
+  }
+  function fxEmojiBlast(){
+    const set = pick([["🎵","🎶","🎤","🔥"],["🥳","🎉","🙌","✨"],["💃","🕺","🎶","⚡"]]);
+    for(let i=0;i<70;i++){ const a=rnd(0,6.28), s=rnd(3,11);
+      parts.push({type:"emoji", glyph: pick(set), x: W()/2, y: H()/2,
+        vx: Math.cos(a)*s, vy: Math.sin(a)*s, size: rnd(28,60), alpha:1,
+        decay: rnd(0.006,0.012), gravity:0.05, rot:rnd(0,6.28), vr:rnd(-0.2,0.2)}); }
+  }
+  function fxSpiral(){
+    const cx=W()/2, cy=H()/2;
+    for(let i=0;i<160;i++){ const a=(i/160)*6.28*4, r=i*2;
+      parts.push({type:"dot", x:cx+Math.cos(a)*r*0.1, y:cy+Math.sin(a)*r*0.1,
+        vx:Math.cos(a)*rnd(2,5), vy:Math.sin(a)*rnd(2,5), size:rnd(3,6),
+        color: pick(COLORS), alpha:1, decay:rnd(0.008,0.014)}); }
+  }
+
+  const EFFECTS = {
+    confetti:fxConfetti, fireworks:fxFireworks, hearts:fxHearts, stars:fxStars,
+    balloons:fxBalloons, celebration:fxCelebration, bubbles:fxBubbles,
+    sparkleRain:fxSparkleRain, emojiBlast:fxEmojiBlast, spiral:fxSpiral
+  };
+
+  window.celebrateRequest = function(kind){
+    ensure();
+    if (!kind){
+      const keys = Object.keys(EFFECTS);
+      do { kind = pick(keys); } while (kind === lastFx);
+    }
+    lastFx = kind;
+    (EFFECTS[kind] || fxConfetti)();
+    buzz();
+    if (!running){ running = true; loop(); }
+  };
+
+  function loop(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts = parts.filter(p => p.alpha>0.02 && p.y < H()+120 && p.y > -300);
+    parts.forEach(p=>{
+      if (p.sway != null){ p.sway += p.swaySpeed; p.x += Math.sin(p.sway)*1.3; }
+      p.x += p.vx||0; p.y += p.vy||0;
+      if (p.gravity) p.vy += p.gravity;
+      if (p.vr != null) p.rot += p.vr;
+      p.alpha -= p.decay;
+      ctx.save(); ctx.globalAlpha = Math.max(0,p.alpha);
+      if (p.type === "emoji"){
+        ctx.font = p.size + "px serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        if (p.rot!=null){ ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillText(p.glyph,0,0); }
+        else ctx.fillText(p.glyph, p.x, p.y);
+      } else if (p.type === "bubble"){
+        ctx.strokeStyle=p.color; ctx.lineWidth=2; ctx.fillStyle=p.color; ctx.globalAlpha=Math.max(0,p.alpha)*0.25;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,6.28); ctx.fill();
+        ctx.globalAlpha=Math.max(0,p.alpha); ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,6.28); ctx.stroke();
+      } else if (p.type === "dot"){
+        ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=8;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,6.28); ctx.fill();
+      } else { // rect confetti
+        ctx.fillStyle=p.color; ctx.translate(p.x,p.y); ctx.rotate(p.rot||0);
+        ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      }
+      ctx.restore();
+    });
+    if (parts.length){ requestAnimationFrame(loop); } else { running=false; ctx.clearRect(0,0,cv.width,cv.height); }
+  }
+})();
 </script>
 </body>
 </html>
