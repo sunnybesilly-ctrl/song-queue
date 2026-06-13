@@ -147,6 +147,7 @@ textarea.chat-input-ta::placeholder { color: rgba(255,255,255,0.22); font-weight
 .confirm-title { font-family: var(--font-d); font-size: 38px; color: var(--gold); letter-spacing: 0.08em; text-align: center; text-shadow: 0 0 30px var(--gold-glow); margin-bottom: 6px; }
 .confirm-sub { text-align: center; font-size: 15px; color: var(--dim); font-family: var(--font-f); line-height: 1.5; margin-bottom: 20px; }
 .confirm-card { background: rgba(0,0,0,0.55); border: 1px solid rgba(245,197,24,0.3); border-left: 4px solid var(--gold); border-radius: 4px; padding: 16px; margin-bottom: 16px; }
+.confirm-thumb { width: 100%; max-width: 240px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; margin: 0 auto 14px; display: block; box-shadow: 0 4px 16px rgba(0,0,0,0.5); border: 1px solid rgba(245,197,24,0.25); }
 .confirm-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); }
 .confirm-row:last-child { border-bottom: none; padding-bottom: 0; }
 .confirm-key { font-family: var(--font-d); font-size: 14px; color: var(--gold-dim); letter-spacing: 0.06em; min-width: 70px; flex-shrink: 0; padding-top: 2px; }
@@ -272,6 +273,7 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
   <div class="confirm-sub">Your song is in the queue — Sunny's got you!</div>
 
   <div class="confirm-card">
+    <img id="c-thumb" class="confirm-thumb" alt="" style="display:none">
     <div class="confirm-row">
       <div class="confirm-key">NAME</div>
       <div class="confirm-val" id="c-name">—</div>
@@ -359,8 +361,10 @@ const YT_API_KEY  = 'AIzaSyDmIRaQ2Mb4iLiNxqgbl_lMGH_shUHS01I';
 
 let songFound = null, searchTimer = null, submitted = false;
 let ytVideoId = null, optionalSaved = false;
+// Increments on every new search; only the latest search may write results.
+let searchToken = 0;
 // Stores the YouTube-corrected title and channel for the selected video
-let ytFinalTitle = null, ytFinalChannel = null;
+let ytFinalTitle = null, ytFinalChannel = null, ytFinalThumb = null;
 
 function goToStep2() {
   const name   = document.getElementById('f-name').value.trim();
@@ -392,6 +396,15 @@ function goToStep2() {
   document.getElementById('c-artist').textContent = finalArtist;
   document.getElementById('c-song').textContent   = finalSong;
 
+  const thumbEl = document.getElementById('c-thumb');
+  if (ytVideoId && ytFinalThumb) {
+    thumbEl.src = ytFinalThumb;
+    thumbEl.onerror = () => { thumbEl.src = `https://img.youtube.com/vi/${ytVideoId}/hqdefault.jpg`; };
+    thumbEl.style.display = 'block';
+  } else {
+    thumbEl.style.display = 'none';
+  }
+
   if (songFound !== null) {
     document.getElementById('c-found-row').style.display = 'flex';
     document.getElementById('c-found').innerHTML = songFound
@@ -401,6 +414,7 @@ function goToStep2() {
 
   document.getElementById('chat-name').value = name;
   showPage(2);
+  if (typeof window.celebrateRequest === "function") window.celebrateRequest();
 }
 
 function goBack() { showPage(1); }
@@ -490,6 +504,8 @@ function searchYouTube() {
   const artist = document.getElementById('f-artist').value.trim();
   const song   = document.getElementById('f-song').value.trim();
   clearTimeout(searchTimer);
+  // Invalidate any in-flight search so its results can't overwrite ours.
+  const myToken = ++searchToken;
   // Reset UI
   document.getElementById('yt-results').classList.remove('visible');
   document.getElementById('yt-not-found').style.display = 'none';
@@ -506,8 +522,11 @@ function searchYouTube() {
     try {
       const q   = encodeURIComponent(artist + ' ' + song);
       const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=5&key=${YT_API_KEY}`);
+      // If a newer search started while we awaited, discard these results.
+      if (myToken !== searchToken) return;
       if (!res.ok) throw new Error('API ' + res.status);
       const data = await res.json();
+      if (myToken !== searchToken) return;
       statusEl.classList.remove('visible');
 
       if (!data.items || data.items.length === 0) {
@@ -521,6 +540,7 @@ function searchYouTube() {
       ytVideoId      = data.items[0].id.videoId;
       ytFinalTitle   = data.items[0].snippet.title;
       ytFinalChannel = data.items[0].snippet.channelTitle;
+      ytFinalThumb   = `https://img.youtube.com/vi/${ytVideoId}/mqdefault.jpg`;
 
       const list = document.getElementById('yt-list');
       list.innerHTML = '';
@@ -548,6 +568,7 @@ function searchYouTube() {
           ytVideoId      = vid;
           ytFinalTitle   = title;
           ytFinalChannel = channel;
+          ytFinalThumb   = `https://img.youtube.com/vi/${vid}/mqdefault.jpg`;
           document.getElementById('yt-selected-badge').classList.add('visible');
         });
 
@@ -558,6 +579,7 @@ function searchYouTube() {
       document.getElementById('yt-selected-badge').classList.add('visible');
 
     } catch(e) {
+      if (myToken !== searchToken) return;
       document.getElementById('search-status').classList.remove('visible');
       songFound = null;
     }
@@ -581,7 +603,9 @@ function resetAll() {
   ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   submitted = false; optionalSaved = false; songFound = null; ytVideoId = null;
-  ytFinalTitle = null; ytFinalChannel = null;
+  searchToken++;
+  ytFinalTitle = null; ytFinalChannel = null; ytFinalThumb = null;
+  const ct = document.getElementById('c-thumb'); if (ct) { ct.style.display = 'none'; ct.src = ''; }
   document.getElementById('yt-results').classList.remove('visible');
   document.getElementById('yt-not-found').style.display = 'none';
   document.getElementById('yt-selected-badge').classList.remove('visible');
@@ -613,6 +637,107 @@ function resetAll() {
     el.style.animationDuration = dur + 's';
     el.style.animationDelay    = (-Math.random() * dur) + 's';
     container.appendChild(el);
+  }
+})();
+</script>
+<!-- iMessage-style on-device celebration when a request is confirmed.
+     Rotates through 6 effects: confetti, fireworks, hearts, stars,
+     balloons, and a gold celebration shimmer. -->
+<script>
+(function(){
+  let cv, ctx, parts = [], running = false, lastFx = "";
+  const COLORS = ["#f5c518","#f472b6","#a78bfa","#34d399","#fb923c","#60a5fa","#fff"];
+  function ensure(){
+    if (cv) return;
+    cv = document.createElement("canvas");
+    cv.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;";
+    document.body.appendChild(cv);
+    ctx = cv.getContext("2d");
+    resize(); window.addEventListener("resize", resize);
+  }
+  function resize(){ if(!cv) return; cv.width = innerWidth; cv.height = innerHeight; }
+  const W = ()=>innerWidth, H = ()=>innerHeight;
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+  // ---- effect builders ----
+  function fxConfetti(){
+    for(let i=0;i<90;i++) parts.push({type:"rect",
+      x: W()/2 + rnd(-W()*0.3, W()*0.3), y: -20 - rnd(0,H()*0.2),
+      vx: rnd(-2.4,2.4), vy: rnd(2,5.5), w: rnd(6,12), h: rnd(9,18),
+      rot: rnd(0,6.28), vr: rnd(-0.3,0.3), color: pick(COLORS),
+      alpha:1, decay: rnd(0.004,0.008), sway: rnd(0,6.28), swaySpeed: rnd(0.03,0.07)});
+  }
+  function fxFireworks(){
+    const bursts = 3;
+    for(let b=0;b<bursts;b++){
+      const cx = rnd(W()*0.2, W()*0.8), cy = rnd(H()*0.2, H()*0.5), n = 46;
+      const col = pick(COLORS), col2 = pick(COLORS);
+      setTimeout(()=>{ for(let i=0;i<n;i++){ const a=(6.28/n)*i, s=rnd(2,7);
+        parts.push({type:"dot", x:cx, y:cy, vx:Math.cos(a)*s, vy:Math.sin(a)*s,
+          size:rnd(2,5), color: Math.random()>0.5?col:col2, alpha:1,
+          decay:rnd(0.012,0.022), gravity:0.08}); } if(!running){running=true;loop();} }, b*180);
+    }
+  }
+  function fxHearts(){
+    for(let i=0;i<26;i++) parts.push({type:"emoji", glyph:"❤️",
+      x: rnd(W()*0.2,W()*0.8), y: H()+rnd(0,60), vx: rnd(-0.6,0.6), vy: -rnd(2,4.5),
+      size: rnd(26,46), alpha:1, decay: rnd(0.006,0.012), sway: rnd(0,6.28), swaySpeed: rnd(0.04,0.08)});
+  }
+  function fxStars(){
+    for(let i=0;i<34;i++) parts.push({type:"emoji", glyph: pick(["⭐","✨","🌟"]),
+      x: rnd(0,W()), y: rnd(0,H()*0.6), vx: rnd(-0.4,0.4), vy: rnd(0.4,1.4),
+      size: rnd(20,40), alpha:1, decay: rnd(0.008,0.016), sway: rnd(0,6.28), swaySpeed: rnd(0.05,0.1)});
+  }
+  function fxBalloons(){
+    for(let i=0;i<14;i++) parts.push({type:"emoji", glyph: pick(["🎈","🎈","🎉"]),
+      x: rnd(W()*0.1,W()*0.9), y: H()+rnd(20,140), vx: rnd(-0.4,0.4), vy: -rnd(1.4,2.8),
+      size: rnd(34,54), alpha:1, decay: rnd(0.003,0.006), sway: rnd(0,6.28), swaySpeed: rnd(0.03,0.06)});
+  }
+  function fxCelebration(){
+    for(let i=0;i<60;i++){ const a=-1.57+rnd(-0.7,0.7), s=rnd(4,11);
+      parts.push({type:"dot", x: W()/2+rnd(-W()*0.25,W()*0.25), y: H()+10,
+        vx: Math.cos(a)*s, vy: Math.sin(a)*s, size: rnd(3,6),
+        color: Math.random()>0.5?"#f5c518":"#f472b6", alpha:1, decay: rnd(0.01,0.018), gravity:0.12}); }
+  }
+
+  const EFFECTS = { confetti:fxConfetti, fireworks:fxFireworks, hearts:fxHearts, stars:fxStars, balloons:fxBalloons, celebration:fxCelebration };
+
+  window.celebrateRequest = function(kind){
+    ensure();
+    if (!kind){
+      const keys = Object.keys(EFFECTS);
+      do { kind = pick(keys); } while (kind === lastFx);
+    }
+    lastFx = kind;
+    (EFFECTS[kind] || fxConfetti)();
+    if (navigator.vibrate) navigator.vibrate([12,40,12]);
+    if (!running){ running = true; loop(); }
+  };
+
+  function loop(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts = parts.filter(p => p.alpha>0.02 && p.y < H()+80 && p.y > -200);
+    parts.forEach(p=>{
+      if (p.sway != null){ p.sway += p.swaySpeed; p.x += Math.sin(p.sway)*1.1; }
+      p.x += p.vx||0; p.y += p.vy||0;
+      if (p.gravity) p.vy += p.gravity;
+      if (p.vr != null) p.rot += p.vr;
+      p.alpha -= p.decay;
+      ctx.save(); ctx.globalAlpha = Math.max(0,p.alpha);
+      if (p.type === "emoji"){
+        ctx.font = p.size + "px serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(p.glyph, p.x, p.y);
+      } else if (p.type === "dot"){
+        ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=6;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,6.28); ctx.fill();
+      } else { // rect confetti
+        ctx.fillStyle=p.color; ctx.translate(p.x,p.y); ctx.rotate(p.rot||0);
+        ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      }
+      ctx.restore();
+    });
+    if (parts.length){ requestAnimationFrame(loop); } else { running=false; ctx.clearRect(0,0,cv.width,cv.height); }
   }
 })();
 </script>
