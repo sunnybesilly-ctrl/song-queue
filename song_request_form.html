@@ -186,6 +186,14 @@ textarea.chat-input-ta::placeholder { color: rgba(255,255,255,0.22); font-weight
 .save-done { display: none; text-align: center; padding: 10px; font-family: var(--font-d); font-size: 15px; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; margin-top: 4px; }
 .save-done.visible { display: block; }
 
+/* LANG TOGGLE */
+.lang-toggle { position: fixed; top: 12px; right: 14px; z-index: 9999; display: flex; gap: 0; border-radius: 20px; overflow: hidden; border: 1.5px solid var(--gold-dim); box-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+.lang-btn { font-family: var(--font-b); font-size: 14px; font-weight: 700; letter-spacing: 0.07em; padding: 7px 14px; cursor: pointer; border: none; transition: background 0.2s, color 0.2s; -webkit-tap-highlight-color: transparent; }
+.lang-btn.en { background: var(--gold); color: var(--green-deep); }
+.lang-btn.es { background: rgba(0,0,0,0.55); color: var(--gold-dim); }
+body.es .lang-btn.en { background: rgba(0,0,0,0.55); color: var(--gold-dim); }
+body.es .lang-btn.es { background: var(--gold); color: var(--green-deep); }
+
 /* ERROR */
 .error-box { display: none; background: rgba(204,17,17,0.12); border: 1px solid var(--red); border-radius: 4px; padding: 12px 14px; margin-top: 12px; font-size: 14px; color: var(--red-bright); font-family: var(--font-f); text-align: center; line-height: 1.5; }
 .error-box.visible { display: block; }
@@ -199,6 +207,11 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 </style>
 </head>
 <body>
+
+<div class="lang-toggle">
+  <button class="lang-btn en" onclick="setLang('en')">EN</button>
+  <button class="lang-btn es" onclick="setLang('es')">ES</button>
+</div>
 
 <div class="notes-bg" id="notes-bg"></div>
 
@@ -227,20 +240,23 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 <div class="page active" id="page-1">
 
   <div class="field-card">
-    <div class="field-label">YOUR NAME <span class="field-req">*</span></div>
+    <div class="field-label" data-en="YOUR NAME" data-es="TU NOMBRE">YOUR NAME <span class="field-req">*</span></div>
     <input class="field-input" id="f-name" type="text" placeholder="Type your name..."
+      data-ph-en="Type your name..." data-ph-es="Escribe tu nombre..."
       autocomplete="given-name" autocorrect="off" spellcheck="false" inputmode="text">
   </div>
 
   <div class="field-card">
-    <div class="field-label">ARTIST <span class="field-req">*</span></div>
+    <div class="field-label" data-en="ARTIST" data-es="ARTISTA">ARTIST <span class="field-req">*</span></div>
     <input class="field-input" id="f-artist" type="text" placeholder="Who's the artist?"
+      data-ph-en="Who's the artist?" data-ph-es="¿Quién es el artista?"
       autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
   </div>
 
   <div class="field-card">
-    <div class="field-label">SONG TITLE <span class="field-req">*</span></div>
+    <div class="field-label" data-en="SONG TITLE" data-es="TÍTULO DE LA CANCIÓN">SONG TITLE <span class="field-req">*</span></div>
     <input class="field-input" id="f-song" type="text" placeholder="Song title..."
+      data-ph-en="Song title..." data-ph-es="Título de la canción..."
       autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
     <div class="search-status" id="search-status">🔍 Searching YouTube...</div>
     <div class="yt-results" id="yt-results">
@@ -253,8 +269,8 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     </div>
   </div>
 
-  <div class="error-box" id="error-1">Please fill in your name, artist, and song title.</div>
-  <button class="btn-primary" onclick="goToStep2()">NEXT →</button>
+  <div class="error-box" id="error-1" data-en="Please fill in your name, artist, and song title." data-es="Por favor llena tu nombre, artista y título de canción.">Please fill in your name, artist, and song title.</div>
+  <button class="btn-primary" onclick="goToStep2()" data-en="NEXT →" data-es="SIGUIENTE →">NEXT →</button>
 
 </div>
 
@@ -269,21 +285,21 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 <div class="page" id="page-2">
 
   <div class="confirm-icon">🎵</div>
-  <div class="confirm-title">REQUEST RECEIVED!</div>
-  <div class="confirm-sub">Your song is in the queue — Sunny's got you!</div>
+  <div class="confirm-title" data-en="REQUEST RECEIVED!" data-es="¡SOLICITUD RECIBIDA!">REQUEST RECEIVED!</div>
+  <div class="confirm-sub" data-en="Your song is in the queue — Sunny's got you!" data-es="¡Tu canción está en la fila — Sunny te tiene!">Your song is in the queue — Sunny's got you!</div>
 
   <div class="confirm-card">
     <img id="c-thumb" class="confirm-thumb" alt="" style="display:none">
     <div class="confirm-row">
-      <div class="confirm-key">NAME</div>
+      <div class="confirm-key" data-en="NAME" data-es="NOMBRE">NAME</div>
       <div class="confirm-val" id="c-name">—</div>
     </div>
     <div class="confirm-row">
-      <div class="confirm-key">ARTIST</div>
+      <div class="confirm-key" data-en="ARTIST" data-es="ARTISTA">ARTIST</div>
       <div class="confirm-val" id="c-artist">—</div>
     </div>
     <div class="confirm-row">
-      <div class="confirm-key">SONG</div>
+      <div class="confirm-key" data-en="SONG" data-es="CANCIÓN">SONG</div>
       <div class="confirm-val" id="c-song">—</div>
     </div>
     <div class="confirm-row" id="c-found-row" style="display:none">
@@ -294,8 +310,8 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 
   <!-- Primary actions — always visible right after confirmation -->
   <div class="action-stack">
-    <button class="btn-another" onclick="resetAll()">+ REQUEST ANOTHER SONG</button>
-    <button class="btn-edit" onclick="goBack()">← EDIT THIS REQUEST</button>
+    <button class="btn-another" onclick="resetAll()" data-en="+ REQUEST ANOTHER SONG" data-es="+ PEDIR OTRA CANCIÓN">+ REQUEST ANOTHER SONG</button>
+    <button class="btn-edit" onclick="goBack()" data-en="← EDIT THIS REQUEST" data-es="← EDITAR ESTA SOLICITUD">← EDIT THIS REQUEST</button>
   </div>
 
   <!-- Party chat — clearly optional -->
@@ -593,10 +609,33 @@ function showPage(num) {
   document.getElementById('page-' + num).classList.add('active');
   document.getElementById('dot-1').className = 'step-dot' + (num === 1 ? ' active' : ' done');
   document.getElementById('dot-2').className = 'step-dot' + (num === 2 ? ' active' : '');
+  const isES = document.body.classList.contains('es');
   document.getElementById('step-label').textContent = num === 1
-    ? 'Step 1 of 2 — Your Request'
-    : "Step 2 of 2 — You're in the queue!";
+    ? (isES ? 'Paso 1 de 2 — Tu solicitud' : 'Step 1 of 2 — Your Request')
+    : (isES ? 'Paso 2 de 2 — ¡Estás en la fila!' : "Step 2 of 2 — You're in the queue!");
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setLang(lang) {
+  const isES = lang === 'es';
+  document.body.classList.toggle('es', isES);
+  // Text nodes
+  document.querySelectorAll('[data-en]').forEach(el => {
+    const req = el.querySelector('.field-req');
+    el.textContent = isES ? el.dataset.es : el.dataset.en;
+    if (req) el.appendChild(req);
+  });
+  // Placeholders
+  document.querySelectorAll('[data-ph-en]').forEach(el => {
+    el.placeholder = isES ? el.dataset.phEs : el.dataset.phEn;
+  });
+  // Step label
+  const stepLabelEl = document.getElementById('step-label');
+  const currentPage = document.querySelector('.page.active');
+  const pageNum = currentPage ? parseInt(currentPage.id.replace('page-','')) : 1;
+  stepLabelEl.textContent = pageNum === 1
+    ? (isES ? 'Paso 1 de 2 — Tu solicitud' : 'Step 1 of 2 — Your Request')
+    : (isES ? 'Paso 2 de 2 — ¡Estás en la fila!' : "Step 2 of 2 — You're in the queue!");
 }
 
 function resetAll() {
