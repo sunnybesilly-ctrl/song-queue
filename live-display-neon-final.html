@@ -1561,16 +1561,18 @@
     // ### page refreshes without losing the display state.
     // ###########################################################
     let activeSlot = getCurrentSlot();
+    // activeDate always starts as TODAY — never restore an old date from
+    // localStorage, because that would hide all of today's requests.
     let activeDate = new Date().toDateString();
 
-    // ### Restore last known slot+date from localStorage on page load
+    // Restore the last known slot from localStorage (slot name only — not date)
     const _savedSlotName = localStorage.getItem("activeSlotName");
-    const _savedDate     = localStorage.getItem("activeDate");
     if (_savedSlotName) {
       const found = TIME_SLOTS.find(s => s.name === _savedSlotName);
       if (found) activeSlot = found;
     }
-    if (_savedDate) activeDate = _savedDate;
+    // Clear any stale saved date so it never causes a mismatch
+    localStorage.removeItem("activeDate");
 
     // ###########################################################
     // ### UPDATE SLOT DISPLAY
