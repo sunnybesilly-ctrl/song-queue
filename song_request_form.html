@@ -270,7 +270,7 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
   </div>
 
   <div class="error-box" id="error-1" data-en="Please fill in your name, artist, and song title." data-es="Por favor llena tu nombre, artista y título de canción.">Please fill in your name, artist, and song title.</div>
-  <button class="btn-primary" onclick="goToStep2()" data-en="NEXT →" data-es="SIGUIENTE →">NEXT →</button>
+  <button class="btn-primary" id="btn-next" onclick="goToStep2()" data-en="NEXT →" data-es="SIGUIENTE →">NEXT →</button>
 
 </div>
 
@@ -381,8 +381,9 @@ let ytVideoId = null, optionalSaved = false;
 let searchToken = 0;
 // Stores the YouTube-corrected title and channel for the selected video
 let ytFinalTitle = null, ytFinalChannel = null, ytFinalThumb = null;
+let currentSearchPromise = null;
 
-function goToStep2() {
+async function goToStep2() {
   const name   = document.getElementById('f-name').value.trim();
   const artist = document.getElementById('f-artist').value.trim();
   const song   = document.getElementById('f-song').value.trim();
@@ -395,6 +396,17 @@ function goToStep2() {
     return;
   }
   errEl.classList.remove('visible');
+
+  // Guests tapping NEXT fast beat the 800ms search debounce, so ytVideoId
+  // was still null at submit time. Force the match to finish before we post.
+  if (songFound === null && song.length >= 2 && YT_API_KEY !== 'YOUR_API_KEY') {
+    const btn = document.getElementById('btn-next');
+    if (btn) { btn.disabled = true; btn.textContent = 'Matching song…'; }
+    clearTimeout(searchTimer);
+    if (!currentSearchPromise) currentSearchPromise = runYouTubeSearch(++searchToken, artist, song);
+    await currentSearchPromise;
+    if (btn) { btn.disabled = false; btn.textContent = btn.dataset.en || 'NEXT →'; }
+  }
 
   // Use YouTube-corrected title/artist if a video was matched, otherwise use what guest typed
   const finalArtist = ytFinalChannel || artist;
@@ -528,10 +540,19 @@ function searchYouTube() {
   document.getElementById('yt-selected-badge').classList.remove('visible');
   document.getElementById('search-status').classList.remove('visible');
   document.getElementById('yt-list').innerHTML = '';
-  songFound = null; ytVideoId = null;
+  songFound = null; ytVideoId = null; currentSearchPromise = null;
   if (!artist || !song || song.length < 2 || YT_API_KEY === 'YOUR_API_KEY') return;
 
-  searchTimer = setTimeout(async () => {
+  searchTimer = setTimeout(() => {
+    currentSearchPromise = runYouTubeSearch(myToken, artist, song);
+  }, 800);
+}
+
+// Awaitable so goToStep2() can block submission until a match attempt
+// has actually finished, instead of racing a fast NEXT tap against the
+// debounce timer (root cause of Video ID sometimes being blank).
+function runYouTubeSearch(myToken, artist, song) {
+  return (async () => {
     const statusEl = document.getElementById('search-status');
     statusEl.textContent = '🔍 Searching YouTube...';
     statusEl.classList.add('visible');
@@ -599,7 +620,7 @@ function searchYouTube() {
       document.getElementById('search-status').classList.remove('visible');
       songFound = null;
     }
-  }, 800);
+  })();
 }
 document.getElementById('f-artist').addEventListener('input', searchYouTube);
 document.getElementById('f-song').addEventListener('input', searchYouTube);
