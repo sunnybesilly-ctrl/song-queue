@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#091809">
 <title>Song Request</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bungee&family=Limelight&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --green-deep:  #091809;
@@ -59,23 +59,7 @@ body {
 .header-title { font-family: var(--font-d); font-size: clamp(36px, 11vw, 52px); color: var(--gold); letter-spacing: 0.06em; line-height: 0.95; text-shadow: 0 0 40px var(--gold-glow), 0 2px 0 rgba(0,0,0,0.6); }
 .header-title em { color: var(--white); font-style: normal; }
 
-/* VIP BANNER */
-.vip-banner { position: relative; z-index: 10; background: rgba(0,0,0,0.55); border-left: 3px solid var(--gold); border-right: 3px solid var(--gold); border-bottom: 1px solid rgba(245,197,24,0.2); margin: 14px 14px 0; padding: 14px 16px; }
-.vip-title { font-family: var(--font-d); font-size: 19px; color: var(--gold); letter-spacing: 0.08em; margin-bottom: 8px; }
-.vip-item { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: var(--dim); font-family: var(--font-f); line-height: 1.45; margin-bottom: 5px; }
-.vip-item::before { content: '★'; color: var(--gold); font-size: 10px; margin-top: 3px; flex-shrink: 0; }
-.vip-item b { color: var(--gold); }
-.vip-item a { color: var(--gold); font-weight: 700; text-decoration: none; }
-.red-line { font-size: 13px; color: var(--red-bright); font-family: var(--font-b); font-weight: 700; margin-top: 8px; }
-.terms-line { font-size: 11px; color: var(--dim2); font-family: var(--font-f); font-style: italic; margin-top: 5px; line-height: 1.4; }
-.red-stripe { height: 3px; background: linear-gradient(90deg, transparent, var(--red) 15%, var(--red) 85%, transparent); margin: 14px 0 0; position: relative; z-index: 10; }
 
-/* STEP INDICATOR */
-.step-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 0 4px; }
-.step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(245,197,24,0.25); border: 1px solid var(--gold-dim); transition: background 0.3s; }
-.step-dot.active { background: var(--gold); box-shadow: 0 0 8px var(--gold-glow); }
-.step-dot.done { background: var(--green-light); border-color: var(--gold); }
-.step-label { font-size: 11px; color: var(--dim2); font-family: var(--font-f); letter-spacing: 0.06em; text-align: center; padding-bottom: 14px; }
 
 /* PAGES */
 .page { display: none; position: relative; z-index: 10; padding: 0 14px; }
@@ -160,8 +144,6 @@ textarea.chat-input-ta::placeholder { color: rgba(255,255,255,0.22); font-weight
 .action-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
 .btn-another { display: block; width: 100%; min-height: 60px; font-family: var(--font-d); font-size: 26px; letter-spacing: 0.1em; color: var(--green-deep); background: var(--gold); border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 24px rgba(245,197,24,0.45); transition: transform 0.1s; }
 .btn-another:active { transform: scale(0.98); }
-.btn-edit { display: block; width: 100%; min-height: var(--tap-min); font-family: var(--font-d); font-size: 20px; letter-spacing: 0.08em; color: rgba(245,197,24,0.6); background: transparent; border: 1.5px solid rgba(245,197,24,0.25); border-radius: 4px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
-.btn-edit:active { border-color: var(--gold); color: var(--gold); }
 
 /* DIVIDERS */
 .divider-label { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
@@ -204,6 +186,36 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 .footer-handles { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .footer-handle { font-size: 13px; color: var(--dim); font-family: var(--font-b); font-weight: 600; letter-spacing: 0.04em; }
 .footer-handle span { color: var(--gold); }
+/* ===== OPTION C: FREE FIRST ===== */
+.header { padding: 14px 16px 10px; }
+.header-title { font-family: 'Bungee', sans-serif; font-size: clamp(22px, 7vw, 30px); letter-spacing: 0.04em; line-height: 1.1; }
+.free-head { text-align: center; margin: 14px 0 4px; padding-bottom: 12px; border-bottom: 3px solid #1fa84a; }
+.free-title { font-family: 'Bungee', sans-serif; font-size: clamp(22px, 7vw, 28px); color: #46d36b; letter-spacing: 0.02em; line-height: 1; }
+.free-sub { font-family: var(--font-b); font-weight: 700; font-size: 19px; letter-spacing: 0.14em; color: var(--dim); margin-top: 7px; }
+.field-card { background: none; border: 0; border-radius: 0; box-shadow: none; padding: 0; margin-bottom: 6px; }
+.field-card:focus-within { border: 0; box-shadow: none; }
+.field-label { font-family: var(--font-b); font-size: 12px; letter-spacing: 0.2em; color: var(--gold-dim); margin: 12px 0 0; font-weight: 700; }
+.field-input { background: none; border-bottom: 2px solid var(--gold); border-radius: 0; }
+.btn-primary { font-family: 'Bungee', sans-serif; font-size: 24px; letter-spacing: 0.04em; border-radius: 0; box-shadow: none; margin-top: 14px; }
+
+/* VIP SIGN */
+.vip-wrap { position: relative; z-index: 10; padding: 0 14px; margin-top: 26px; }
+.rope-label { font-family: 'Bungee', sans-serif; font-size: 14px; letter-spacing: 0.1em; text-align: center; color: var(--gold-dim); }
+.rope { display: block; width: 100%; height: auto; margin-top: 2px; }
+.vip-sign { position: relative; margin-top: 14px; padding: 26px 24px; background: #2a0606; }
+.vip-kicker { font-family: 'Limelight', serif; font-size: 15px; letter-spacing: 0.3em; color: var(--gold); text-align: center; }
+.vip-big { font-family: 'Limelight', serif; font-size: 54px; line-height: 1; color: var(--gold); text-align: center; text-shadow: 0 0 18px rgba(245,197,24,0.67); }
+.vip-row { display: flex; justify-content: space-between; font-family: var(--font-b); font-size: 22px; font-weight: 700; margin-top: 9px; border-top: 1px dashed rgba(200,160,16,0.53); padding-top: 8px; }
+.vip-row b { color: var(--gold); }
+.annoy { margin-top: 12px; color: #ff5560; font-family: var(--font-b); font-weight: 700; text-align: center; font-size: 18px; }
+.vip-pay { text-align: center; font-family: var(--font-f); font-size: 13px; color: var(--dim); margin-top: 6px; }
+.vip-pay a { color: var(--gold); font-weight: 700; text-decoration: none; }
+.vip-terms { text-align: center; font-family: var(--font-f); font-size: 11px; font-style: italic; color: var(--dim2); margin-top: 8px; line-height: 1.4; }
+@keyframes bl { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.2; } }
+.bl, .bl2 { position: absolute; inset: 0; pointer-events: none; --b: radial-gradient(circle, #fff7c9 0 2px, #f5c518 3px, #f5c51800 6px); background: var(--b) 0 0/16px 16px repeat-x, var(--b) 0 100%/16px 16px repeat-x, var(--b) 0 0/16px 16px repeat-y, var(--b) 100% 0/16px 16px repeat-y; animation: bl 1s steps(1) infinite; }
+.bl2 { background-position: 8px 0, 8px 100%, 0 8px, 100% 8px; animation-delay: -0.5s; }
+.blink { animation: bl 1.4s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) { .bl, .blink { animation: none; } .bl2 { display: none; } }
 </style>
 </head>
 <body>
@@ -220,24 +232,13 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
   <div class="header-title">✦ SONG <em>REQUEST</em> ✦</div>
 </div>
 
-<div class="vip-banner">
-  <div class="vip-title">⚡ VIP SERVICES</div>
-  <div class="vip-item"><b>SKIP</b> next song in queue — <b>$12</b></div>
-  <div class="vip-item"><b>SKIP ALL</b> songs immediately — <b>$40</b></div>
-  <div class="vip-item">Cashapp: <a href="https://cash.app/$SUNNYAUBADE" target="_blank">$SUNNYAUBADE</a> &nbsp;· Tips welcome 🙏</div>
-  <div class="red-line">⚠ Annoyance fee: $62.75</div>
-  <div class="terms-line">Terms apply. Sunny may refuse service. NO REFUNDS. I might play it OR kick you out.</div>
-</div>
-<div class="red-stripe"></div>
-
-<div class="step-indicator">
-  <div class="step-dot active" id="dot-1"></div>
-  <div class="step-dot" id="dot-2"></div>
-</div>
-<div class="step-label" id="step-label">Step 1 of 2 — Your Request</div>
-
 <!-- PAGE 1 -->
 <div class="page active" id="page-1">
+
+  <div class="free-head">
+    <div class="free-title" data-en="FREE TO REQUEST" data-es="PEDIR ES GRATIS">FREE TO REQUEST</div>
+    <div class="free-sub" data-en="NO PAYMENT NEEDED" data-es="NO NECESITAS PAGAR">NO PAYMENT NEEDED</div>
+  </div>
 
   <div class="field-card">
     <div class="field-label" data-en="YOUR NAME" data-es="TU NOMBRE">YOUR NAME <span class="field-req">*</span></div>
@@ -278,9 +279,8 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
      Order:
        1. ✅ Confirmed summary
        2. ➕ REQUEST ANOTHER (always first, most visible)
-       3. ← Edit (small ghost button)
-       4. 💬 Party chat (optional)
-       5. 🔒 Sunny-only extras (collapsed)
+       3. 💬 Party chat (optional)
+       4. 🔒 Sunny-only extras (collapsed)
 -->
 <div class="page" id="page-2">
 
@@ -311,7 +311,6 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
   <!-- Primary actions — always visible right after confirmation -->
   <div class="action-stack">
     <button class="btn-another" onclick="resetAll()" data-en="+ REQUEST ANOTHER SONG" data-es="+ PEDIR OTRA CANCIÓN">+ REQUEST ANOTHER SONG</button>
-    <button class="btn-edit" onclick="goBack()" data-en="← EDIT THIS REQUEST" data-es="← EDITAR ESTA SOLICITUD">← EDIT THIS REQUEST</button>
   </div>
 
   <!-- Party chat — clearly optional -->
@@ -362,6 +361,22 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 
 </div>
 
+<!-- VIP: rope + marquee sign (shows under both pages) -->
+<section class="vip-wrap" id="vip">
+  <div class="rope-label" data-en="IN A HURRY? THE ROPE IS RIGHT HERE" data-es="¿CON PRISA? LA CUERDA ESTÁ AQUÍ">IN A HURRY? THE ROPE IS RIGHT HERE</div>
+  <svg class="rope" viewBox="0 0 358 52" role="img" aria-label="Velvet rope"><path d="M22 12Q179 66 336 12" fill="none" stroke="#7a0b12" stroke-width="9" stroke-linecap="round"/><path d="M22 10Q179 64 336 10" fill="none" stroke="#e0323c" stroke-width="3" stroke-linecap="round"/><g fill="#c8a010"><rect x="16" y="14" width="12" height="38"/><circle cx="22" cy="10" r="9"/><rect x="330" y="14" width="12" height="38"/><circle cx="336" cy="10" r="9"/></g></svg>
+  <div class="vip-sign">
+    <div class="bl"></div><div class="bl2"></div>
+    <div class="vip-kicker" data-en="WANT TO CUT THE LINE?" data-es="¿QUIERES SALTARTE LA FILA?">WANT TO CUT THE LINE?</div>
+    <div class="vip-big">VIP</div>
+    <div class="vip-row"><span>SKIP NEXT SONG</span><b>$12</b></div>
+    <div class="vip-row"><span>SKIP ALL SONGS NOW</span><b>$40</b></div>
+    <div class="annoy blink">ANNOYANCE FEE $62.75</div>
+    <div class="vip-pay">Cash App <a href="https://cash.app/$SUNNYAUBADE" target="_blank" rel="noopener">$SUNNYAUBADE</a> · Tips welcome 🙏</div>
+    <div class="vip-terms">Terms apply. Sunny may refuse service. NO REFUNDS. I might play it OR kick you out.</div>
+  </div>
+</section>
+
 <footer>
   <div class="footer-name">DJ SUNNY</div>
   <div class="footer-handles">
@@ -382,6 +397,17 @@ let searchToken = 0;
 // Stores the YouTube-corrected title and channel for the selected video
 let ytFinalTitle = null, ytFinalChannel = null, ytFinalThumb = null;
 let currentSearchPromise = null;
+// Set when YouTube reports the daily quota is gone; stops all further API calls this session.
+let ytQuotaOut = false;
+// Reuse results when the query hasn't actually changed (typo fixed then undone, etc.).
+let lastQ = '', lastItems = null;
+
+function showQuotaOut() {
+  const el = document.getElementById('yt-not-found');
+  el.textContent = '\u26A0 Video search is maxed out for today \u2014 Sunny will match your song by hand';
+  el.style.display = 'block';
+  songFound = false;
+}
 
 async function goToStep2() {
   const name   = document.getElementById('f-name').value.trim();
@@ -399,7 +425,7 @@ async function goToStep2() {
 
   // Guests tapping NEXT fast beat the 800ms search debounce, so ytVideoId
   // was still null at submit time. Force the match to finish before we post.
-  if (songFound === null && song.length >= 2 && YT_API_KEY !== 'YOUR_API_KEY') {
+  if (songFound === null && !ytQuotaOut && song.length >= 2 && YT_API_KEY !== 'YOUR_API_KEY') {
     const btn = document.getElementById('btn-next');
     if (btn) { btn.disabled = true; btn.textContent = 'Matching song…'; }
     clearTimeout(searchTimer);
@@ -444,8 +470,6 @@ async function goToStep2() {
   showPage(2);
   if (typeof window.celebrateRequest === "function") window.celebrateRequest();
 }
-
-function goBack() { showPage(1); }
 
 function toggleOptional() {
   document.getElementById('optional-toggle').classList.toggle('open');
@@ -533,7 +557,7 @@ function searchYouTube() {
   const song   = document.getElementById('f-song').value.trim();
   clearTimeout(searchTimer);
   // Invalidate any in-flight search so its results can't overwrite ours.
-  const myToken = ++searchToken;
+  ++searchToken;
   // Reset UI
   document.getElementById('yt-results').classList.remove('visible');
   document.getElementById('yt-not-found').style.display = 'none';
@@ -541,11 +565,19 @@ function searchYouTube() {
   document.getElementById('search-status').classList.remove('visible');
   document.getElementById('yt-list').innerHTML = '';
   songFound = null; ytVideoId = null; currentSearchPromise = null;
+  ytFinalTitle = null; ytFinalChannel = null; ytFinalThumb = null;
   if (!artist || !song || song.length < 2 || YT_API_KEY === 'YOUR_API_KEY') return;
+  if (ytQuotaOut) showQuotaOut();
+}
 
-  searchTimer = setTimeout(() => {
-    currentSearchPromise = runYouTubeSearch(myToken, artist, song);
-  }, 800);
+// One search per request: run it when the guest leaves the artist/song field
+// (or taps NEXT), not on every typing pause.
+function searchOnLeave() {
+  const artist = document.getElementById('f-artist').value.trim();
+  const song   = document.getElementById('f-song').value.trim();
+  if (!artist || !song || song.length < 2 || YT_API_KEY === 'YOUR_API_KEY' || ytQuotaOut) return;
+  if (songFound !== null || currentSearchPromise) return;   // already matched or in flight
+  currentSearchPromise = runYouTubeSearch(++searchToken, artist, song);
 }
 
 // Awaitable so goToStep2() can block submission until a match attempt
@@ -557,16 +589,37 @@ function runYouTubeSearch(myToken, artist, song) {
     statusEl.textContent = '🔍 Searching YouTube...';
     statusEl.classList.add('visible');
     try {
-      const q   = encodeURIComponent(artist + ' ' + song);
-      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=5&key=${YT_API_KEY}`);
-      // If a newer search started while we awaited, discard these results.
-      if (myToken !== searchToken) return;
-      if (!res.ok) throw new Error('API ' + res.status);
-      const data = await res.json();
-      if (myToken !== searchToken) return;
+      const qRaw = (artist + ' ' + song).toLowerCase().replace(/\s+/g, ' ').trim();
+      let items;
+      if (lastItems && qRaw === lastQ) {
+        items = lastItems;
+      } else {
+        const q   = encodeURIComponent(artist + ' ' + song);
+        const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=5&key=${YT_API_KEY}`);
+        // If a newer search started while we awaited, discard these results.
+        if (myToken !== searchToken) return;
+        if (!res.ok) {
+          let reason = '';
+          try {
+            const b = await res.json();
+            reason = (b.error && b.error.errors && b.error.errors[0] && b.error.errors[0].reason) || '';
+          } catch (_) {}
+          if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') {
+            ytQuotaOut = true;
+            statusEl.classList.remove('visible');
+            showQuotaOut();
+            return;
+          }
+          throw new Error('API ' + res.status);
+        }
+        const data = await res.json();
+        if (myToken !== searchToken) return;
+        items = data.items || [];
+        lastQ = qRaw; lastItems = items;
+      }
       statusEl.classList.remove('visible');
 
-      if (!data.items || data.items.length === 0) {
+      if (items.length === 0) {
         document.getElementById('yt-not-found').style.display = 'block';
         songFound = false;
         return;
@@ -574,15 +627,15 @@ function runYouTubeSearch(myToken, artist, song) {
 
       songFound = true;
       // Auto-select first result as default
-      ytVideoId      = data.items[0].id.videoId;
-      ytFinalTitle   = data.items[0].snippet.title;
-      ytFinalChannel = data.items[0].snippet.channelTitle;
+      ytVideoId      = items[0].id.videoId;
+      ytFinalTitle   = items[0].snippet.title;
+      ytFinalChannel = items[0].snippet.channelTitle;
       ytFinalThumb   = `https://img.youtube.com/vi/${ytVideoId}/mqdefault.jpg`;
 
       const list = document.getElementById('yt-list');
       list.innerHTML = '';
 
-      data.items.forEach((item, idx) => {
+      items.forEach((item, idx) => {
         const vid     = item.id.videoId;
         const title   = item.snippet.title;
         const channel = item.snippet.channelTitle;
@@ -624,16 +677,12 @@ function runYouTubeSearch(myToken, artist, song) {
 }
 document.getElementById('f-artist').addEventListener('input', searchYouTube);
 document.getElementById('f-song').addEventListener('input', searchYouTube);
+document.getElementById('f-artist').addEventListener('blur', searchOnLeave);
+document.getElementById('f-song').addEventListener('blur', searchOnLeave);
 
 function showPage(num) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + num).classList.add('active');
-  document.getElementById('dot-1').className = 'step-dot' + (num === 1 ? ' active' : ' done');
-  document.getElementById('dot-2').className = 'step-dot' + (num === 2 ? ' active' : '');
-  const isES = document.body.classList.contains('es');
-  document.getElementById('step-label').textContent = num === 1
-    ? (isES ? 'Paso 1 de 2 — Tu solicitud' : 'Step 1 of 2 — Your Request')
-    : (isES ? 'Paso 2 de 2 — ¡Estás en la fila!' : "Step 2 of 2 — You're in the queue!");
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -650,13 +699,6 @@ function setLang(lang) {
   document.querySelectorAll('[data-ph-en]').forEach(el => {
     el.placeholder = isES ? el.dataset.phEs : el.dataset.phEn;
   });
-  // Step label
-  const stepLabelEl = document.getElementById('step-label');
-  const currentPage = document.querySelector('.page.active');
-  const pageNum = currentPage ? parseInt(currentPage.id.replace('page-','')) : 1;
-  stepLabelEl.textContent = pageNum === 1
-    ? (isES ? 'Paso 1 de 2 — Tu solicitud' : 'Step 1 of 2 — Your Request')
-    : (isES ? 'Paso 2 de 2 — ¡Estás en la fila!' : "Step 2 of 2 — You're in the queue!");
 }
 
 function resetAll() {
