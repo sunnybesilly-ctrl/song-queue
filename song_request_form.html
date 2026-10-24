@@ -238,6 +238,20 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 .vibe-song small { display: block; font-family: var(--font-f); font-size: 12px; font-weight: 400; color: var(--dim); margin-top: 2px; }
 .vibe-song:active { background: rgba(245,197,24,0.22); }
 .help-box .help-found { display: block; width: 100%; margin-top: 12px; background: none; border: 1px solid var(--gold); color: var(--gold); font-family: var(--font-d); font-size: 21px; letter-spacing: 0.08em; padding: 11px 12px; min-height: 48px; border-radius: 4px; cursor: pointer; }
+.vibe-chip[hidden], .vibe-more[hidden] { display: none; }
+.vibe-chip.special { border-style: dashed; background: rgba(255,255,255,0.05); color: var(--gold); }
+.vibe-chip.special.on { background: var(--gold); color: #000; }
+.vibe-song { animation: vibeIn 0.28s ease-out backwards; }
+.help-box .vibe-more { display: block; width: 100%; margin: 2px 0 4px; background: none; border: 1px dashed var(--gold); color: var(--gold); font-family: var(--font-d); font-size: 19px; letter-spacing: 0.08em; padding: 9px 12px; min-height: 46px; border-radius: 4px; cursor: pointer; }
+@keyframes vibeIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .vibe-song { animation: none; } }
+.help-box .vibe-song { display: flex; align-items: center; gap: 12px; }
+.vs-art { flex: 0 0 54px; width: 54px; height: 54px; border-radius: 4px; background: rgba(245,197,24,0.12) center / cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(245,197,24,0.55); }
+.vs-art.loaded { color: transparent; }
+.vs-txt { min-width: 0; }
+.lyric-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 4px; color: var(--white); font-family: var(--font-b); font-size: 18px; font-weight: 600; padding: 11px 12px; min-height: 46px; margin: 6px 0 8px; }
+.lyric-input::placeholder { color: rgba(255,255,255,0.45); }
+.lyric-note { font-family: var(--font-f); font-size: 13px; color: var(--dim); }
 @keyframes vibeFlash { 0% { box-shadow: 0 0 0 rgba(245,197,24,0); } 35% { box-shadow: 0 0 24px rgba(245,197,24,0.6); border-color: var(--gold); } 100% { box-shadow: 0 0 0 rgba(245,197,24,0); } }
 .field-card.flash { animation: vibeFlash 1s ease-out; }
 @media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } }
@@ -294,6 +308,10 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
       <div class="vibe-title" data-en="Need ideas? Pick a vibe." data-es="¿Necesitas ideas? Elige un estilo.">Need ideas? Pick a vibe.</div>
       <div class="vibe-chips" id="vibe-chips"></div>
       <div class="vibe-songs" id="vibe-songs"></div>
+      <div class="vibe-title" data-en="Remember a line? Type it." data-es="¿Recuerdas una frase? Escríbela.">Remember a line? Type it.</div>
+      <input class="lyric-input" id="lyric-q" type="text" placeholder="a lyric you remember" data-ph-en="a lyric you remember" data-ph-es="una frase que recuerdes" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button type="button" class="vibe-more" onclick="findByLyric()" data-en="FIND IT" data-es="BUSCAR">FIND IT</button>
+      <div id="lyric-results"></div>
       <div data-en="Check your Spotify, Apple Music or Shazam history. The name and artist are right there." data-es="Revisa tu historial de Spotify, Apple Music o Shazam. Ahí está el nombre y el artista.">Check your Spotify, Apple Music or Shazam history. The name and artist are right there.</div>
       <div><span data-en="Somewhere quiet?" data-es="¿Un lugar tranquilo?">Somewhere quiet?</span> <a href="https://www.midomi.com" target="_blank" rel="noopener" data-en="Hum it here" data-es="Tararéala aquí">Hum it here</a></div>
       <div data-en="Still stuck? Ask the DJ." data-es="¿Sigues sin encontrarla? Pregunta al DJ.">Still stuck? Ask the DJ.</div>
@@ -726,86 +744,617 @@ function showPage(num) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-const VIBES = [
-  { en: "Throwbacks", es: "Clásicos", songs: [
-    ["Whitney Houston", "I Wanna Dance with Somebody"],
-    ["Journey", "Don't Stop Believin'"],
-    ["Earth, Wind & Fire", "September"],
-    ["Michael Jackson", "Billie Jean"],
-    ["Bon Jovi", "Livin' on a Prayer"],
-    ["Cyndi Lauper", "Girls Just Want to Have Fun"] ] },
-  { en: "Hip-Hop", es: "Hip-Hop", songs: [
-    ["The Notorious B.I.G.", "Hypnotize"],
-    ["Kendrick Lamar", "HUMBLE."],
-    ["OutKast", "Hey Ya!"],
-    ["Snoop Dogg", "Gin and Juice"],
-    ["50 Cent", "In Da Club"],
-    ["Dr. Dre", "Still D.R.E."] ] },
-  { en: "Reggaeton", es: "Reggaetón", songs: [
-    ["Daddy Yankee", "Gasolina"],
-    ["Bad Bunny", "Tití Me Preguntó"],
-    ["Don Omar", "Danza Kuduro"],
-    ["Luis Fonsi", "Despacito"],
-    ["J Balvin", "Mi Gente"],
-    ["Karol G", "Tusa"] ] },
-  { en: "Tejano & Latin", es: "Tejano y Latino", songs: [
-    ["Selena", "Como la Flor"],
-    ["Selena", "Bidi Bidi Bom Bom"],
-    ["Selena", "Baila Esta Cumbia"],
-    ["Little Joe y La Familia", "Las Nubes"],
-    ["Los Lobos", "La Bamba"],
-    ["Celia Cruz", "La Vida Es un Carnaval"] ] },
-  { en: "Country", es: "Country", songs: [
-    ["Garth Brooks", "Friends in Low Places"],
-    ["Luke Combs", "Beer Never Broke My Heart"],
-    ["Shania Twain", "Man! I Feel Like a Woman!"],
-    ["Johnny Cash", "Ring of Fire"],
-    ["George Strait", "All My Ex's Live in Texas"],
-    ["Chris Stapleton", "Tennessee Whiskey"] ] },
-  { en: "Pop & Dance", es: "Pop y Baile", songs: [
-    ["Dua Lipa", "Levitating"],
-    ["The Weeknd", "Blinding Lights"],
-    ["Mark Ronson", "Uptown Funk"],
-    ["Lizzo", "Good as Hell"],
-    ["Taylor Swift", "Shake It Off"],
-    ["Harry Styles", "As It Was"] ] }
+const VIBE_RAW = [
+["Throwbacks", "Clásicos", `
+Whitney Houston | I Wanna Dance with Somebody
+Journey | Don't Stop Believin'
+Earth, Wind & Fire | September
+Michael Jackson | Billie Jean
+Bon Jovi | Livin' on a Prayer
+Cyndi Lauper | Girls Just Want to Have Fun
+Prince | Kiss
+Madonna | Like a Prayer
+a-ha | Take On Me
+Rick Astley | Never Gonna Give You Up
+Backstreet Boys | I Want It That Way
+Spice Girls | Wannabe`],
+["Hip-Hop", "Hip-Hop", `
+The Notorious B.I.G. | Hypnotize
+Kendrick Lamar | HUMBLE.
+OutKast | Hey Ya!
+Snoop Dogg | Gin and Juice
+50 Cent | In Da Club
+Dr. Dre | Still D.R.E.
+2Pac | California Love
+Missy Elliott | Get Ur Freak On
+Kanye West | Gold Digger
+Lil Jon & The East Side Boyz | Get Low
+Nelly | Hot in Herre
+Travis Scott | SICKO MODE`],
+["R&B & Slow Jams", "R&B y Románticas", `
+Beyoncé | Crazy in Love
+Marvin Gaye | Let's Get It On
+Boyz II Men | End of the Road
+Usher | Yeah!
+Aaliyah | Try Again
+Alicia Keys | No One
+Sade | Smooth Operator
+Luther Vandross | Never Too Much
+Mary J. Blige | Real Love
+SZA | Kill Bill
+Ginuwine | Pony
+TLC | No Scrubs`],
+["Reggaeton", "Reggaetón", `
+Daddy Yankee | Gasolina
+Bad Bunny | Tití Me Preguntó
+Don Omar | Danza Kuduro
+Luis Fonsi | Despacito
+J Balvin | Mi Gente
+Karol G | Tusa
+Rauw Alejandro | Todo de Ti
+Bad Bunny | Me Porto Bonito
+Wisin & Yandel | Rakata
+Maluma | Felices los 4
+Anitta | Envolver
+Daddy Yankee | Dura`],
+["Tejano & Latin", "Tejano y Latino", `
+Selena | Como la Flor
+Selena | Bidi Bidi Bom Bom
+Selena | Baila Esta Cumbia
+Little Joe y La Familia | Las Nubes
+Los Lobos | La Bamba
+Celia Cruz | La Vida Es un Carnaval
+Selena | Amor Prohibido
+La Mafia | Me Estoy Enamorando
+Ramón Ayala | Un Rinconcito en el Cielo
+Shakira | Hips Don't Lie
+Gloria Estefan | Conga
+Ricky Martin | Livin' la Vida Loca`],
+["Regional Mexican", "Regional Mexicano", `
+Vicente Fernández | El Rey
+Los Tigres del Norte | La Puerta Negra
+Eslabon Armado | Ella Baila Sola
+Grupo Frontera | No Se Va
+Los Bukis | Tu Cárcel
+Los Ángeles Azules | Cómo Te Voy a Olvidar
+Juan Gabriel | Querida
+Banda MS | Mía
+Selena | Techno Cumbia
+Chalino Sánchez | Alma Enlutada
+Intocable | Y Todo Para Qué
+Los Bukis | Mi Fantasía`],
+["Salsa & Bachata", "Salsa y Bachata", `
+Marc Anthony | Vivir Mi Vida
+Romeo Santos | Propuesta Indecente
+Aventura | Obsesión
+Prince Royce | Stand By Me
+Juan Luis Guerra | Bachata Rosa
+Gente de Zona | La Gozadera
+Elvis Crespo | Suavemente
+Tito Puente | Oye Como Va
+Rubén Blades | Pedro Navaja
+Grupo Niche | Cali Pachanguero
+Carlos Vives | La Bicicleta
+Marc Anthony | Valio la Pena`],
+["Country", "Country", `
+Garth Brooks | Friends in Low Places
+Luke Combs | Beer Never Broke My Heart
+Shania Twain | Man! I Feel Like a Woman!
+Johnny Cash | Ring of Fire
+George Strait | All My Ex's Live in Texas
+Chris Stapleton | Tennessee Whiskey
+Dolly Parton | 9 to 5
+Brooks & Dunn | Boot Scootin' Boogie
+Morgan Wallen | Last Night
+Zach Bryan | Something in the Orange
+Alan Jackson | Chattahoochee
+Jason Aldean | Dirt Road Anthem`],
+["Pop & Dance", "Pop y Baile", `
+Dua Lipa | Levitating
+The Weeknd | Blinding Lights
+Mark Ronson | Uptown Funk
+Lizzo | Good as Hell
+Taylor Swift | Shake It Off
+Harry Styles | As It Was
+Lady Gaga | Bad Romance
+Britney Spears | Baby One More Time
+Bruno Mars | 24K Magic
+Katy Perry | Firework
+Miley Cyrus | Flowers
+Olivia Rodrigo | good 4 u`],
+["Rock", "Rock", `
+Queen | Don't Stop Me Now
+AC/DC | Thunderstruck
+Guns N' Roses | Sweet Child o' Mine
+Fleetwood Mac | Dreams
+Survivor | Eye of the Tiger
+Def Leppard | Pour Some Sugar on Me
+Lynyrd Skynyrd | Sweet Home Alabama
+Joan Jett & the Blackhearts | I Love Rock 'n Roll
+The Killers | Mr. Brightside
+Tom Petty | Free Fallin'
+Aerosmith | Walk This Way
+Van Halen | Jump`],
+["Party Anthems", "Para Bailar Todos", `
+Cupid | Cupid Shuffle
+DJ Casper | Cha Cha Slide
+Marcia Griffiths | Electric Boogie
+Los del Río | Macarena
+Village People | Y.M.C.A.
+Rednex | Cotton Eye Joe
+Kool & The Gang | Celebration
+V.I.C. | Wobble
+Soulja Boy | Crank That (Soulja Boy)
+Black Eyed Peas | I Gotta Feeling
+Vengaboys | We Like to Party
+Sister Sledge | We Are Family`],
+["Disco & Funk", "Disco y Funk", `
+Bee Gees | Stayin' Alive
+Donna Summer | Hot Stuff
+Chic | Le Freak
+Gloria Gaynor | I Will Survive
+Rick James | Super Freak
+Stevie Wonder | Superstition
+James Brown | I Got You (I Feel Good)
+Lipps Inc. | Funkytown
+Michael Jackson | Don't Stop 'Til You Get Enough
+Diana Ross | I'm Coming Out
+Earth, Wind & Fire | Boogie Wonderland
+Daft Punk | Get Lucky`],
+["Emo & Pop Punk", "Emo y Pop Punk", `
+Blink-182 | All the Small Things
+Green Day | Basket Case
+My Chemical Romance | I'm Not Okay (I Promise)
+Fall Out Boy | Sugar, We're Goin Down
+Paramore | Misery Business
+Avril Lavigne | Complicated
+Linkin Park | In the End
+Evanescence | Bring Me to Life
+Panic! at the Disco | I Write Sins Not Tragedies
+Good Charlotte | The Anthem
+Yellowcard | Ocean Avenue
+Green Day | Boulevard of Broken Dreams`],
+["EDM & Club", "Electrónica", `
+Avicii | Levels
+David Guetta | Titanium
+Swedish House Mafia | Don't You Worry Child
+Calvin Harris | We Found Love
+Zedd | Clarity
+Martin Garrix | Animals
+The Chainsmokers | Closer
+Daft Punk | One More Time
+Marshmello | Alone
+DJ Snake | Turn Down for What
+Skrillex | Scary Monsters and Nice Sprites
+Tiësto | The Business`],
+["Oldies & Motown", "Oldies y Motown", `
+The Temptations | My Girl
+Aretha Franklin | Respect
+Otis Redding | (Sittin' On) The Dock of the Bay
+Etta James | At Last
+Elvis Presley | Jailhouse Rock
+Frank Sinatra | Fly Me to the Moon
+Ben E. King | Stand by Me
+The Supremes | You Can't Hurry Love
+Chuck Berry | Johnny B. Goode
+The Beach Boys | Good Vibrations
+Al Green | Let's Stay Together
+Elvis Presley | Can't Help Falling in Love`],
+["Reggae & Island", "Reggae e Isla", `
+Bob Marley | Three Little Birds
+Bob Marley | Could You Be Loved
+Shaggy | It Wasn't Me
+Sean Paul | Temperature
+Sean Paul | Get Busy
+UB40 | Red Red Wine
+Kevin Lyttle | Turn Me On
+Beenie Man | Who Am I (Sim Simma)
+Inner Circle | Bad Boys
+Chaka Demus & Pliers | Murder She Wrote
+Damian Marley | Welcome to Jamrock
+Jimmy Cliff | I Can See Clearly Now`]
 ];
+const VIBE_MORE = {
+"Throwbacks": `
+Tina Turner | What's Love Got to Do with It
+Whitney Houston | How Will I Know
+Madonna | Vogue
+Michael Jackson | Thriller
+Prince | Purple Rain
+Wham! | Wake Me Up Before You Go-Go
+Hall & Oates | You Make My Dreams
+Toni Basil | Mickey
+Salt-N-Pepa | Push It
+Ace of Base | The Sign
+TLC | Waterfalls
+NSYNC | Bye Bye Bye`,
+"Hip-Hop": `
+Eminem | Lose Yourself
+Jay-Z | Empire State of Mind
+Ludacris | Stand Up
+Drake | God's Plan
+Cardi B | Bodak Yellow
+Run-D.M.C. | It's Tricky
+Sir Mix-A-Lot | Baby Got Back
+Wu-Tang Clan | C.R.E.A.M.
+Future | Mask Off
+Megan Thee Stallion | Savage
+Post Malone | rockstar
+Juvenile | Back That Azz Up`,
+"R&B & Slow Jams": `
+Destiny's Child | Say My Name
+Usher | U Got It Bad
+Frankie Beverly & Maze | Before I Let Go
+Mariah Carey | We Belong Together
+Chris Brown | Forever
+Bruno Mars | That's What I Like
+Janet Jackson | That's the Way Love Goes
+Lauryn Hill | Doo Wop (That Thing)
+Rihanna | Umbrella
+Silk Sonic | Leave the Door Open
+Brandy & Monica | The Boy Is Mine
+Jodeci | Forever My Lady`,
+"Reggaeton": `
+Bad Bunny | Dákiti
+Bad Bunny | Callaíta
+J Balvin | Ginza
+DJ Snake | Taki Taki
+Daddy Yankee | Con Calma
+Shakira | Bzrp Music Sessions, Vol. 53
+Karol G | Provenza
+Feid | Normal
+Nicky Jam | El Perdón
+Tego Calderón | Pa' Que Retozen
+Ivy Queen | Quiero Bailar
+Don Omar | Dale Don Dale`,
+"Tejano & Latin": `
+Selena | I Could Fall in Love
+Selena | No Me Queda Más
+Selena | Fotos y Recuerdos
+Selena | Dreaming of You
+Texas Tornados | Hey Baby Que Pasó
+Miami Sound Machine | Rhythm Is Gonna Get You
+Santana | Smooth
+Enrique Iglesias | Bailando
+Pitbull | Give Me Everything
+Jennifer Lopez | On the Floor
+Camila Cabello | Havana
+Shakira | Waka Waka (This Time for Africa)`,
+"Regional Mexican": `
+Los Tigres del Norte | Contrabando y Traición
+Vicente Fernández | Volver, Volver
+Pedro Infante | Amorcito Corazón
+Juan Gabriel | Hasta Que Te Conocí
+Los Temerarios | Te Hice Mal
+Intocable | Fuerte No Soy
+Carín León | Primera Cita
+Christian Nodal | Adiós Amor
+Marco Antonio Solís | Si No Te Hubieras Ido
+Ana Gabriel | Evidencias
+Grupo Firme | Ya Supérame
+Los Tucanes de Tijuana | La Chona`,
+"Salsa & Bachata": `
+Celia Cruz | Quimbara
+Héctor Lavoe | El Cantante
+Willie Colón | Che Che Colé
+Gilberto Santa Rosa | Conciencia
+Marc Anthony | Flor Pálida
+Romeo Santos | Eres Mía
+Prince Royce | Corazón Sin Cara
+Aventura | Un Beso
+Joe Arroyo | En Barranquilla Me Quedo
+Fruko y Sus Tesos | El Preso
+Monchy & Alexandra | Dos Locos
+Frankie Ruiz | Tú con Él`,
+"Country": `
+Kenny Chesney | She Thinks My Tractor's Sexy
+Tim McGraw | Live Like You Were Dying
+Toby Keith | Should've Been a Cowboy
+Alan Jackson | It's Five O'Clock Somewhere
+Blake Shelton | Honey Bee
+Luke Bryan | Country Girl (Shake It for Me)
+Carrie Underwood | Before He Cheats
+Miranda Lambert | Kerosene
+Kane Brown | Heaven
+Lainey Wilson | Heart Like a Truck
+Zac Brown Band | Chicken Fried
+Dierks Bentley | Drunk on a Plane`,
+"Pop & Dance": `
+Taylor Swift | Anti-Hero
+Ariana Grande | thank u, next
+Justin Timberlake | Can't Stop the Feeling!
+Sabrina Carpenter | Espresso
+Doja Cat | Say So
+Rihanna | Don't Stop the Music
+Beyoncé | Single Ladies (Put a Ring on It)
+Kesha | TiK ToK
+Carly Rae Jepsen | Call Me Maybe
+Ed Sheeran | Shape of You
+Dua Lipa | Don't Start Now
+Justin Bieber | Sorry`,
+"Rock": `
+Led Zeppelin | Whole Lotta Love
+Metallica | Enter Sandman
+Nirvana | Smells Like Teen Spirit
+Foo Fighters | Everlong
+Bruce Springsteen | Born to Run
+The Rolling Stones | Paint It Black
+Eagles | Hotel California
+Pink Floyd | Another Brick in the Wall
+Heart | Barracuda
+AC/DC | You Shook Me All Night Long
+Steve Miller Band | The Joker
+Cheap Trick | I Want You to Want Me`,
+"Party Anthems": `
+Silentó | Watch Me (Whip/Nae Nae)
+DJ Khaled | All I Do Is Win
+Pharrell Williams | Happy
+Cher | Believe
+Aqua | Barbie Girl
+Baha Men | Who Let the Dogs Out
+The Isley Brothers | Shout
+Chubby Checker | The Twist
+Flo Rida | Low
+LMFAO | Party Rock Anthem
+Tag Team | Whoomp! (There It Is)
+Montell Jordan | This Is How We Do It`,
+"Disco & Funk": `
+Kool & The Gang | Get Down On It
+Sister Sledge | He's the Greatest Dancer
+The Trammps | Disco Inferno
+KC and the Sunshine Band | Get Down Tonight
+Barry White | Can't Get Enough of Your Love, Babe
+Anita Ward | Ring My Bell
+Parliament | Give Up the Funk
+Sly & The Family Stone | Everyday People
+The Gap Band | Outstanding
+Cameo | Word Up!
+Chaka Khan | I'm Every Woman
+ABBA | Dancing Queen`,
+"Emo & Pop Punk": `
+Sum 41 | Fat Lip
+Simple Plan | I'm Just a Kid
+The All-American Rejects | Dirty Little Secret
+Jimmy Eat World | The Middle
+Taking Back Sunday | MakeDamnSure
+Fall Out Boy | Thnks fr th Mmrs
+My Chemical Romance | Welcome to the Black Parade
+Paramore | Ain't It Fun
+Avril Lavigne | Sk8er Boi
+Good Charlotte | Lifestyles of the Rich & Famous
+The Offspring | Pretty Fly (for a White Guy)
+Green Day | American Idiot`,
+"EDM & Club": `
+Avicii | Wake Me Up
+Calvin Harris | Summer
+Calvin Harris | This Is What You Came For
+Major Lazer | Lean On
+Kygo | Firestone
+Clean Bandit | Rather Be
+Fred again.. | Delilah (pull me out of this)
+Axwell Λ Ingrosso | More Than You Know
+Alan Walker | Faded
+Zedd | Stay
+Tiësto | Red Lights
+Alesso | Heroes (we could be)`,
+"Oldies & Motown": `
+Sam Cooke | Wonderful World
+The Beatles | Twist and Shout
+Marvin Gaye | I Heard It Through the Grapevine
+Four Tops | I Can't Help Myself (Sugar Pie Honey Bunch)
+Smokey Robinson & The Miracles | The Tracks of My Tears
+Ray Charles | Hit the Road Jack
+Louis Armstrong | What a Wonderful World
+Dean Martin | That's Amore
+Percy Sledge | When a Man Loves a Woman
+Ritchie Valens | La Bamba
+Bill Haley & His Comets | Rock Around the Clock
+Little Richard | Tutti Frutti`,
+"Reggae & Island": `
+Bob Marley | One Love
+Bob Marley | Buffalo Soldier
+Bob Marley | Is This Love
+Shaggy | Angel
+Sean Paul | Gimme the Light
+Sean Paul | We Be Burnin'
+Rihanna | Work
+Eddy Grant | Electric Avenue
+Toots & the Maytals | Pressure Drop
+Ini Kamoze | Here Comes the Hotstepper
+Buju Banton | Champion
+Wayne Wonder | No Letting Go`
+};
+const parseSongs = raw => raw.trim().split('\n').map(l => l.split('|').map(s => s.trim()));
+const VIBES = VIBE_RAW.map(([en, es, raw]) => ({ en, es, songs: parseSongs(raw).concat(VIBE_MORE[en] ? parseSongs(VIBE_MORE[en]) : []) }));
+const HOT = parseSongs(`
+Ella Langley | Choosin' Texas
+Ella Langley | Be Her
+Taylor Swift | I Knew It, I Knew You
+Ariana Grande | Hate That I Made You Love Me
+Drake | Janice STFU
+Drake & Don Toliver | Solar Eclipse
+Taylor Swift | The Fate of Ophelia
+HUNTR/X | Golden
+Alex Warren | Ordinary
+Sabrina Carpenter | When Did You Get Hot?
+Lady Gaga | The Dead Dance`);
 
-(function renderVibes() {
-  const chips = document.getElementById('vibe-chips');
-  VIBES.forEach((v, i) => {
+const VIBE_FIRST = 8, VIBE_STEP = 8, VIBE_CHIPS_SHOWN = 8;
+let vibeKey = null, vibePool = [], vibeShown = 0;
+const isES = () => document.body.classList.contains('es');
+function vibeTaps() { try { return JSON.parse(localStorage.getItem('vibeTaps') || '{}'); } catch (e) { return {}; } }
+function vibeBump(name) { try { const t = vibeTaps(); t[name] = (t[name] || 0) + 1; localStorage.setItem('vibeTaps', JSON.stringify(t)); } catch (e) {} }
+function vibeShuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+// Album art via the iTunes Search API (JSONP, no key, no YouTube quota). One request at a time.
+let artMem = {};
+try { artMem = JSON.parse(localStorage.getItem('vibeArt') || '{}'); } catch (e) {}
+let artQueue = Promise.resolve();
+function vibeArt(artist, song, el) {
+  const k = artist + '|' + song;
+  const show = u => { if (!u) return; el.style.backgroundImage = 'url("' + u + '")'; el.classList.add('loaded'); };
+  if (artMem[k] !== undefined) { show(artMem[k]); return; }
+  artQueue = artQueue.then(() => new Promise(res => {
+    if (artMem[k] !== undefined) { show(artMem[k]); res(); return; }
+    const cb = 'itcb' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    let t;
+    const end = u => {
+      clearTimeout(t); delete window[cb]; s.remove();
+      if (u !== undefined) { artMem[k] = u; try { localStorage.setItem('vibeArt', JSON.stringify(artMem)); } catch (e) {} }
+      show(u); setTimeout(res, 120);
+    };
+    t = setTimeout(() => end(undefined), 5000);
+    window[cb] = d => { const r = d && d.results && d.results[0]; end(r && r.artworkUrl100 ? r.artworkUrl100.replace('100x100bb', '200x200bb') : ''); };
+    s.onerror = () => end(undefined);
+    s.src = 'https://itunes.apple.com/search?media=music&entity=song&limit=1&term=' + encodeURIComponent(song + ' ' + artist) + '&callback=' + cb;
+    document.head.appendChild(s);
+  }));
+}
+
+function renderVibes() {
+  const wrap = document.getElementById('vibe-chips');
+  const taps = vibeTaps();
+  wrap.innerHTML = '';
+  const mk = (key, en, es, cls) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'vibe-chip';
-    b.dataset.en = v.en; b.dataset.es = v.es;
-    b.textContent = v.en;
+    b.className = 'vibe-chip' + (cls ? ' ' + cls : '');
+    b.dataset.key = key; b.dataset.en = en; b.dataset.es = es;
+    b.textContent = isES() ? es : en;
+    wrap.appendChild(b);
+    return b;
+  };
+  mk('hot', '▲ Recent hits', '▲ Éxitos recientes', 'special').addEventListener('click', () => showVibe('hot'));
+  mk('surprise', '✦ Surprise me', '✦ Sorpréndeme', 'special').addEventListener('click', () => showVibe('surprise'));
+  const mix = mk('mix', '★ My mix', '★ Mi mix', 'special');
+  mix.hidden = !Object.keys(taps).length;
+  mix.addEventListener('click', () => showVibe('mix'));
+  VIBES.map((v, i) => i).sort((a, b) => (taps[VIBES[b].en] || 0) - (taps[VIBES[a].en] || 0)).forEach((i, n) => {
+    const b = mk(i, VIBES[i].en, VIBES[i].es, n >= VIBE_CHIPS_SHOWN ? 'extra' : '');
+    b.hidden = n >= VIBE_CHIPS_SHOWN;
     b.addEventListener('click', () => showVibe(i));
-    chips.appendChild(b);
   });
-})();
+  const more = mk('more', '+ More genres', '+ Más estilos', 'special');
+  more.addEventListener('click', () => {
+    wrap.querySelectorAll('.extra').forEach(c => { c.hidden = false; });
+    more.hidden = true;
+  });
+}
 
-function showVibe(i) {
+function showVibe(key) {
   const chips = document.querySelectorAll('#vibe-chips .vibe-chip');
   const box = document.getElementById('vibe-songs');
-  const alreadyOpen = chips[i].classList.contains('on');
+  const same = vibeKey === key && box.classList.contains('open');
   chips.forEach(c => c.classList.remove('on'));
-  box.innerHTML = '';
   box.classList.remove('open');
-  if (alreadyOpen) return;
-  chips[i].classList.add('on');
-  VIBES[i].songs.forEach(([artist, song]) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'vibe-song';
-    b.textContent = song;
-    const sm = document.createElement('small');
-    sm.textContent = artist;
-    b.appendChild(sm);
-    b.addEventListener('click', () => pickSong(artist, song));
-    box.appendChild(b);
-  });
+  box.innerHTML = '';
+  if (same) { vibeKey = null; return; }
+  vibeKey = key; vibeShown = 0;
+  if (key === 'hot') {
+    vibePool = HOT;
+  } else if (key === 'surprise') {
+    vibePool = vibeShuffle(VIBES.flatMap(v => v.songs)).slice(0, 40);
+  } else if (key === 'mix') {
+    const t = vibeTaps();
+    vibePool = vibeShuffle(VIBES.filter(v => t[v.en]).flatMap(v => v.songs)).slice(0, 40);
+  } else {
+    vibePool = VIBES[key].songs;
+    vibeBump(VIBES[key].en);
+    document.querySelector('#vibe-chips [data-key="mix"]').hidden = false;
+  }
+  document.querySelector('#vibe-chips [data-key="' + key + '"]').classList.add('on');
+  drawVibeSongs(true);
+}
+
+function songRow(artist, song, onPick, delay) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'vibe-song';
+  b.style.animationDelay = delay + 'ms';
+  const art = document.createElement('span');
+  art.className = 'vs-art';
+  art.textContent = '♪';
+  const tx = document.createElement('span');
+  tx.className = 'vs-txt';
+  tx.textContent = song;
+  const sm = document.createElement('small');
+  sm.textContent = artist;
+  tx.appendChild(sm);
+  b.appendChild(art); b.appendChild(tx);
+  b.addEventListener('click', onPick);
+  return { b, art };
+}
+
+function drawVibeSongs(first) {
+  const box = document.getElementById('vibe-songs');
+  const old = box.querySelector('.vibe-more');
+  if (old) old.remove();
+  const end = Math.min(vibeShown + (first ? VIBE_FIRST : VIBE_STEP), vibePool.length);
+  for (let i = vibeShown; i < end; i++) {
+    const [artist, song] = vibePool[i];
+    const r = songRow(artist, song, () => pickSong(artist, song), (i - vibeShown) * 45);
+    box.appendChild(r.b);
+    vibeArt(artist, song, r.art);
+  }
+  vibeShown = end;
+  if (vibeShown < vibePool.length) {
+    const m = document.createElement('button');
+    m.type = 'button';
+    m.className = 'vibe-more';
+    m.dataset.en = '+ More songs'; m.dataset.es = '+ Más canciones';
+    m.textContent = isES() ? m.dataset.es : m.dataset.en;
+    m.addEventListener('click', () => drawVibeSongs(false));
+    box.appendChild(m);
+  }
   box.classList.add('open');
 }
+
+// Lyric search: one YouTube search, only when the guest taps FIND IT. Results show video thumbnails.
+async function findByLyric() {
+  const q = document.getElementById('lyric-q').value.trim();
+  const out = document.getElementById('lyric-results');
+  if (q.length < 3) return;
+  const say = (en, es) => { out.textContent = isES() ? es : en; };
+  if (ytQuotaOut || YT_API_KEY === 'YOUR_API_KEY') { say('Search is maxed out today. Ask the DJ.', 'La búsqueda está llena por hoy. Pregunta al DJ.'); return; }
+  say('Searching…', 'Buscando…');
+  try {
+    const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q=' + encodeURIComponent(q + ' lyrics') + '&key=' + YT_API_KEY);
+    if (!res.ok) {
+      let reason = '';
+      try { const b = await res.json(); reason = (b.error && b.error.errors && b.error.errors[0] && b.error.errors[0].reason) || ''; } catch (_) {}
+      if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') { ytQuotaOut = true; showQuotaOut(); }
+      throw new Error('API ' + res.status);
+    }
+    const items = ((await res.json()).items || []);
+    if (!items.length) { say('No matches. Try different words.', 'Sin resultados. Prueba otras palabras.'); return; }
+    out.innerHTML = '';
+    items.forEach((item, i) => {
+      const title = item.snippet.title;
+      const r = songRow(item.snippet.channelTitle, title, () => pickFromVideo(item), i * 45);
+      r.art.style.backgroundImage = 'url("' + item.snippet.thumbnails.default.url + '")';
+      r.art.classList.add('loaded');
+      out.appendChild(r.b);
+    });
+  } catch (e) {
+    say('Could not search right now. Ask the DJ.', 'No se pudo buscar. Pregunta al DJ.');
+  }
+}
+
+function pickFromVideo(item) {
+  const vid = item.id.videoId, title = item.snippet.title, channel = item.snippet.channelTitle;
+  let song = title.replace(/\s*[\(\[][^\)\]]*(official|lyric|video|audio|visuali[sz]er|hd|4k)[^\)\]]*[\)\]]/gi, '').replace(/\s*\|.*$/, '').trim();
+  let artist = channel.replace(/\s*-\s*Topic$/i, '').replace(/VEVO$/i, '').trim();
+  const parts = song.split(/\s+[-–—]\s+/);
+  if (parts.length > 1) { artist = parts[0].trim(); song = parts.slice(1).join(' - ').trim(); }
+  song = song.replace(/\s*lyrics?\s*$/i, '').trim();
+  pickSong(artist, song);
+  // pickSong's input events reset the match; set the chosen video after so NEXT skips a second search.
+  songFound = true; ytVideoId = vid; ytFinalTitle = title; ytFinalChannel = channel;
+  ytFinalThumb = 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg';
+}
+
+renderVibes();
 
 // Fills the form but does NOT search. goToStep2() runs the single YouTube
 // match when the guest taps NEXT, so browsing vibes costs no quota.
