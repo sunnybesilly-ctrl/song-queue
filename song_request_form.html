@@ -216,6 +216,31 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 .bl2 { background-position: 8px 0, 8px 100%, 0 8px, 100% 8px; animation-delay: -0.5s; }
 .blink { animation: bl 1.4s steps(1) infinite; }
 @media (prefers-reduced-motion: reduce) { .bl, .blink { animation: none; } .bl2 { display: none; } }
+/* STEP FIELDS (1-2-3) */
+.fill-line { font-family: var(--font-d); font-size: 24px; letter-spacing: 0.1em; color: rgba(255,255,255,0.78); text-align: center; line-height: 1; margin: 2px 0 14px; }
+.field-card.step-card { padding: 10px 16px 10px 14px; }
+.step-row { display: flex; align-items: center; gap: 12px; }
+.step-num { font-family: var(--font-d); font-size: 38px; line-height: 1; color: var(--gold); min-width: 22px; text-align: center; text-shadow: 0 0 18px var(--gold-glow); }
+.step-row .field-input { flex: 1; min-width: 0; }
+.step-row .field-input::placeholder { font-family: var(--font-d); font-size: 25px; letter-spacing: 0.07em; font-weight: 400; color: rgba(255,255,255,0.48); }
+.help-link { display: block; background: none; border: none; padding: 10px 0 2px 34px; min-height: 36px; color: var(--dim); font-family: var(--font-f); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.help-box { display: none; margin: 6px 0 0 34px; }
+.help-box.open { display: block; }
+.help-box div { margin-bottom: 6px; }
+/* VIBE PICKER */
+.help-box .vibe-title { font-family: var(--font-d); font-size: 21px; letter-spacing: 0.07em; color: var(--gold); line-height: 1; margin-bottom: 0; }
+.help-box .vibe-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 10px; }
+.vibe-chip { background: rgba(245,197,24,0.08); border: 1px solid rgba(245,197,24,0.4); color: var(--white); font-family: var(--font-b); font-weight: 700; font-size: 17px; letter-spacing: 0.03em; padding: 8px 13px; min-height: 42px; border-radius: 4px; cursor: pointer; }
+.vibe-chip.on { background: var(--gold); border-color: var(--gold); color: #000; }
+.help-box .vibe-songs { display: none; margin: 0 0 12px; }
+.help-box .vibe-songs.open { display: block; }
+.vibe-song { display: block; width: 100%; text-align: left; background: rgba(255,255,255,0.06); border: none; border-left: 3px solid var(--gold); color: var(--white); font-family: var(--font-b); font-size: 18px; font-weight: 600; line-height: 1.15; padding: 9px 12px; min-height: 48px; margin-bottom: 6px; cursor: pointer; }
+.vibe-song small { display: block; font-family: var(--font-f); font-size: 12px; font-weight: 400; color: var(--dim); margin-top: 2px; }
+.vibe-song:active { background: rgba(245,197,24,0.22); }
+.help-box .help-found { display: block; width: 100%; margin-top: 12px; background: none; border: 1px solid var(--gold); color: var(--gold); font-family: var(--font-d); font-size: 21px; letter-spacing: 0.08em; padding: 11px 12px; min-height: 48px; border-radius: 4px; cursor: pointer; }
+@keyframes vibeFlash { 0% { box-shadow: 0 0 0 rgba(245,197,24,0); } 35% { box-shadow: 0 0 24px rgba(245,197,24,0.6); border-color: var(--gold); } 100% { box-shadow: 0 0 0 rgba(245,197,24,0); } }
+.field-card.flash { animation: vibeFlash 1s ease-out; }
+@media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } }
 </style>
 </head>
 <body>
@@ -240,25 +265,37 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     <div class="free-sub" data-en="NO PAYMENT NEEDED" data-es="NO NECESITAS PAGAR">NO PAYMENT NEEDED</div>
   </div>
 
-  <div class="field-card">
-    <div class="field-label" data-en="YOUR NAME" data-es="TU NOMBRE">YOUR NAME <span class="field-req">*</span></div>
-    <input class="field-input" id="f-name" type="text" placeholder="Type your name..."
-      data-ph-en="Type your name..." data-ph-es="Escribe tu nombre..."
-      autocomplete="given-name" autocorrect="off" spellcheck="false" inputmode="text">
+  <div class="fill-line" data-en="FILL OUT 1, 2, 3" data-es="LLENA 1, 2, 3">FILL OUT 1, 2, 3</div>
+
+  <div class="field-card step-card">
+    <div class="step-row"><span class="step-num">1</span>
+    <input class="field-input" id="f-name" type="text" placeholder="YOUR NAME"
+      data-ph-en="YOUR NAME" data-ph-es="TU NOMBRE"
+      autocomplete="given-name" autocorrect="off" spellcheck="false" inputmode="text"></div>
   </div>
 
-  <div class="field-card">
-    <div class="field-label" data-en="ARTIST" data-es="ARTISTA">ARTIST <span class="field-req">*</span></div>
-    <input class="field-input" id="f-artist" type="text" placeholder="Who's the artist?"
-      data-ph-en="Who's the artist?" data-ph-es="¿Quién es el artista?"
-      autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
+  <div class="field-card step-card">
+    <div class="step-row"><span class="step-num">2</span>
+    <input class="field-input" id="f-artist" type="text" placeholder="ARTIST"
+      data-ph-en="ARTIST" data-ph-es="ARTISTA"
+      autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></div>
   </div>
 
-  <div class="field-card">
-    <div class="field-label" data-en="SONG TITLE" data-es="TÍTULO DE LA CANCIÓN">SONG TITLE <span class="field-req">*</span></div>
-    <input class="field-input" id="f-song" type="text" placeholder="Song title..."
-      data-ph-en="Song title..." data-ph-es="Título de la canción..."
-      autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text">
+  <div class="field-card step-card">
+    <div class="step-row"><span class="step-num">3</span>
+    <input class="field-input" id="f-song" type="text" placeholder="SONG TITLE"
+      data-ph-en="SONG TITLE" data-ph-es="TÍTULO DE LA CANCIÓN"
+      autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></div>
+    <button type="button" class="help-link" onclick="toggleHelp()" data-en="Not sure of the song or artist?" data-es="¿No sabes la canción o el artista?">Not sure of the song or artist?</button>
+    <div class="field-hint help-box" id="help-box">
+      <div class="vibe-title" data-en="Need ideas? Pick a vibe." data-es="¿Necesitas ideas? Elige un estilo.">Need ideas? Pick a vibe.</div>
+      <div class="vibe-chips" id="vibe-chips"></div>
+      <div class="vibe-songs" id="vibe-songs"></div>
+      <div data-en="Check your Spotify, Apple Music or Shazam history. The name and artist are right there." data-es="Revisa tu historial de Spotify, Apple Music o Shazam. Ahí está el nombre y el artista.">Check your Spotify, Apple Music or Shazam history. The name and artist are right there.</div>
+      <div><span data-en="Somewhere quiet?" data-es="¿Un lugar tranquilo?">Somewhere quiet?</span> <a href="https://www.midomi.com" target="_blank" rel="noopener" data-en="Hum it here" data-es="Tararéala aquí">Hum it here</a></div>
+      <div data-en="Still stuck? Ask the DJ." data-es="¿Sigues sin encontrarla? Pregunta al DJ.">Still stuck? Ask the DJ.</div>
+      <button type="button" class="help-found" onclick="foundIt()" data-en="Found it? Enter it here" data-es="¿La encontraste? Escríbela aquí">Found it? Enter it here</button>
+    </div>
     <div class="search-status" id="search-status">🔍 Searching YouTube...</div>
     <div class="yt-results" id="yt-results">
       <div class="yt-results-label">TAP THE CORRECT VERSION ↓</div>
@@ -684,6 +721,119 @@ function showPage(num) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + num).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const VIBES = [
+  { en: "Throwbacks", es: "Clásicos", songs: [
+    ["Whitney Houston", "I Wanna Dance with Somebody"],
+    ["Journey", "Don't Stop Believin'"],
+    ["Earth, Wind & Fire", "September"],
+    ["Michael Jackson", "Billie Jean"],
+    ["Bon Jovi", "Livin' on a Prayer"],
+    ["Cyndi Lauper", "Girls Just Want to Have Fun"] ] },
+  { en: "Hip-Hop", es: "Hip-Hop", songs: [
+    ["The Notorious B.I.G.", "Hypnotize"],
+    ["Kendrick Lamar", "HUMBLE."],
+    ["OutKast", "Hey Ya!"],
+    ["Snoop Dogg", "Gin and Juice"],
+    ["50 Cent", "In Da Club"],
+    ["Dr. Dre", "Still D.R.E."] ] },
+  { en: "Reggaeton", es: "Reggaetón", songs: [
+    ["Daddy Yankee", "Gasolina"],
+    ["Bad Bunny", "Tití Me Preguntó"],
+    ["Don Omar", "Danza Kuduro"],
+    ["Luis Fonsi", "Despacito"],
+    ["J Balvin", "Mi Gente"],
+    ["Karol G", "Tusa"] ] },
+  { en: "Tejano & Latin", es: "Tejano y Latino", songs: [
+    ["Selena", "Como la Flor"],
+    ["Selena", "Bidi Bidi Bom Bom"],
+    ["Selena", "Baila Esta Cumbia"],
+    ["Little Joe y La Familia", "Las Nubes"],
+    ["Los Lobos", "La Bamba"],
+    ["Celia Cruz", "La Vida Es un Carnaval"] ] },
+  { en: "Country", es: "Country", songs: [
+    ["Garth Brooks", "Friends in Low Places"],
+    ["Luke Combs", "Beer Never Broke My Heart"],
+    ["Shania Twain", "Man! I Feel Like a Woman!"],
+    ["Johnny Cash", "Ring of Fire"],
+    ["George Strait", "All My Ex's Live in Texas"],
+    ["Chris Stapleton", "Tennessee Whiskey"] ] },
+  { en: "Pop & Dance", es: "Pop y Baile", songs: [
+    ["Dua Lipa", "Levitating"],
+    ["The Weeknd", "Blinding Lights"],
+    ["Mark Ronson", "Uptown Funk"],
+    ["Lizzo", "Good as Hell"],
+    ["Taylor Swift", "Shake It Off"],
+    ["Harry Styles", "As It Was"] ] }
+];
+
+(function renderVibes() {
+  const chips = document.getElementById('vibe-chips');
+  VIBES.forEach((v, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'vibe-chip';
+    b.dataset.en = v.en; b.dataset.es = v.es;
+    b.textContent = v.en;
+    b.addEventListener('click', () => showVibe(i));
+    chips.appendChild(b);
+  });
+})();
+
+function showVibe(i) {
+  const chips = document.querySelectorAll('#vibe-chips .vibe-chip');
+  const box = document.getElementById('vibe-songs');
+  const alreadyOpen = chips[i].classList.contains('on');
+  chips.forEach(c => c.classList.remove('on'));
+  box.innerHTML = '';
+  box.classList.remove('open');
+  if (alreadyOpen) return;
+  chips[i].classList.add('on');
+  VIBES[i].songs.forEach(([artist, song]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'vibe-song';
+    b.textContent = song;
+    const sm = document.createElement('small');
+    sm.textContent = artist;
+    b.appendChild(sm);
+    b.addEventListener('click', () => pickSong(artist, song));
+    box.appendChild(b);
+  });
+  box.classList.add('open');
+}
+
+// Fills the form but does NOT search. goToStep2() runs the single YouTube
+// match when the guest taps NEXT, so browsing vibes costs no quota.
+function pickSong(artist, song) {
+  const n = document.getElementById('f-name');
+  const a = document.getElementById('f-artist');
+  const s = document.getElementById('f-song');
+  a.value = artist; s.value = song;
+  a.style.borderBottomColor = ''; s.style.borderBottomColor = '';
+  a.dispatchEvent(new Event('input')); s.dispatchEvent(new Event('input'));
+  document.getElementById('error-1').classList.remove('visible');
+  document.getElementById('help-box').classList.remove('open');
+  [a, s].forEach(el => {
+    const c = el.closest('.field-card');
+    c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+  });
+  if (!n.value.trim()) { n.focus(); }
+  else { document.getElementById('btn-next').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+}
+
+// Guest found the song elsewhere (Shazam, Spotify, midomi): jump to the first empty field.
+function foundIt() {
+  document.getElementById('help-box').classList.remove('open');
+  const fields = ['f-name', 'f-artist', 'f-song'].map(id => document.getElementById(id));
+  const target = fields.find(el => !el.value.trim()) || fields[2];
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  target.focus();
+}
+
+function toggleHelp() {
+  document.getElementById('help-box').classList.toggle('open');
 }
 
 function setLang(lang) {
