@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DJ Console">
+<title>DJ Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--pitch:#07140d;--moss:#12301e;--gold:#f5c542;--red:#ff4d3d;--chalk:#f1ead2;--dim:#8fa597}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--pitch);color:var(--chalk);font-family:'Barlow Condensed','Arial Narrow',sans-serif}
+body{min-height:100vh;padding-bottom:calc(env(safe-area-inset-bottom) + 24px);
+  background:repeating-linear-gradient(135deg,transparent 0 14px,rgba(245,197,66,.04) 14px 15px)}
+#band{position:sticky;top:0;z-index:5;padding:calc(env(safe-area-inset-top) + 12px) 16px 12px 22px;
+  background:var(--moss);border-bottom:6px solid var(--dim)}
+#band.locked{background:var(--gold);color:#201a00;border-bottom-color:var(--red)}
+#bandTitle{font-family:'Bungee',sans-serif;font-size:21px;line-height:1.1;overflow-wrap:anywhere}
+#bandHint{font-size:19px;font-weight:700;margin-top:6px;line-height:1.15}
+#bandLive{font-size:16px;font-weight:500;margin-top:6px;opacity:.8}
+#bandLive.off{color:var(--red);opacity:1;font-weight:800}
+#band.locked #bandLive.off{color:#8a1208}
+.row{position:relative;padding:13px 16px 13px 22px;border-bottom:1px solid rgba(241,234,210,.14);cursor:pointer}
+.row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--dim)}
+.row.next::before{background:var(--gold)}
+.row.late::before{background:var(--red)}
+.t{font-size:26px;font-weight:800;line-height:1.05;overflow-wrap:anywhere}
+.s{font-size:18px;font-weight:500;color:var(--dim);margin-top:2px}
+.tag{display:inline-block;margin-right:8px;padding:0 7px;font-weight:800;font-size:16px;color:var(--chalk);background:var(--red)}
+.tag.nx{background:var(--gold);color:#201a00}
+.acts{display:none;gap:8px;margin-top:12px}
+.row.open .acts{display:flex}
+.acts button,.acts a{flex:1;min-height:48px;display:flex;align-items:center;justify-content:center;border:2px solid var(--chalk);
+  background:transparent;color:var(--chalk);font:800 19px 'Barlow Condensed','Arial Narrow',sans-serif;text-decoration:none;border-radius:0}
+.acts .go{background:var(--gold);border-color:var(--gold);color:#201a00}
+.fresh{animation:ping 1.8s ease-out 1}
+@keyframes ping{0%{background:rgba(245,197,66,.45)}100%{background:transparent}}
+.empty{padding:28px 22px;font-size:22px;font-weight:700;color:var(--dim)}
+#doneBox{margin-top:18px}
+#doneBox summary{padding:12px 22px;font-size:20px;font-weight:800;color:var(--dim);cursor:pointer}
+.row.played .t{font-size:20px;color:var(--dim);text-decoration:line-through}
+.row.played::before{background:var(--moss)}
+.row.played .acts{display:flex}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.fresh{animation:none}}
+</style>
+</head>
+<body>
+<header id="band"><div id="bandTitle"></div><div id="bandHint"></div><div id="bandLive"></div></header>
+<main id="list"></main>
+<details id="doneBox"><summary id="doneSum"></summary><div id="done"></div></details>
+<script>
+(function(){
+const URL_='https://script.google.com/macros/s/AKfycbwOl2qF3bAl5yWNolDvYlN0Thgp93jgJAQuUB7lphpw5xEqY5tdHMFjxR4VskzsWXnTvA/exec';
+const POLL=4000;
+const NAME=["WHAT’S YOUR NAME?","WHAT'S YOUR NAME?","What’s your name?","What's your name?","YOUR NAME","Your Name","Name","name"];
+const ART=["WHO’S THE ARTIST?","WHO'S THE ARTIST?","Who’s the artist?","Who's the artist?","Artist","artist","ARTIST","Artist Name","Band"];
+const SONG=["SONG TITLE?","Song Title?","SONG TITLE","Song Title","Song","song","SONG","Track","track"];
+const VID=["Video ID","video id","videoId","VIDEO ID","VideoID","video_id","Youtube ID","YouTube ID"];
+const $=id=>document.getElementById(id);
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const pick=(o,keys)=>{for(const k of keys){const v=(o[k]||'').toString().trim();if(v&&!/^\d{4}-\d{2}-\d{2}T/.test(v))return v}return''};
+const pickVid=o=>{for(const k of VID){const v=(o[k]||'').toString().trim();if(/^[a-zA-Z0-9_-]{11}$/.test(v))return v}return''};
+const ago=t=>{if(!t)return'';const s=Math.max(0,Math.round((Date.now()-t)/1000));
+  return s<60?s+'s ago':s<3600?Math.floor(s/60)+'m ago':Math.floor(s/3600)+'h ago'};
+
+let played=new Set(load('dj_played',[])),lock=load('dj_lock',null);
+let songs=[],seen=null,openKey=null,lastOk=0,offline=false,sig='',waiting=0;
+const fresh={},animated=new Set();
+
+function norm(o){
+  const ts=o.Timestamp||o.timestamp||o.TIMESTAMP||'';
+  const t=ts?new Date(ts).getTime():0;
+  const vid=pickVid(o),artist=pick(o,ART),song=pick(o,SONG),name=pick(o,NAME);
+  return{key:ts+'|'+(vid||artist+song),t:isNaN(t)?0:t,vid,artist,song,name};
+}
+
+function render(){
+  const wait=songs.filter(s=>!played.has(s.key));
+  const done=songs.filter(s=>played.has(s.key));
+  waiting=wait.length;
+  if(lock&&!wait.some(s=>s.key===lock.key)){lock=null;save('dj_lock',null)}
+  const lockS=lock?wait.find(s=>s.key===lock.key):null;
+  const isLate=s=>lock&&s.key!==lock.key&&s.t>lock.at;
+  const late=wait.filter(isLate).length;
+
+  $('band').className=lockS?'locked':'';
+  $('bandTitle').textContent=lockS?'Next: '+(lockS.song||lockS.artist):'Nothing locked yet';
+  $('bandHint').textContent=lockS
+    ?(late?late+(late===1?' request arrived':' requests arrived')+' after your lock. They play after this one.':'Everything so far made it in time.')
+    :'Tap a song, then lock it the moment you commit to it. Anything that lands later is marked late.';
+
+  const list=$('list');list.textContent='';
+  if(!wait.length)list.append(el('div','empty','Queue is clear. New requests show up here within seconds.'));
+  wait.forEach(s=>list.append(rowFor(s,isLate(s))));
+
+  const dn=$('done');dn.textContent='';
+  $('doneBox').style.display=done.length?'':'none';
+  $('doneSum').textContent='Played ('+done.length+')';
+  done.slice().reverse().forEach(s=>{
+    const d=el('div','row played');
+    d.append(el('div','t',(s.song||'Untitled')+(s.artist?' — '+s.artist:'')));
+    const acts=el('div','acts');
+    const b=el('button','','Put back');
+    b.onclick=()=>{played.delete(s.key);save('dj_played',[...played]);render()};
+    acts.append(b);d.append(acts);dn.append(d);
+  });
+  tickMeta();
+}
+
+function rowFor(s,late){
+  const isNext=lock&&lock.key===s.key;
+  const d=el('div','row'+(isNext?' next':'')+(late?' late':'')+(openKey===s.key?' open':''));
+  if(fresh[s.key]>Date.now()&&!animated.has(s.key)){d.classList.add('fresh');animated.add(s.key)}
+  d.append(el('div','t',s.song||'Untitled request'));
+  if(s.artist)d.append(el('div','s',s.artist));
+  const m=el('div','s');
+  if(isNext)m.append(el('span','tag nx','Locked next'));
+  if(late)m.append(el('span','tag','Late'));
+  m.append(document.createTextNode(s.name?'from '+s.name+', ':''));
+  const a=el('span','ago',ago(s.t));a.dataset.t=s.t;m.append(a);
+  d.append(m);
+
+  const acts=el('div','acts');
+  const lk=el('button',isNext?'':'go',isNext?'Unlock':'Lock as next');
+  lk.onclick=e=>{e.stopPropagation();lock=isNext?null:{key:s.key,at:Date.now()};save('dj_lock',lock);render()};
+  const yt=el('a','','Open in YouTube');
+  yt.href=s.vid?'https://www.youtube.com/watch?v='+s.vid:'https://www.youtube.com/results?search_query='+encodeURIComponent((s.artist+' '+s.song).trim());
+  yt.target='_blank';yt.rel='noopener';yt.onclick=e=>e.stopPropagation();
+  const pl=el('button','','Played');
+  pl.onclick=e=>{e.stopPropagation();played.add(s.key);if(lock&&lock.key===s.key){lock=null;save('dj_lock',null)}save('dj_played',[...played]);render()};
+  acts.append(lk,yt,pl);d.append(acts);
+  d.onclick=()=>{openKey=openKey===s.key?null:s.key;render()};
+  return d;
+}
+
+function tickMeta(){
+  const live=$('bandLive');
+  if(offline){live.className='off';live.textContent='Offline. Showing the last list, retrying every few seconds.'}
+  else{live.className='';live.textContent=waiting+' waiting. Live, updated '+Math.max(0,Math.round((Date.now()-lastOk)/1000))+'s ago.'}
+  document.querySelectorAll('.ago').forEach(e=>{e.textContent=ago(+e.dataset.t)});
+}
+
+async function tick(){
+  try{
+    const r=await fetch(URL_,{redirect:'follow',cache:'no-store'});
+    const raw=await r.json();
+    if(!Array.isArray(raw))throw new Error('bad payload');
+    const today=new Date().toDateString();
+    songs=raw.map(norm).filter(s=>(s.artist||s.song)&&(!s.t||new Date(s.t).toDateString()===today)).sort((a,b)=>a.t-b.t);
+    const keys=songs.map(s=>s.key);
+    if(seen===null){seen=new Set(keys)}
+    else keys.forEach(k=>{if(!seen.has(k)){seen.add(k);fresh[k]=Date.now()+8000}});
+    lastOk=Date.now();offline=false;
+  }catch(e){offline=true}
+  const ns=songs.map(s=>s.key).join('~');
+  if(ns!==sig){sig=ns;render()}else tickMeta();
+}
+
+render();tick();
+setInterval(tick,POLL);
+setInterval(tickMeta,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});
+})();
+</script>
+</body>
+</html>
