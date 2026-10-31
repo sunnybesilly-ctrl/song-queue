@@ -67,7 +67,7 @@
     .header {
       background: rgba(0,0,0,0.65);
       
-      padding: 18px 40px;
+      padding: 12px 40px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -80,28 +80,29 @@
 
     /* ==========================================================
        HEADER TITLE TEXT
-       The "✨ SONG REQUESTS ✨" text in the center of the header.
-       font-size: 40px — change this to make the title bigger/smaller.
-       
-      font-weight: 700;
+       The "JUKEBOX" text in the center of the header.
+       font-size: 64px — change this to make the title bigger/smaller.
+       Static glow (no animation) so it stays crisp on the projector.
+    ========================================================== */
+    .title {
+      font-size: 64px;
+      font-weight: 900;
+      line-height: 1.05;
       color: #FFD700;
-      letter-spacing: 3px;
+      letter-spacing: 5px;
       text-align: center;
-      text-shadow: 0 0 20px rgba(255,215,0,0.6), 3px 3px 6px rgba(0,0,0,0.8);
-      
+      text-shadow: 0 0 22px rgba(255,215,0,0.55), 0 4px 0 rgba(0,0,0,0.85);
     }
 
     .title-sub {
-      font-family: -apple-system, sans-serif;
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 30px;
+      font-weight: 800;
       letter-spacing: 1px;
       color: #FF7AC6;
       text-transform: lowercase;
-      text-shadow: 0 0 14px rgba(255,122,198,0.6);
-      margin-top: -2px;
+      text-shadow: 0 3px 0 rgba(0,0,0,0.85);
     }
-    .title-sub em { color: #FFD700; font-style: italic; font-weight: 700; }
+    .title-sub em { color: #FFD700; font-style: italic; font-weight: 900; }
 
     /* ==========================================================
        NEON PULSE ANIMATION
@@ -133,14 +134,17 @@
        font-size: 26px — change to make the number bigger/smaller.
     ========================================================== */
     .total-stat {
-      background: linear-gradient(135deg, #FFD700, #c8102e);
-      color: #fff;
-      padding: 6px 18px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 26px;
-      box-shadow: 0 0 20px rgba(255,215,0,0.4), 0 4px 12px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: #000;
+      border: 4px solid #FFD700;
+      border-radius: 10px;
+      padding: 6px 22px 6px 20px;
+      box-shadow: 0 0 0 3px #c8102e;
     }
+    .ts-num   { font-size: 78px; font-weight: 900; line-height: 1; color: #FFD700; font-variant-numeric: tabular-nums; min-width: 1ch; text-align: center; }
+    .ts-label { font-size: 28px; font-weight: 900; line-height: 1.1; color: #fff; letter-spacing: 3px; text-transform: uppercase; text-align: left; }
 
     /* ==========================================================
        LIVE GREEN DOT
@@ -149,8 +153,8 @@
        animation: pulse 2s — speed of the pulse blink.
     ========================================================== */
     .dot {
-      width: 14px;
-      height: 14px;
+      width: 24px;
+      height: 24px;
       background: #00ff00;
       border-radius: 50%;
       animation: pulse 2s infinite;
@@ -169,12 +173,14 @@
     .header-date {
       position: absolute;
       left: 40px;
-      font-size: 20px;
-      font-weight: 600;
-      color: rgba(255,215,0,0.75);
-      letter-spacing: 2px;
-      font-style: italic;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
+    .hd-day  { font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: 3px; text-transform: uppercase; color: #FFD700; text-shadow: 0 3px 0 rgba(0,0,0,0.9); }
+    .hd-date { font-size: 34px; font-weight: 800; line-height: 1.1; letter-spacing: 1px; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,0.9); }
 
     /* ==========================================================
        SCANLINE OVERLAY ANIMATION
@@ -229,7 +235,13 @@
       overflow: hidden;
       padding: 10px 20px;
       contain: layout style;
+      position: relative;
     }
+    /* soft dark edges so cards slide in/out instead of being clipped hard */
+    .ticker-fade { position: absolute; top: 0; bottom: 0; width: 90px; z-index: 2; pointer-events: none; }
+    .ticker-fade.l { left: 0;  background: linear-gradient(90deg,  rgba(0,0,0,0.6), rgba(0,0,0,0)); }
+    .ticker-fade.r { right: 0; background: linear-gradient(270deg, rgba(0,0,0,0.6), rgba(0,0,0,0)); }
+    .ticker-wrapper.is-static { animation: none !important; transform: none !important; margin: 0 auto; padding-right: 0; }
 
     /* ==========================================================
        TICKER WRAPPER
@@ -242,16 +254,18 @@
     ========================================================== */
     .ticker-wrapper {
       display: flex;
-      animation: scroll 45s linear infinite; /* SPEED CONTROL: 45s = faster scroll. Lower = faster, Higher = slower */
+      animation: scroll 45s linear infinite; /* fallback only — JS sets exact speed (see TICKER_* constants in JS) */
       gap: 32px;
+      flex: 0 0 auto;        /* never shrink: keeps the loop seam exact */
+      padding-right: 32px;   /* trailing gap so both halves are identical length */
       align-items: center;
       will-change: transform;
       transform: translateZ(0);
       backface-visibility: hidden;
     }
     @keyframes scroll {
-      0%   { transform: translateX(0) translateZ(0); }
-      100% { transform: translateX(-50%) translateZ(0); }
+      0%   { transform: translate3d(0,0,0); }
+      100% { transform: translate3d(var(--tp, -50%),0,0); }
     }
     /* The duplicate card set is transparent to the flex layout on desktop
        (so the seamless scroll still works), but can be hidden on mobile. */
@@ -363,100 +377,81 @@
     .card-song      { font-size: 40px; font-weight: 700; color: #fff; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .card-artist    { font-size: 32px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .card-hype      { font-size: 26px; font-style: italic; color: rgba(255,255,255,0.75); line-height: 1.3; }
-    .card-meta      { font-size: 22px; color: rgba(255,255,255,0.5); letter-spacing: 1px; font-weight: 700; }
+    .card-meta      { font-size: 22px; color: rgba(255,255,255,0.85); letter-spacing: 1px; font-weight: 700; }
 
     /* ==========================================================
        QR CODE FOOTER
-       The black bar at the bottom with 4 QR codes.
-       padding: 12px 16px — top/bottom and left/right padding.
-       border-top: 4px solid #FFD700 — the gold top border.
-       box-shadow: 0 -2px 0 #c8102e — the red line above the gold.
-       gap: 8px — spacing between each QR section.
+       Black bar at the bottom: a one-line "how to" strip on top,
+       then 4 colour-coded codes. Each code says WHAT TO DO in big
+       letters (REQUEST / JOIN / TIP / FOLLOW) above the code.
+       Colours: set --c on .q-req / .q-chat / .q-tip / .q-snap.
+       QR SIZE: change width/height on .qr-code (all 4 stay equal).
     ========================================================== */
     .qr-footer {
-      background: rgba(0,0,0,0.75);
-      
+      background: rgba(0,0,0,0.85);
       border-top: 4px solid #FFD700;
-      box-shadow: 0 -2px 0 #c8102e, 0 -8px 40px rgba(255,215,0,0.15);
-      /* padding: top/bottom side — increase side padding to give QR codes breathing room */
-      padding: 10px 12px;
+      box-shadow: 0 -2px 0 #c8102e;
       display: flex;
-      justify-content: space-evenly;
-      align-items: center;
-      /* gap: space between each QR section */
-      gap: 8px;
+      flex-direction: column;
       overflow: hidden;
     }
-
-    /* ==========================================================
-       INDIVIDUAL QR SECTION
-       Each of the 4 columns in the QR footer (image + label).
-       flex: 1 — each section takes equal width automatically.
-       All 4 are always perfectly symmetrical.
-    ========================================================== */
+    .qr-howto {
+      background: #FFD700;
+      color: #000;
+      text-align: center;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 12px;
+      white-space: nowrap;
+    }
+    .qr-row {
+      display: flex;
+      justify-content: space-evenly;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px 10px;
+    }
     .qr-section {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
+      gap: 4px;
       flex: 1;
       min-width: 0;
-      max-width: 25%; /* never wider than 1/4 of the footer */
-      padding: 0;
-      overflow: hidden;
+      max-width: 25%;
     }
-
-    /* ==========================================================
-       QR CODE IMAGE
-       The actual QR code square image.
-       SIZE CONTROL: change both min() values to resize all 4 QR codes.
-         Current: min(260px, calc(460.8px - 10px))
-         Bigger:  min(300px, calc(480px - 10px))
-         Smaller: min(200px, calc(422.4px - 20px))
-       All 4 QR codes use this same class so they stay equal/symmetrical.
-       object-fit: cover fills the square without distortion.
-    ========================================================== */
+    .qr-verb { font-size: 44px; font-weight: 900; line-height: 1; letter-spacing: 2px; color: var(--c); text-shadow: 0 3px 0 rgba(0,0,0,0.9); white-space: nowrap; }
+    .qr-noun { font-size: 28px; font-weight: 900; line-height: 1; letter-spacing: 2px; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,0.9); white-space: nowrap; margin-bottom: 4px; }
+    .qr-wrap { position: relative; }
     .qr-code {
-      /* SIZE CONTROL: change min(240px...) to resize all 4 QR codes equally.
-         Formula: left panel ≈ 57% of viewport. Divide by 4 codes minus gaps.
-         268.8px = ~268px on 1920 wide. -20px accounts for padding and borders.
-         Decrease 268.8px if still overlapping. Increase 240px cap for bigger QR. */
-      width:  min(240px, calc(268.8px - 20px));
-      height: min(240px, calc(268.8px - 20px));
+      display: block;
+      width: 244px;
+      height: 244px;
       background: white;
-      padding: 5px;
+      padding: 6px;
       border-radius: 10px;
-      border: 3px solid #FFD700;
-      box-shadow: 0 0 20px rgba(255,215,0,0.5), 0 4px 16px rgba(0,0,0,0.6);
-      transition: all 0.3s;
-      flex-shrink: 0;
+      border: 6px solid var(--c);
       object-fit: cover;
     }
-    .qr-code:hover {
-      transform: scale(1.06);
-      box-shadow: 0 0 35px rgba(255,215,0,0.9);
-    }
-
-    /* ==========================================================
-       QR LABEL TEXT
-       The caption under each QR code (REQUEST SONG, ENTER CHAT etc).
-       font-size: clamp(11px, 23.04px, 18px) — scales with screen width.
-         First value: minimum size. Last value: maximum size.
-       white-space: nowrap — prevents labels from wrapping to 2 lines.
-    ========================================================== */
-    .qr-label {
-      font-size: clamp(11px, 23.04px, 18px);
-      color: #FFD700;
+    .qr-tag {
+      background: var(--c);
+      color: #000;
+      font-size: 24px;
       font-weight: 900;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      text-shadow: 0 0 12px rgba(255,215,0,0.8);
-      text-align: center;
+      line-height: 1;
+      letter-spacing: 2px;
+      padding: 6px 16px;
+      border-radius: 6px;
       white-space: nowrap;
-      line-height: 1.2;
-      width: 100%;
+      margin-bottom: 6px;
     }
+    .qr-sub { font-size: 32px; font-weight: 900; line-height: 1.1; letter-spacing: 2px; color: var(--c); text-shadow: 0 3px 0 rgba(0,0,0,0.9); white-space: nowrap; }
+    .q-req  { --c: #FFD700; }
+    .q-chat { --c: #FF7AC6; }
+    .q-tip  { --c: #5CFF9D; }
+    .q-snap { --c: #6DD5FF; }
 
     /* ==========================================================
        PARTY CHAT PANEL (RIGHT SIDE)
@@ -529,7 +524,7 @@
       from { opacity: 0; transform: translateX(30px); }
       to   { opacity: 1; transform: translateX(0); }
     }
-    .chat-header-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+    .chat-header-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 6px; }
 
     /* ==========================================================
        CHAT TEXT SIZES
@@ -538,8 +533,8 @@
        chat-text: The message body. font-size: 30px
        Change these font-sizes to resize chat text globally.
     ========================================================== */
-    .chat-name { font-size: 38px; font-weight: 900; }
-    .chat-time { font-size: 22px; color: #FFD700; font-weight: 700; }
+    .chat-name { font-size: 38px; font-weight: 900; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-time { flex-shrink: 0; font-size: 34px; font-weight: 900; line-height: 1; color: #FFD700; background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 8px; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
     .chat-text { font-size: 30px; color: #fff; line-height: 1.5; font-weight: 700; }
 
     /* ==========================================================
@@ -562,7 +557,7 @@
     .user-5 { background: linear-gradient(135deg,rgba(14,165,233,.25),rgba(2,132,199,.15)); border-left: 4px solid #0ea5e9; }
     .user-5 .chat-name { color:#7dd3fc; }
 
-    .empty-state { text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.4); font-size: 18px; }
+    .empty-state { text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.8); font-size: 40px; font-weight: 800; white-space: nowrap; }
 
     /* ==========================================================
        GHOST BUBBLE
@@ -679,7 +674,6 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100% !important; overfl
 .paint-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.15; background: radial-gradient(circle at 12% 15%, #c8102e 0 95px, transparent 96px), radial-gradient(circle at 88% 20%, #c8102e 0 110px, transparent 111px), radial-gradient(circle at 85% 85%, #c8102e 0 100px, transparent 101px); }
 #notesCanvas { display: none !important; }
 .chat-section { background: rgba(0,0,0,0.72) !important; }
-.qr-footer { background: rgba(0,0,0,0.85) !important; }
 </style>
 <link rel="apple-touch-icon" href="icon-lite.png">
 <link rel="icon" type="image/png" href="icon-lite.png">
@@ -724,11 +718,11 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
         <div class="title" id="mainTitle">🎶 JUKEBOX 🎶</div>
         <div class="title-sub">↳ where <em>you're</em> in control</div>
         <!-- Time slot category label — updates automatically based on current time -->
-        <div id="slotLabel" style="font-family:-apple-system,sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;color:rgba(255,215,0,0.7);text-transform:uppercase;text-shadow:0 0 12px rgba(255,215,0,0.4);"></div>
+<div id="slotLabel" style="font-size:32px;font-weight:900;letter-spacing:4px;text-transform:uppercase;line-height:1.1;text-shadow:0 3px 0 rgba(0,0,0,0.9);"></div>
       </div>
       <div class="header-date" id="headerDate"></div>
       <div class="header-right">
-        <div class="total-stat" id="totalCount">0</div>
+        <div class="total-stat"><span class="ts-num" id="totalCount">0</span><span class="ts-label">Songs<br>Tonight</span></div>
         <div class="dot"></div>
       </div>
     </div>
@@ -749,6 +743,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 
         <!-- Scrolling song cards -->
         <div class="ticker-section">
+          <div class="ticker-fade l"></div><div class="ticker-fade r"></div>
           <div class="ticker-wrapper" id="tickerWrapper">
             <div class="empty-state">Loading queue…</div>
           </div>
@@ -764,35 +759,61 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
         ==================================================== -->
         <div class="qr-footer">
 
-          <!-- QR 1: Request Song → custom song request form -->
-          <div class="qr-section">
-            <img class="qr-code"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html"
-              alt="Request Song">
-            <div class="qr-label">Request Song</div>
-          </div>
+          <div class="qr-howto">📷 Point your phone camera at a code → tap the link</div>
 
-          <!-- QR 2: Enter Chat → party chat form -->
-          <div class="qr-section">
-            <img class="qr-code"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html"
-              alt="Enter Chat">
-            <div class="qr-label">Enter Chat</div>
-          </div>
+          <div class="qr-row">
 
-          <!-- QR 3: CashApp tip -->
-          <div class="qr-section">
-            <img class="qr-code"
-              src="https://cash.app/qr/$SunnyAubade?size=400&margin=0&format=png"
-              alt="Cashapp">
-            <div class="qr-label">$sunnyaubade</div>
-          </div>
+            <!-- QR 1: Request Song → custom song request form -->
+            <div class="qr-section q-req">
+              <div class="qr-tag">★ START HERE ★</div>
+              <div class="qr-verb">REQUEST</div>
+              <div class="qr-noun">A SONG</div>
+              <div class="qr-wrap">
+                <img class="qr-code"
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html"
+                  alt="Request Song">
+              </div>
+              <div class="qr-sub">FREE</div>
+            </div>
 
-          <!-- QR 4: Snapchat — actual photo QR embedded as base64 -->
-          <div class="qr-section">
-            <img class="qr-code" id="snapQR" alt="Snapchat">
-            <div class="qr-label">@eatitall</div>
-          </div>
+            <!-- QR 2: Enter Chat → party chat form -->
+            <div class="qr-section q-chat">
+              <div class="qr-tag">SAY HI 👋</div>
+              <div class="qr-verb">JOIN</div>
+              <div class="qr-noun">THE CHAT</div>
+              <div class="qr-wrap">
+                <img class="qr-code"
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html"
+                  alt="Enter Chat">
+              </div>
+              <div class="qr-sub">FREE</div>
+            </div>
+
+            <!-- QR 3: CashApp tip -->
+            <div class="qr-section q-tip">
+              <div class="qr-tag">OPTIONAL</div>
+              <div class="qr-verb">TIP</div>
+              <div class="qr-noun">THE DJ</div>
+              <div class="qr-wrap">
+                <img class="qr-code"
+                  src="https://cash.app/qr/$SunnyAubade?size=400&margin=0&format=png"
+                  alt="Cashapp">
+              </div>
+              <div class="qr-sub">$sunnyaubade</div>
+            </div>
+
+            <!-- QR 4: Snapchat — actual photo QR embedded as base64 -->
+            <div class="qr-section q-snap">
+              <div class="qr-tag">STAY IN TOUCH</div>
+              <div class="qr-verb">FOLLOW</div>
+              <div class="qr-noun">ON SNAPCHAT</div>
+              <div class="qr-wrap">
+                <img class="qr-code" id="snapQR" alt="Snapchat">
+              </div>
+              <div class="qr-sub">@eatitall</div>
+            </div>
+
+          </div><!-- end qr-row -->
 
         </div><!-- end qr-footer -->
 
@@ -1099,17 +1120,91 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
     // Builds the HTML for all song cards and injects into ticker.
     // Cards are doubled so the scroll loop is seamless (no jump).
     // ==========================================================
+    // ----------------------------------------------------------
+    // TICKER SPEED (all in the same place so they are easy to tweak)
+    //   TICKER_LOOP_SECONDS : ideal time for one full loop of all cards
+    //   TICKER_MIN_PXS      : never scroll slower than this (px/sec)
+    //   TICKER_MAX_PXS      : never scroll faster than this (px/sec)
+    // Speed is now measured in px/sec, so a card moves at the same
+    // readable pace whether there are 3 songs or 30.
+    // ----------------------------------------------------------
+    const TICKER_LOOP_SECONDS = 45;
+    const TICKER_MIN_PXS      = 90;
+    const TICKER_MAX_PXS      = 240;
+    let _tickerSig    = "";   // fingerprint of what is on screen
+    let _tickerPeriod = 0;    // px length of one set of cards
+
+    function _tickerOffsetPx(el) {
+      try {
+        const tr = getComputedStyle(el).transform;
+        if (!tr || tr === "none") return 0;
+        const v  = tr.slice(tr.indexOf("(") + 1, tr.lastIndexOf(")")).split(",").map(parseFloat);
+        const tx = tr.indexOf("matrix3d") === 0 ? v[12] : v[4];
+        return isFinite(tx) ? -tx : 0;
+      } catch (e) { return 0; }
+    }
+
     function displayQueue() {
       const wrapper = document.getElementById("tickerWrapper");
       if (!window.allSongs.length) {
+        _tickerSig = ""; _tickerPeriod = 0;
+        wrapper.classList.add("is-static");
         wrapper.innerHTML = '<div class="empty-state">No requests yet…</div>';
         return;
       }
-      const _off = Math.max(0, window.allSongs.length - LITE_MAX_CARDS);
-      const html = window.allSongs.slice(_off).map((s, i) => createSongCard(s, i + _off)).join("");
-      // Doubled for the seamless desktop scroll loop. The second copy is
-      // wrapped so it can be hidden on mobile (where we scroll vertically).
+      const _off  = Math.max(0, window.allSongs.length - LITE_MAX_CARDS);
+      const shown = window.allSongs.slice(_off);
+
+      // Nothing new since the last refresh? Leave the screen alone — no
+      // re-render, no thumbnail flicker, no scroll hiccup every 10 seconds.
+      const sig = window.allSongs.length + "#" + shown.map(s =>
+        getSongName(s) + "|" + getSongTitle(s) + "|" + getArtist(s) + "|" + getVideoId(s)).join("~");
+      if (sig === _tickerSig) return;
+      _tickerSig = sig;
+
+      // Remember where the scroll is so a new card doesn't make it jump.
+      const keepPx = _tickerPeriod > 0 ? _tickerOffsetPx(wrapper) : 0;
+
+      const html = shown.map((s, i) => createSongCard(s, i + _off)).join("");
+
+      // Only one card: it fits on screen, so show it still and centered.
+      if (shown.length === 1) {
+        _tickerPeriod = 0;
+        wrapper.classList.add("is-static");
+        wrapper.style.animation = "none";
+        wrapper.innerHTML = html;
+        return;
+      }
+
+      wrapper.classList.remove("is-static");
+      // Doubled for the seamless loop (second copy is the .ticker-dupe).
       wrapper.innerHTML = html + '<div class="ticker-dupe">' + html + '</div>';
+
+      // Exact length of one set = distance from card #1 to its twin.
+      const first = wrapper.querySelector(".song-card");
+      const twin  = wrapper.querySelector(".ticker-dupe .song-card");
+      const period = (first && twin) ? (twin.offsetLeft - first.offsetLeft) : 0;
+      if (!(period > 0)) { wrapper.style.animation = ""; return; }
+      _tickerPeriod = period;
+
+      const pxs   = Math.min(TICKER_MAX_PXS, Math.max(TICKER_MIN_PXS, period / TICKER_LOOP_SECONDS));
+      const dur   = period / pxs;
+      const startPx = ((keepPx % period) + period) % period;
+      wrapper.style.setProperty("--tp", (-period) + "px");
+      wrapper.style.animation = "none";
+      void wrapper.offsetWidth;            // restart animation cleanly
+      wrapper.style.animation = "scroll " + dur.toFixed(2) + "s linear " + (-(startPx / pxs)).toFixed(2) + "s infinite";
+    }
+
+    // ----------------------------------------------------------
+    // HEADER DATE — big weekday on top, full date underneath.
+    // ----------------------------------------------------------
+    function setHeaderDate() {
+      const d  = new Date();
+      const el = document.getElementById("headerDate");
+      if (!el) return;
+      el.innerHTML = '<span class="hd-day">' + d.toLocaleDateString("en-US", { weekday: "long" }) + '</span>' +
+                     '<span class="hd-date">' + d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) + '</span>';
     }
 
     // ==========================================================
@@ -1495,12 +1590,12 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
       lastSongCount           = 0;
       window.lastMessageCount = 0;
       firstChatLoad           = true; // ### reset chat baseline so no false hype fires
-      document.getElementById("tickerWrapper").innerHTML = '<div class="empty-state">Waiting for first request…</div>';
+      _tickerSig = ""; _tickerPeriod = 0;
+      { const w = document.getElementById("tickerWrapper"); w.classList.add("is-static"); w.innerHTML = '<div class="empty-state">Waiting for first request…</div>'; }
       document.getElementById("chatMessages").innerHTML  = '<div class="empty-state">No messages yet…</div>';
       document.getElementById("totalCount").textContent  = "0";
       // ### Update header date to today
-      document.getElementById("headerDate").textContent  =
-        new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+      setHeaderDate();
     }
 
     // ###########################################################
@@ -1555,8 +1650,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 
     // ### Set header date and slot label on initial page load
     const _now = new Date();
-    document.getElementById("headerDate").textContent =
-      _now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+    setHeaderDate();
     updateSlotDisplay();
 
     // ==========================================================
