@@ -1351,14 +1351,38 @@ async function findByLyric() {
 // Type an artist, tap SHOW THEIR SONGS: whatever YouTube pulls up for that artist (music category).
 // Picking one uses pickFromVideo, so NEXT skips its own YouTube search: no extra quota spent.
 const artistMem = {};
-function drawArtistRows(out, items) {
-  out.innerHTML = '';
-  items.forEach((item, i) => {
-    const r = songRow(item.snippet.channelTitle, item.snippet.title, () => pickFromVideo(item), i * 45);
+let artistPool = [], artistShown = 0;
+const ARTIST_STEP = 8;
+function artistKey(t) {
+  let s = t.replace(/[\(\[][^\)\]]*[\)\]]/g, ' ');
+  const parts = s.split(/\s+[-–—]\s+/);
+  if (parts.length > 1) s = parts.slice(1).join(' ');
+  s = s.replace(/\b(ft|feat|featuring)\b\.?.*$/i, ' ').replace(/\b(official|music|video|lyrics?|lyrical|audio|visuali[sz]er|hd|4k|live)\b/gi, ' ');
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '') || t.toLowerCase();
+}
+function artistDedupe(items) {
+  const seen = {};
+  return items.filter(it => { const k = artistKey(it.snippet.title); if (seen[k]) return false; seen[k] = 1; return true; });
+}
+function drawArtistRows(out, items, fresh) {
+  if (fresh) { artistPool = items; artistShown = 0; out.innerHTML = ''; }
+  const old = out.querySelector('.vibe-more'); if (old) old.remove();
+  const end = Math.min(artistShown + ARTIST_STEP, artistPool.length);
+  for (let i = artistShown; i < end; i++) {
+    const item = artistPool[i];
+    const r = songRow(item.snippet.channelTitle, item.snippet.title, () => pickFromVideo(item), (i - artistShown) * 45);
     r.art.style.backgroundImage = 'url("' + item.snippet.thumbnails.default.url + '")';
     r.art.classList.add('loaded');
     out.appendChild(r.b);
-  });
+  }
+  artistShown = end;
+  if (artistShown < artistPool.length) {
+    const m = document.createElement('button');
+    m.type = 'button'; m.className = 'vibe-more';
+    m.textContent = isES() ? 'MÁS CANCIONES' : 'MORE SONGS';
+    m.addEventListener('click', () => drawArtistRows(out, null, false));
+    out.appendChild(m);
+  }
 }
 async function findByArtist() {
   const q = document.getElementById('artist-q').value.trim();
@@ -1366,11 +1390,11 @@ async function findByArtist() {
   if (q.length < 2) return;
   const say = (en, es) => { out.textContent = isES() ? es : en; };
   const key = q.toLowerCase();
-  if (artistMem[key]) { drawArtistRows(out, artistMem[key]); return; }
+  if (artistMem[key]) { drawArtistRows(out, artistMem[key], true); return; }
   if (ytQuotaOut || YT_API_KEY === 'YOUR_API_KEY') { say('Search is maxed out today. Ask the DJ.', 'La búsqueda está llena por hoy. Pregunta al DJ.'); return; }
   say('Searching…', 'Buscando…');
   try {
-    const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=8&q=' + encodeURIComponent(q) + '&key=' + YT_API_KEY);
+    const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=50&q=' + encodeURIComponent(q) + '&key=' + YT_API_KEY);
     if (!res.ok) {
       let reason = '';
       try { const b = await res.json(); reason = (b.error && b.error.errors && b.error.errors[0] && b.error.errors[0].reason) || ''; } catch (_) {}
@@ -1379,8 +1403,9 @@ async function findByArtist() {
     }
     const items = ((await res.json()).items || []);
     if (!items.length) { say('No songs found. Check the spelling.', 'Sin resultados. Revisa cómo se escribe.'); return; }
-    artistMem[key] = items;
-    drawArtistRows(out, items);
+    const list = artistDedupe(items);
+    artistMem[key] = list;
+    drawArtistRows(out, list, true);
   } catch (e) {
     say('Could not search right now. Ask the DJ.', 'No se pudo buscar. Pregunta al DJ.');
   }
