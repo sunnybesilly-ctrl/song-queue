@@ -418,6 +418,8 @@
        All 4 QR codes use this same class so they stay equal/symmetrical.
        object-fit: cover fills the square without distortion.
     ========================================================== */
+    .qr-link { display: block; flex-shrink: 0; line-height: 0; text-decoration: none; cursor: pointer; }
+    .qr-link:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 12px; }
     .qr-code {
       /* SIZE CONTROL: change min(240px...) to resize all 4 QR codes equally.
          Formula: left panel ≈ 57% of viewport. Divide by 4 codes minus gaps.
@@ -874,31 +876,31 @@
 
           <!-- QR 1: Request Song → custom song request form -->
           <div class="qr-section">
-            <img class="qr-code"
+            <a class="qr-link" href="https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html" target="_blank" rel="noopener noreferrer"><img class="qr-code"
               src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html"
-              alt="Request Song">
+              alt="Request Song"></a>
             <div class="qr-label">Request Song</div>
           </div>
 
           <!-- QR 2: Enter Chat → party chat form -->
           <div class="qr-section">
-            <img class="qr-code"
+            <a class="qr-link" href="https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html" target="_blank" rel="noopener noreferrer"><img class="qr-code"
               src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html"
-              alt="Enter Chat">
+              alt="Enter Chat"></a>
             <div class="qr-label">Enter Chat</div>
           </div>
 
           <!-- QR 3: CashApp tip -->
           <div class="qr-section">
-            <img class="qr-code"
+            <a class="qr-link" href="https://cash.app/$SunnyAubade" target="_blank" rel="noopener noreferrer"><img class="qr-code"
               src="https://cash.app/qr/$SunnyAubade?size=400&margin=0&format=png"
-              alt="Cashapp">
+              alt="Cashapp"></a>
             <div class="qr-label">$sunnyaubade</div>
           </div>
 
           <!-- QR 4: Snapchat — actual photo QR embedded as base64 -->
           <div class="qr-section">
-            <img class="qr-code" id="snapQR" alt="Snapchat">
+            <a class="qr-link" href="https://www.snapchat.com/add/eatitall" target="_blank" rel="noopener noreferrer"><img class="qr-code" id="snapQR" alt="Snapchat"></a>
             <div class="qr-label">@eatitall</div>
           </div>
 
