@@ -261,6 +261,10 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 .as-tray .vibe-song { display: flex; align-items: center; gap: 12px; }
 .as-more { display: block; width: 100%; margin: 2px 0 4px; background: none; border: 1px dashed var(--gold); color: var(--gold); font-family: var(--font-d); font-size: 19px; letter-spacing: 0.08em; padding: 9px 12px; min-height: 46px; border-radius: 4px; cursor: pointer; }
 .as-foot { font-family: var(--font-f); font-size: 13px; color: var(--dim); margin-top: 6px; }
+.as-note { font-family: var(--font-d); font-size: 18px; letter-spacing: 0.07em; color: var(--white); padding: 4px 0 2px; }
+.as-note.busy { animation: asPulse 0.9s ease-in-out infinite alternate; }
+@keyframes asPulse { from { opacity: 0.35; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .as-note.busy { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } }
 </style>
 <link rel="apple-touch-icon" href="icon-request.png">
@@ -1397,42 +1401,68 @@ function foundIt() {
 }
 
 // ARTIST -> SONG OPTIONS: iTunes Search (JSONP, no key, zero YouTube quota).
-let asTok = 0, asTimer = null, asLock = false, asPool = [], asShown = 0;
+let asTok = 0, asTimer = null, asLock = false, asLast = '', asPool = [], asShown = 0;
 const asCache = {}, AS_STEP = 6;
-function asNorm(s) { return s.toLowerCase().replace(/[\(\[].*?[\)\]]/g, '').replace(/[^a-z0-9]+/g, ''); }
+const asES = () => document.body.classList.contains('es');
+function asFlat(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+function asNorm(s) { return asFlat(s.replace(/[\(\[].*?[\)\]]/g, '')); }
 function asHide() {
-  ++asTok; clearTimeout(asTimer);
+  ++asTok; clearTimeout(asTimer); asLast = '';
   const t = document.getElementById('as-tray'); if (t) t.hidden = true;
   const l = document.getElementById('as-list'); if (l) l.innerHTML = '';
   asPool = []; asShown = 0;
 }
-function asLookup(artist) {
-  const key = artist.toLowerCase();
-  if (asCache[key]) { asShow(asCache[key]); return; }
-  const tok = ++asTok;
+function asNote(en, es, busy) {
+  const box = document.getElementById('as-list');
+  box.innerHTML = '';
+  const n = document.createElement('div');
+  n.className = 'as-note' + (busy ? ' busy' : '');
+  n.textContent = asES() ? es : en;
+  box.appendChild(n);
+  document.getElementById('as-tray').hidden = false;
+}
+function asJsonp(url, done) {
   const cb = 'ascb' + Math.random().toString(36).slice(2);
   const s = document.createElement('script');
-  let t;
-  const end = rows => {
-    clearTimeout(t); delete window[cb]; s.remove();
-    if (tok !== asTok) return;
-    if (rows && rows.length) { asCache[key] = rows; asShow(rows); } else { asHide(); }
-  };
-  t = setTimeout(() => end(null), 6000);
-  window[cb] = d => {
-    const seen = {}, rows = [];
-    ((d && d.results) || []).forEach(r => {
-      if (!r.trackName || !r.artistName) return;
-      const n = asNorm(r.trackName);
-      if (!n || seen[n]) return;
-      seen[n] = 1;
-      rows.push([r.artistName, r.trackName, r.artworkUrl100 ? r.artworkUrl100.replace('100x100bb', '200x200bb') : '']);
-    });
-    end(rows);
-  };
+  let t, fin = false;
+  const end = d => { if (fin) return; fin = true; clearTimeout(t); delete window[cb]; s.remove(); done(d); };
+  t = setTimeout(() => end(null), 7000);
+  window[cb] = d => end(d || {});
   s.onerror = () => end(null);
-  s.src = 'https://itunes.apple.com/search?media=music&entity=song&attribute=artistTerm&limit=50&term=' + encodeURIComponent(artist) + '&callback=' + cb;
+  s.src = url + '&callback=' + cb;
   document.head.appendChild(s);
+}
+function asRows(d, q, strict) {
+  const seen = {}, rows = [], ql = asFlat(q);
+  ((d && d.results) || []).forEach(r => {
+    if (!r.trackName || !r.artistName) return;
+    if (strict && asFlat(r.artistName).indexOf(ql) < 0) return;
+    const n = asNorm(r.trackName);
+    if (!n || seen[n]) return;
+    seen[n] = 1;
+    rows.push([r.artistName, r.trackName, r.artworkUrl100 ? r.artworkUrl100.replace('100x100bb', '200x200bb') : '']);
+  });
+  return rows;
+}
+function asLookup(artist) {
+  const key = artist.toLowerCase();
+  asLast = key;
+  if (asCache[key]) { asShow(asCache[key]); return; }
+  const tok = ++asTok;
+  asNote('LOOKING UP SONGS...', 'BUSCANDO CANCIONES...', true);
+  const base = 'https://itunes.apple.com/search?media=music&entity=song&limit=50&term=' + encodeURIComponent(artist);
+  asJsonp(base + '&attribute=artistTerm', d1 => {
+    if (tok !== asTok) return;
+    let rows = d1 ? asRows(d1, artist, false) : [];
+    if (rows.length) { asCache[key] = rows; asShow(rows); return; }
+    asJsonp(base, d2 => {
+      if (tok !== asTok) return;
+      rows = d2 ? asRows(d2, artist, true) : [];
+      if (rows.length) { asCache[key] = rows; asShow(rows); }
+      else if (d1 === null && d2 === null) asNote("COULDN'T LOAD SONGS", 'NO SE PUDIERON CARGAR');
+      else asNote('NO SONGS FOUND', 'NO ENCONTRAMOS CANCIONES');
+    });
+  });
 }
 function asShow(rows) {
   asPool = rows; asShown = 0;
@@ -1454,7 +1484,7 @@ function asDraw() {
   if (asShown < asPool.length) {
     const m = document.createElement('button');
     m.type = 'button'; m.className = 'as-more';
-    m.textContent = document.body.classList.contains('es') ? 'MÁS' : 'MORE';
+    m.textContent = asES() ? 'MÁS' : 'MORE';
     m.addEventListener('click', asDraw);
     box.appendChild(m);
   }
@@ -1464,16 +1494,25 @@ function asPick(artist, song) {
   try { pickSong(artist, song); } finally { asLock = false; }
   asHide();
 }
-document.getElementById('f-artist').addEventListener('input', () => {
-  if (asLock) return;
-  clearTimeout(asTimer);
-  const a = document.getElementById('f-artist').value.trim();
-  if (a.length < 3 || document.getElementById('f-song').value.trim()) { asHide(); return; }
-  asTimer = setTimeout(() => asLookup(a), 700);
-});
-document.getElementById('f-song').addEventListener('input', () => {
-  if (!asLock && document.getElementById('f-song').value.trim()) asHide();
-});
+(function () {
+  const A = document.getElementById('f-artist'), S = document.getElementById('f-song');
+  A.addEventListener('input', () => {
+    if (asLock) return;
+    clearTimeout(asTimer);
+    const a = A.value.trim();
+    if (a.length < 3 || S.value.trim()) { asHide(); return; }
+    asTimer = setTimeout(() => asLookup(a), 600);
+  });
+  // Leaving the artist box looks it up right away, no waiting on the typing pause.
+  A.addEventListener('blur', () => {
+    if (asLock) return;
+    const a = A.value.trim();
+    if (a.length < 3 || S.value.trim() || a.toLowerCase() === asLast) return;
+    clearTimeout(asTimer);
+    asLookup(a);
+  });
+  S.addEventListener('input', () => { if (!asLock && S.value.trim()) asHide(); });
+})();
 
 function toggleHelp() {
   document.getElementById('help-box').classList.toggle('open');
