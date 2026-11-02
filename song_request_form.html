@@ -252,19 +252,9 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 .lyric-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 4px; color: var(--white); font-family: var(--font-b); font-size: 18px; font-weight: 600; padding: 11px 12px; min-height: 46px; margin: 6px 0 8px; }
 .lyric-input::placeholder { color: rgba(255,255,255,0.45); }
 .lyric-note { font-family: var(--font-f); font-size: 13px; color: var(--dim); }
+.as-block { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed rgba(245,197,24,0.35); }
 @keyframes vibeFlash { 0% { box-shadow: 0 0 0 rgba(245,197,24,0); } 35% { box-shadow: 0 0 24px rgba(245,197,24,0.6); border-color: var(--gold); } 100% { box-shadow: 0 0 0 rgba(245,197,24,0); } }
 .field-card.flash { animation: vibeFlash 1s ease-out; }
-/* ARTIST -> SONG OPTIONS */
-.as-tray { margin: 12px 0 2px; padding-top: 10px; border-top: 1px dashed rgba(245,197,24,0.45); }
-.as-tray[hidden] { display: none; }
-.as-head { font-family: var(--font-d); font-size: 21px; letter-spacing: 0.07em; color: var(--gold); line-height: 1; margin-bottom: 8px; }
-.as-tray .vibe-song { display: flex; align-items: center; gap: 12px; }
-.as-more { display: block; width: 100%; margin: 2px 0 4px; background: none; border: 1px dashed var(--gold); color: var(--gold); font-family: var(--font-d); font-size: 19px; letter-spacing: 0.08em; padding: 9px 12px; min-height: 46px; border-radius: 4px; cursor: pointer; }
-.as-foot { font-family: var(--font-f); font-size: 13px; color: var(--dim); margin-top: 6px; }
-.as-note { font-family: var(--font-d); font-size: 18px; letter-spacing: 0.07em; color: var(--white); padding: 4px 0 2px; }
-.as-note.busy { animation: asPulse 0.9s ease-in-out infinite alternate; }
-@keyframes asPulse { from { opacity: 0.35; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .as-note.busy { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } }
 </style>
 <link rel="apple-touch-icon" href="icon-request.png">
@@ -307,11 +297,6 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     <input class="field-input" id="f-artist" type="text" placeholder="ARTIST"
       data-ph-en="ARTIST" data-ph-es="ARTISTA"
       autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></div>
-    <div class="as-tray" id="as-tray" hidden>
-      <div class="as-head" data-en="TAP YOUR SONG" data-es="TOCA TU CANCIÓN">TAP YOUR SONG</div>
-      <div id="as-list"></div>
-      <div class="as-foot" data-en="Not listed? Type it in step 3." data-es="¿No está? Escríbela en el paso 3.">Not listed? Type it in step 3.</div>
-    </div>
   </div>
 
   <div class="field-card step-card">
@@ -321,6 +306,12 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
       autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></div>
     <button type="button" class="help-link" onclick="toggleHelp()" data-en="Not sure of the song or artist?" data-es="¿No sabes la canción o el artista?">Not sure of the song or artist?</button>
     <div class="field-hint help-box" id="help-box">
+      <div class="as-block">
+        <div class="vibe-title" data-en="Know the artist? Type it." data-es="¿Sabes el artista? Escríbelo.">Know the artist? Type it.</div>
+        <input class="lyric-input" id="artist-q" type="text" placeholder="artist name" data-ph-en="artist name" data-ph-es="nombre del artista" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+        <button type="button" class="vibe-more" onclick="findByArtist()" data-en="SHOW THEIR SONGS" data-es="VER SUS CANCIONES">SHOW THEIR SONGS</button>
+        <div id="artist-results"></div>
+      </div>
       <div class="vibe-title" data-en="Need ideas? Pick a vibe." data-es="¿Necesitas ideas? Elige un estilo.">Need ideas? Pick a vibe.</div>
       <div class="vibe-chips" id="vibe-chips"></div>
       <div class="vibe-songs" id="vibe-songs"></div>
@@ -1357,6 +1348,47 @@ async function findByLyric() {
   }
 }
 
+// Type an artist, tap SHOW THEIR SONGS: whatever YouTube pulls up for that artist (music category).
+// Picking one uses pickFromVideo, so NEXT skips its own YouTube search: no extra quota spent.
+const artistMem = {};
+function drawArtistRows(out, items) {
+  out.innerHTML = '';
+  items.forEach((item, i) => {
+    const r = songRow(item.snippet.channelTitle, item.snippet.title, () => pickFromVideo(item), i * 45);
+    r.art.style.backgroundImage = 'url("' + item.snippet.thumbnails.default.url + '")';
+    r.art.classList.add('loaded');
+    out.appendChild(r.b);
+  });
+}
+async function findByArtist() {
+  const q = document.getElementById('artist-q').value.trim();
+  const out = document.getElementById('artist-results');
+  if (q.length < 2) return;
+  const say = (en, es) => { out.textContent = isES() ? es : en; };
+  const key = q.toLowerCase();
+  if (artistMem[key]) { drawArtistRows(out, artistMem[key]); return; }
+  if (ytQuotaOut || YT_API_KEY === 'YOUR_API_KEY') { say('Search is maxed out today. Ask the DJ.', 'La búsqueda está llena por hoy. Pregunta al DJ.'); return; }
+  say('Searching…', 'Buscando…');
+  try {
+    const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=8&q=' + encodeURIComponent(q) + '&key=' + YT_API_KEY);
+    if (!res.ok) {
+      let reason = '';
+      try { const b = await res.json(); reason = (b.error && b.error.errors && b.error.errors[0] && b.error.errors[0].reason) || ''; } catch (_) {}
+      if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') { ytQuotaOut = true; showQuotaOut(); }
+      throw new Error('API ' + res.status);
+    }
+    const items = ((await res.json()).items || []);
+    if (!items.length) { say('No songs found. Check the spelling.', 'Sin resultados. Revisa cómo se escribe.'); return; }
+    artistMem[key] = items;
+    drawArtistRows(out, items);
+  } catch (e) {
+    say('Could not search right now. Ask the DJ.', 'No se pudo buscar. Pregunta al DJ.');
+  }
+}
+document.getElementById('artist-q').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); findByArtist(); }
+});
+
 function pickFromVideo(item) {
   const vid = item.id.videoId, title = item.snippet.title, channel = item.snippet.channelTitle;
   let song = title.replace(/\s*[\(\[][^\)\]]*(official|lyric|video|audio|visuali[sz]er|hd|4k)[^\)\]]*[\)\]]/gi, '').replace(/\s*\|.*$/, '').trim();
@@ -1400,120 +1432,6 @@ function foundIt() {
   target.focus();
 }
 
-// ARTIST -> SONG OPTIONS: iTunes Search (JSONP, no key, zero YouTube quota).
-let asTok = 0, asTimer = null, asLock = false, asLast = '', asPool = [], asShown = 0;
-const asCache = {}, AS_STEP = 6;
-const asES = () => document.body.classList.contains('es');
-function asFlat(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, ''); }
-function asNorm(s) { return asFlat(s.replace(/[\(\[].*?[\)\]]/g, '')); }
-function asHide() {
-  ++asTok; clearTimeout(asTimer); asLast = '';
-  const t = document.getElementById('as-tray'); if (t) t.hidden = true;
-  const l = document.getElementById('as-list'); if (l) l.innerHTML = '';
-  asPool = []; asShown = 0;
-}
-function asNote(en, es, busy) {
-  const box = document.getElementById('as-list');
-  box.innerHTML = '';
-  const n = document.createElement('div');
-  n.className = 'as-note' + (busy ? ' busy' : '');
-  n.textContent = asES() ? es : en;
-  box.appendChild(n);
-  document.getElementById('as-tray').hidden = false;
-}
-function asJsonp(url, done) {
-  const cb = 'ascb' + Math.random().toString(36).slice(2);
-  const s = document.createElement('script');
-  let t, fin = false;
-  const end = d => { if (fin) return; fin = true; clearTimeout(t); delete window[cb]; s.remove(); done(d); };
-  t = setTimeout(() => end(null), 7000);
-  window[cb] = d => end(d || {});
-  s.onerror = () => end(null);
-  s.src = url + '&callback=' + cb;
-  document.head.appendChild(s);
-}
-function asRows(d, q, strict) {
-  const seen = {}, rows = [], ql = asFlat(q);
-  ((d && d.results) || []).forEach(r => {
-    if (!r.trackName || !r.artistName) return;
-    if (strict && asFlat(r.artistName).indexOf(ql) < 0) return;
-    const n = asNorm(r.trackName);
-    if (!n || seen[n]) return;
-    seen[n] = 1;
-    rows.push([r.artistName, r.trackName, r.artworkUrl100 ? r.artworkUrl100.replace('100x100bb', '200x200bb') : '']);
-  });
-  return rows;
-}
-function asLookup(artist) {
-  const key = artist.toLowerCase();
-  asLast = key;
-  if (asCache[key]) { asShow(asCache[key]); return; }
-  const tok = ++asTok;
-  asNote('LOOKING UP SONGS...', 'BUSCANDO CANCIONES...', true);
-  const base = 'https://itunes.apple.com/search?media=music&entity=song&limit=50&term=' + encodeURIComponent(artist);
-  asJsonp(base + '&attribute=artistTerm', d1 => {
-    if (tok !== asTok) return;
-    let rows = d1 ? asRows(d1, artist, false) : [];
-    if (rows.length) { asCache[key] = rows; asShow(rows); return; }
-    asJsonp(base, d2 => {
-      if (tok !== asTok) return;
-      rows = d2 ? asRows(d2, artist, true) : [];
-      if (rows.length) { asCache[key] = rows; asShow(rows); }
-      else if (d1 === null && d2 === null) asNote("COULDN'T LOAD SONGS", 'NO SE PUDIERON CARGAR');
-      else asNote('NO SONGS FOUND', 'NO ENCONTRAMOS CANCIONES');
-    });
-  });
-}
-function asShow(rows) {
-  asPool = rows; asShown = 0;
-  document.getElementById('as-list').innerHTML = '';
-  document.getElementById('as-tray').hidden = false;
-  asDraw();
-}
-function asDraw() {
-  const box = document.getElementById('as-list');
-  const old = box.querySelector('.as-more'); if (old) old.remove();
-  const end = Math.min(asShown + AS_STEP, asPool.length);
-  for (let i = asShown; i < end; i++) {
-    const [artist, song, art] = asPool[i];
-    const r = songRow(artist, song, () => asPick(artist, song), (i - asShown) * 45);
-    if (art) { r.art.style.backgroundImage = 'url("' + art + '")'; r.art.classList.add('loaded'); }
-    box.appendChild(r.b);
-  }
-  asShown = end;
-  if (asShown < asPool.length) {
-    const m = document.createElement('button');
-    m.type = 'button'; m.className = 'as-more';
-    m.textContent = asES() ? 'MÁS' : 'MORE';
-    m.addEventListener('click', asDraw);
-    box.appendChild(m);
-  }
-}
-function asPick(artist, song) {
-  asLock = true;
-  try { pickSong(artist, song); } finally { asLock = false; }
-  asHide();
-}
-(function () {
-  const A = document.getElementById('f-artist'), S = document.getElementById('f-song');
-  A.addEventListener('input', () => {
-    if (asLock) return;
-    clearTimeout(asTimer);
-    const a = A.value.trim();
-    if (a.length < 3 || S.value.trim()) { asHide(); return; }
-    asTimer = setTimeout(() => asLookup(a), 600);
-  });
-  // Leaving the artist box looks it up right away, no waiting on the typing pause.
-  A.addEventListener('blur', () => {
-    if (asLock) return;
-    const a = A.value.trim();
-    if (a.length < 3 || S.value.trim() || a.toLowerCase() === asLast) return;
-    clearTimeout(asTimer);
-    asLookup(a);
-  });
-  S.addEventListener('input', () => { if (!asLock && S.value.trim()) asHide(); });
-})();
-
 function toggleHelp() {
   document.getElementById('help-box').classList.toggle('open');
 }
@@ -1534,7 +1452,6 @@ function setLang(lang) {
 }
 
 function resetAll() {
-  asHide();
   ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   submitted = false; optionalSaved = false; songFound = null; ytVideoId = null;
