@@ -254,6 +254,13 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 .lyric-note { font-family: var(--font-f); font-size: 13px; color: var(--dim); }
 @keyframes vibeFlash { 0% { box-shadow: 0 0 0 rgba(245,197,24,0); } 35% { box-shadow: 0 0 24px rgba(245,197,24,0.6); border-color: var(--gold); } 100% { box-shadow: 0 0 0 rgba(245,197,24,0); } }
 .field-card.flash { animation: vibeFlash 1s ease-out; }
+/* ARTIST -> SONG OPTIONS */
+.as-tray { margin: 12px 0 2px; padding-top: 10px; border-top: 1px dashed rgba(245,197,24,0.45); }
+.as-tray[hidden] { display: none; }
+.as-head { font-family: var(--font-d); font-size: 21px; letter-spacing: 0.07em; color: var(--gold); line-height: 1; margin-bottom: 8px; }
+.as-tray .vibe-song { display: flex; align-items: center; gap: 12px; }
+.as-more { display: block; width: 100%; margin: 2px 0 4px; background: none; border: 1px dashed var(--gold); color: var(--gold); font-family: var(--font-d); font-size: 19px; letter-spacing: 0.08em; padding: 9px 12px; min-height: 46px; border-radius: 4px; cursor: pointer; }
+.as-foot { font-family: var(--font-f); font-size: 13px; color: var(--dim); margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } }
 </style>
 <link rel="apple-touch-icon" href="icon-request.png">
@@ -296,6 +303,11 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     <input class="field-input" id="f-artist" type="text" placeholder="ARTIST"
       data-ph-en="ARTIST" data-ph-es="ARTISTA"
       autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text"></div>
+    <div class="as-tray" id="as-tray" hidden>
+      <div class="as-head" data-en="TAP YOUR SONG" data-es="TOCA TU CANCIÓN">TAP YOUR SONG</div>
+      <div id="as-list"></div>
+      <div class="as-foot" data-en="Not listed? Type it in step 3." data-es="¿No está? Escríbela en el paso 3.">Not listed? Type it in step 3.</div>
+    </div>
   </div>
 
   <div class="field-card step-card">
@@ -1384,6 +1396,85 @@ function foundIt() {
   target.focus();
 }
 
+// ARTIST -> SONG OPTIONS: iTunes Search (JSONP, no key, zero YouTube quota).
+let asTok = 0, asTimer = null, asLock = false, asPool = [], asShown = 0;
+const asCache = {}, AS_STEP = 6;
+function asNorm(s) { return s.toLowerCase().replace(/[\(\[].*?[\)\]]/g, '').replace(/[^a-z0-9]+/g, ''); }
+function asHide() {
+  ++asTok; clearTimeout(asTimer);
+  const t = document.getElementById('as-tray'); if (t) t.hidden = true;
+  const l = document.getElementById('as-list'); if (l) l.innerHTML = '';
+  asPool = []; asShown = 0;
+}
+function asLookup(artist) {
+  const key = artist.toLowerCase();
+  if (asCache[key]) { asShow(asCache[key]); return; }
+  const tok = ++asTok;
+  const cb = 'ascb' + Math.random().toString(36).slice(2);
+  const s = document.createElement('script');
+  let t;
+  const end = rows => {
+    clearTimeout(t); delete window[cb]; s.remove();
+    if (tok !== asTok) return;
+    if (rows && rows.length) { asCache[key] = rows; asShow(rows); } else { asHide(); }
+  };
+  t = setTimeout(() => end(null), 6000);
+  window[cb] = d => {
+    const seen = {}, rows = [];
+    ((d && d.results) || []).forEach(r => {
+      if (!r.trackName || !r.artistName) return;
+      const n = asNorm(r.trackName);
+      if (!n || seen[n]) return;
+      seen[n] = 1;
+      rows.push([r.artistName, r.trackName, r.artworkUrl100 ? r.artworkUrl100.replace('100x100bb', '200x200bb') : '']);
+    });
+    end(rows);
+  };
+  s.onerror = () => end(null);
+  s.src = 'https://itunes.apple.com/search?media=music&entity=song&attribute=artistTerm&limit=50&term=' + encodeURIComponent(artist) + '&callback=' + cb;
+  document.head.appendChild(s);
+}
+function asShow(rows) {
+  asPool = rows; asShown = 0;
+  document.getElementById('as-list').innerHTML = '';
+  document.getElementById('as-tray').hidden = false;
+  asDraw();
+}
+function asDraw() {
+  const box = document.getElementById('as-list');
+  const old = box.querySelector('.as-more'); if (old) old.remove();
+  const end = Math.min(asShown + AS_STEP, asPool.length);
+  for (let i = asShown; i < end; i++) {
+    const [artist, song, art] = asPool[i];
+    const r = songRow(artist, song, () => asPick(artist, song), (i - asShown) * 45);
+    if (art) { r.art.style.backgroundImage = 'url("' + art + '")'; r.art.classList.add('loaded'); }
+    box.appendChild(r.b);
+  }
+  asShown = end;
+  if (asShown < asPool.length) {
+    const m = document.createElement('button');
+    m.type = 'button'; m.className = 'as-more';
+    m.textContent = document.body.classList.contains('es') ? 'MÁS' : 'MORE';
+    m.addEventListener('click', asDraw);
+    box.appendChild(m);
+  }
+}
+function asPick(artist, song) {
+  asLock = true;
+  try { pickSong(artist, song); } finally { asLock = false; }
+  asHide();
+}
+document.getElementById('f-artist').addEventListener('input', () => {
+  if (asLock) return;
+  clearTimeout(asTimer);
+  const a = document.getElementById('f-artist').value.trim();
+  if (a.length < 3 || document.getElementById('f-song').value.trim()) { asHide(); return; }
+  asTimer = setTimeout(() => asLookup(a), 700);
+});
+document.getElementById('f-song').addEventListener('input', () => {
+  if (!asLock && document.getElementById('f-song').value.trim()) asHide();
+});
+
 function toggleHelp() {
   document.getElementById('help-box').classList.toggle('open');
 }
@@ -1404,6 +1495,7 @@ function setLang(lang) {
 }
 
 function resetAll() {
+  asHide();
   ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   submitted = false; optionalSaved = false; songFound = null; ytVideoId = null;
