@@ -425,6 +425,8 @@
     .qr-verb { font-size: 44px; font-weight: 900; line-height: 1; letter-spacing: 2px; color: var(--c); text-shadow: 0 3px 0 rgba(0,0,0,0.9); white-space: nowrap; }
     .qr-noun { font-size: 28px; font-weight: 900; line-height: 1; letter-spacing: 2px; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,0.9); white-space: nowrap; margin-bottom: 4px; }
     .qr-wrap { position: relative; }
+    .qr-link { display: block; flex-shrink: 0; line-height: 0; text-decoration: none; cursor: pointer; }
+    .qr-link:focus-visible { outline: 3px solid #fff; outline-offset: 4px; border-radius: 12px; }
     .qr-code {
       display: block;
       width: 244px;
@@ -769,9 +771,9 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
               <div class="qr-verb">REQUEST</div>
               <div class="qr-noun">A SONG</div>
               <div class="qr-wrap">
-                <img class="qr-code"
+                <a class="qr-link" href="https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html" target="_blank" rel="noopener noreferrer"><img class="qr-code"
                   src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/song_request_form.html"
-                  alt="Request Song">
+                  alt="Request Song"></a>
               </div>
               <div class="qr-sub">FREE</div>
             </div>
@@ -782,9 +784,9 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
               <div class="qr-verb">JOIN</div>
               <div class="qr-noun">THE CHAT</div>
               <div class="qr-wrap">
-                <img class="qr-code"
+                <a class="qr-link" href="https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html" target="_blank" rel="noopener noreferrer"><img class="qr-code"
                   src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/party_chat_form.html"
-                  alt="Enter Chat">
+                  alt="Enter Chat"></a>
               </div>
               <div class="qr-sub">FREE</div>
             </div>
@@ -795,9 +797,9 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
               <div class="qr-verb">TIP</div>
               <div class="qr-noun">THE DJ</div>
               <div class="qr-wrap">
-                <img class="qr-code"
+                <a class="qr-link" href="https://cash.app/$SunnyAubade" target="_blank" rel="noopener noreferrer"><img class="qr-code"
                   src="https://cash.app/qr/$SunnyAubade?size=400&margin=0&format=png"
-                  alt="Cashapp">
+                  alt="Cashapp"></a>
               </div>
               <div class="qr-sub">$sunnyaubade</div>
             </div>
@@ -808,7 +810,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
               <div class="qr-verb">FOLLOW</div>
               <div class="qr-noun">ON SNAPCHAT</div>
               <div class="qr-wrap">
-                <img class="qr-code" id="snapQR" alt="Snapchat">
+                <a class="qr-link" href="https://www.snapchat.com/add/eatitall" target="_blank" rel="noopener noreferrer"><img class="qr-code" id="snapQR" alt="Snapchat"></a>
               </div>
               <div class="qr-sub">@eatitall</div>
             </div>
