@@ -269,12 +269,8 @@ async function retry(fn, tries, wait) {
   return false;
 }
 function cleanup(item) {
-  const d = item.data || {};
-  const target = d.storagePath || d.url;
-  if (target) {
-    retry(function () { return deleteObject(ref(storage, target)); }, 5, 3000);
-  }
-  return retry(function () { return deleteDoc(doc(db, "media_queue", item.id)); }, 5, 3000);
+// DISABLED: Keep files in Firebase for the 24-hour gallery
+return Promise.resolve();
 }
 
 /* ---------- playback state machine ---------- */
