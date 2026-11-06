@@ -4,41 +4,61 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Party Album - Download Portal</title>
+<!-- Using the same fonts as your upload/display pages -->
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
 body {
-background-color: #001a00;
+background-color: #0a140c;
+background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%);
 color: white;
-font-family: Arial, sans-serif;
+font-family: 'Inter', sans-serif;
 margin: 0;
 padding: 20px;
-text-align: center;
+min-height: 100vh;
 }
-h1 {
-color: #ccff00;
-font-size: 2.5rem;
+.header {
+text-align: center;
+margin-bottom: 40px;
+margin-top: 20px;
+}
+.header h1 {
+font-family: 'Anton', sans-serif;
+color: #e2ff00;
+font-size: 4rem;
 text-transform: uppercase;
-text-shadow: 0 0 10px rgba(204, 255, 0, 0.5);
+text-shadow: 0 0 20px rgba(226, 255, 0, 0.5);
+margin: 0;
+letter-spacing: 2px;
+}
+.header p {
+color: #a3bca3;
+font-size: 1.1rem;
+margin-top: 10px;
 }
 #gallery-grid {
 display: grid;
-grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-gap: 20px;
-padding: 20px;
+grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+gap: 25px;
 max-width: 1400px;
 margin: 0 auto;
 }
 .media-card {
-background-color: #002b00;
-border: 2px solid #ccff00;
-border-radius: 12px;
+background-color: #000;
+border: 2px solid #3a5a3e;
+border-radius: 8px;
 overflow: hidden;
 display: flex;
 flex-direction: column;
+transition: border-color 0.3s, box-shadow 0.3s;
+}
+.media-card:hover {
+border-color: #e2ff00;
+box-shadow: 0 0 20px rgba(226, 255, 0, 0.2);
 }
 .media-container {
 width: 100%;
-height: 250px;
-background-color: black;
+height: 300px;
+background-color: #000;
 display: flex;
 align-items: center;
 justify-content: center;
@@ -48,27 +68,56 @@ width: 100%;
 height: 100%;
 object-fit: contain;
 }
-.card-info { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-.uploader-name { font-weight: bold; color: #ccff00; margin: 0; }
-.download-btn {
-background-color: #ccff00;
-color: black;
-text-decoration: none;
-padding: 10px;
-border-radius: 6px;
-font-weight: bold;
-text-transform: uppercase;
+.card-info {
+padding: 15px;
+display: flex;
+flex-direction: column;
+gap: 15px;
+background: #0d1b11;
 }
-#loading, #empty-message { font-size: 1.5rem; color: #ccff00; margin-top: 50px; }
+.uploader-name {
+font-family: 'Anton', sans-serif;
+color: #e2ff00;
+font-size: 1.4rem;
+margin: 0;
+letter-spacing: 1px;
+}
+.download-btn {
+background-color: #e2ff00;
+color: #000;
+text-decoration: none;
+padding: 12px;
+border-radius: 4px;
+font-weight: bold;
+text-align: center;
+text-transform: uppercase;
+font-family: 'Anton', sans-serif;
+font-size: 1.2rem;
+letter-spacing: 1px;
+transition: transform 0.1s, background-color 0.2s;
+}
+.download-btn:hover {
+background-color: #fff;
+transform: scale(1.02);
+}
+#loading, #empty-message {
+text-align: center;
+font-family: 'Anton', sans-serif;
+font-size: 2rem;
+color: #e2ff00;
+margin-top: 50px;
+}
 </style>
 </head>
 <body>
 
+<div class="header">
 <h1>Party Album</h1>
-<p>View and download the memories from tonight!</p>
+<p>Relive the night. Download your memories.</p>
+</div>
 
-<div id="loading">Loading the album...</div>
-<div id="empty-message" style="display: none;">No media has been uploaded yet.</div>
+<div id="loading">Loading party album...</div>
+<div id="empty-message" style="display: none;">No photos or videos were sent tonight.</div>
 <div id="gallery-grid"></div>
 
 <script type="module">
@@ -77,12 +126,12 @@ import { getFirestore, collection, getDocs, query, orderBy } from "https://www.g
 
 // ⚠️ REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ⚠️
 const firebaseConfig = {
-apiKey: "YOUR_API_KEY",
-authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-projectId: "YOUR_PROJECT_ID",
-storageBucket: "YOUR_PROJECT_ID.appspot.com",
-messagingSenderId: "YOUR_SENDER_ID",
-appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
+  authDomain: "dj-photo-wall.firebaseapp.com",
+  projectId: "dj-photo-wall",
+  storageBucket: "dj-photo-wall.firebasestorage.app",
+  messagingSenderId: "187308843014",
+  appId: "1:187308843014:web:a4dbf9c17011767890a387"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -94,6 +143,7 @@ const emptyMessage = document.getElementById('empty-message');
 
 async function loadGallery() {
 try {
+// Fetch all media sorted by time
 const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
 const querySnapshot = await getDocs(q);
 
@@ -109,14 +159,16 @@ const data = doc.data();
 const card = document.createElement('div');
 card.className = 'media-card';
 
+// Check if it's a video or image
 let mediaElement = data.type === 'video'
 ? `<video src="${data.url}" controls preload="metadata"></video>`
 : `<img src="${data.url}" alt="Photo">`;
 
+// Create the HTML for the card
 card.innerHTML = `
 <div class="media-container">${mediaElement}</div>
 <div class="card-info">
-<p class="uploader-name">Uploaded by: ${data.name}</p>
+<p class="uploader-name">SENT BY: ${data.name}</p>
 <a href="${data.url}" download="${data.name}-party-media" target="_blank" class="download-btn">Download</a>
 </div>
 `;
@@ -124,7 +176,7 @@ grid.appendChild(card);
 });
 } catch (error) {
 console.error("Error loading gallery: ", error);
-loading.innerText = "Error loading gallery.";
+loading.innerText = "Error loading gallery. Check console.";
 }
 }
 loadGallery();
