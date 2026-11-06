@@ -153,14 +153,14 @@ object-fit: contain;
 </div>
 
 <div class="instructions">
-<p>Scan the QR code with your phone camera to</p>
+<p>Scan the QR code with your camera to</p>
 <h2>SEND TO THE ALBUM</h2>
 <p>Pick a photo or video. It joins the album instantly!</p>
 <div class="qr-container">
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/upload.html" alt="Scan to Upload">
 </div>
 </div>
-
+</div>
 
 <!-- Scrolling Banner -->
 <div class="marquee">
@@ -170,7 +170,7 @@ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A V
 </div>
 </div>
 
-<!-- MEDIA PLAYER -->
+<!-- MEDIA PLAYER (Hidden until a photo arrives) -->
 <div id="media-overlay">
 <img id="display-img" src="" style="display:none;">
 <video id="display-video" style="display:none;" muted playsinline></video>
@@ -213,11 +213,9 @@ snapshot.forEach((doc) => {
 mediaList.push(doc.data());
 });
 
-// If photos exist but we aren't playing, start the show!
 if (!isPlaying && mediaList.length > 0) {
 startShow();
 }
-// If the album is empty, go back to the idle screen
 if (mediaList.length === 0 && isPlaying) {
 isPlaying = false;
 mediaOverlay.classList.remove('active');
@@ -235,20 +233,20 @@ playNext();
 function playNext() {
 if (mediaList.length === 0) return;
 
-// Loop back to the beginning if we reach the end
+// Loop back to the QR code after the last photo
 if (currentIndex >= mediaList.length) {
 mediaOverlay.classList.remove('active'); // Hide photo
 idleScreen.style.opacity = '1'; // Show QR Code
 
-// Wait 8 seconds, then restart the album
 imageTimeout = setTimeout(() => {
 currentIndex = 0;
 idleScreen.style.opacity = '0'; // Hide QR Code
 mediaOverlay.classList.add('active');// Show photo
 playNext();
-}, 8000);
+}, 8000); // 8 seconds of QR code
 return;
 }
+
 const currentMedia = mediaList[currentIndex];
 clearTimeout(imageTimeout);
 
@@ -258,7 +256,6 @@ vidEl.style.display = 'block';
 vidEl.src = currentMedia.url;
 vidEl.play().catch(e => console.log("Autoplay blocked", e));
 
-// Move to the next video when this one ends
 vidEl.onended = () => {
 currentIndex++;
 playNext();
@@ -268,7 +265,7 @@ vidEl.style.display = 'none';
 imgEl.style.display = 'block';
 imgEl.src = currentMedia.url;
 
-// Show images for 10 seconds
+// Show image for 10 seconds
 imageTimeout = setTimeout(() => {
 currentIndex++;
 playNext();
