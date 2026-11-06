@@ -1,131 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Party Album - Download Portal</title>
-<!-- Using the same fonts as your upload/display pages -->
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<style>
-body {
-background-color: #0a140c;
-background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%);
-color: white;
-font-family: 'Inter', sans-serif;
-margin: 0;
-padding: 20px;
-min-height: 100vh;
-}
-.header {
-text-align: center;
-margin-bottom: 40px;
-margin-top: 20px;
-}
-.header h1 {
-font-family: 'Anton', sans-serif;
-color: #e2ff00;
-font-size: 4rem;
-text-transform: uppercase;
-text-shadow: 0 0 20px rgba(226, 255, 0, 0.5);
-margin: 0;
-letter-spacing: 2px;
-}
-.header p {
-color: #a3bca3;
-font-size: 1.1rem;
-margin-top: 10px;
-}
-#gallery-grid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-gap: 25px;
-max-width: 1400px;
-margin: 0 auto;
-}
-.media-card {
-background-color: #000;
-border: 2px solid #3a5a3e;
-border-radius: 8px;
-overflow: hidden;
-display: flex;
-flex-direction: column;
-transition: border-color 0.3s, box-shadow 0.3s;
-}
-.media-card:hover {
-border-color: #e2ff00;
-box-shadow: 0 0 20px rgba(226, 255, 0, 0.2);
-}
-.media-container {
-width: 100%;
-height: 300px;
-background-color: #000;
-display: flex;
-align-items: center;
-justify-content: center;
-}
-.media-container img, .media-container video {
-width: 100%;
-height: 100%;
-object-fit: contain;
-}
-.card-info {
-padding: 15px;
-display: flex;
-flex-direction: column;
-gap: 15px;
-background: #0d1b11;
-}
-.uploader-name {
-font-family: 'Anton', sans-serif;
-color: #e2ff00;
-font-size: 1.4rem;
-margin: 0;
-letter-spacing: 1px;
-}
-.download-btn {
-background-color: #e2ff00;
-color: #000;
-text-decoration: none;
-padding: 12px;
-border-radius: 4px;
-font-weight: bold;
-text-align: center;
-text-transform: uppercase;
-font-family: 'Anton', sans-serif;
-font-size: 1.2rem;
-letter-spacing: 1px;
-transition: transform 0.1s, background-color 0.2s;
-}
-.download-btn:hover {
-background-color: #fff;
-transform: scale(1.02);
-}
-#loading, #empty-message {
-text-align: center;
-font-family: 'Anton', sans-serif;
-font-size: 2rem;
-color: #e2ff00;
-margin-top: 50px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Album</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0a140c; color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
+        h1 { font-family: 'Anton', sans-serif; color: #e2ff00; text-align: center; font-size: 3rem; margin-bottom: 5px; text-shadow: 0 0 15px rgba(226,255,0,0.5); letter-spacing: 2px;}
+        p { text-align: center; color: #a3bca3; margin-bottom: 30px; font-size: 1.1rem; }
+        
+        #gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .media-card { background: #000; border: 2px solid #3a5a3e; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: border 0.3s; }
+        .media-card:hover { border-color: #e2ff00; }
+        .media-container { height: 300px; display: flex; align-items: center; justify-content: center; background: #000; }
+        .media-container img, .media-container video { width: 100%; height: 100%; object-fit: contain; }
+        
+        .card-info { padding: 15px; background: #0d1b11; display: flex; justify-content: space-between; align-items: center; }
+        .uploader-name { font-family: 'Anton', sans-serif; color: #e2ff00; font-size: 1.2rem; margin: 0; letter-spacing: 1px;}
+        
+        /* Like Button */
+        .like-btn { background: #1a2e1d; border: 2px solid #e2ff00; color: #e2ff00; padding: 8px 15px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; gap: 8px; }
+        .like-btn:active { transform: scale(0.9); background: #e2ff00; color: #000; }
+        
+        .download-btn { background: transparent; color: #a3bca3; border: none; text-decoration: underline; margin-top: 8px; cursor: pointer; font-size: 0.9rem; width: 100%; text-align: left; padding: 0; }
+        #loading { text-align: center; font-family: 'Anton', sans-serif; font-size: 2rem; color: #e2ff00; margin-top: 50px; }
+    </style>
 </head>
 <body>
+    <h1>PARTY ALBUM</h1>
+    <p>Download your memories and tap the heart to show love!</p>
+    
+    <div id="loading">LOADING MEDIA...</div>
+    <div id="gallery-grid"></div>
 
-<div class="header">
-<h1>Party Album</h1>
-<p>Relive the night. Download your memories.</p>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-<div id="loading">Loading party album...</div>
-<div id="empty-message" style="display: none;">No photos or videos were sent tonight.</div>
-<div id="gallery-grid"></div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-// ⚠️ REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ⚠️
-const firebaseConfig = {
+        // ⚠️ YOUR FIREBASE CONFIG
+       const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
   authDomain: "dj-photo-wall.firebaseapp.com",
   projectId: "dj-photo-wall",
@@ -134,52 +48,73 @@ const firebaseConfig = {
   appId: "1:187308843014:web:a4dbf9c17011767890a387"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const grid = document.getElementById('gallery-grid');
 
-const grid = document.getElementById('gallery-grid');
-const loading = document.getElementById('loading');
-const emptyMessage = document.getElementById('empty-message');
+        async function loadGallery() {
+            try {
+                const q = query(collection(db, "media_queue"), orderBy("timestamp", "desc"));
+                const snapshot = await getDocs(q);
+                document.getElementById('loading').style.display = 'none';
 
-async function loadGallery() {
-try {
-// Fetch all media sorted by time
-const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
-const querySnapshot = await getDocs(q);
+                if(snapshot.empty) {
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('loading').innerText = "NO MEDIA WAS SENT TONIGHT.";
+                    return;
+                }
 
-loading.style.display = 'none';
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const card = document.createElement('div');
+                    card.className = 'media-card';
 
-if (querySnapshot.empty) {
-emptyMessage.style.display = 'block';
-return;
-}
+                    let mediaHtml = data.type === 'video' 
+                        ? `<video src="${data.url}" controls preload="metadata"></video>` 
+                        : `<img src="${data.url}">`;
 
-querySnapshot.forEach((doc) => {
-const data = doc.data();
-const card = document.createElement('div');
-card.className = 'media-card';
+                    card.innerHTML = `
+                        <div class="media-container">${mediaHtml}</div>
+                        <div class="card-info">
+                            <div>
+                                <p class="uploader-name">${data.name}</p>
+                                <a href="${data.url}" download="${data.name}-party" class="download-btn">Download Original</a>
+                            </div>
+                            <button class="like-btn" id="btn-${docSnap.id}" onclick="likeMedia('${docSnap.id}')">
+                                ❤️ <span id="count-${docSnap.id}">${data.likes || 0}</span>
+                            </button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loading').innerText = "Error loading gallery.";
+            }
+        }
 
-// Check if it's a video or image
-let mediaElement = data.type === 'video'
-? `<video src="${data.url}" controls preload="metadata"></video>`
-: `<img src="${data.url}" alt="Photo">`;
+        window.likeMedia = async function(docId) {
+            const btn = document.getElementById(`btn-${docId}`);
+            const countSpan = document.getElementById(`count-${docId}`);
+            
+            // Fun visual feedback on the phone
+            btn.style.backgroundColor = '#e2ff00';
+            btn.style.color = '#000';
+            setTimeout(() => {
+                btn.style.backgroundColor = '#1a2e1d';
+                btn.style.color = '#e2ff00';
+            }, 200);
+            
+            // Update Firebase
+            const docRef = doc(db, "media_queue", docId);
+            await updateDoc(docRef, { likes: increment(1) });
+            
+            // Update UI instantly
+            let current = parseInt(countSpan.innerText);
+            countSpan.innerText = current + 1;
+        }
 
-// Create the HTML for the card
-card.innerHTML = `
-<div class="media-container">${mediaElement}</div>
-<div class="card-info">
-<p class="uploader-name">SENT BY: ${data.name}</p>
-<a href="${data.url}" download="${data.name}-party-media" target="_blank" class="download-btn">Download</a>
-</div>
-`;
-grid.appendChild(card);
-});
-} catch (error) {
-console.error("Error loading gallery: ", error);
-loading.innerText = "Error loading gallery. Check console.";
-}
-}
-loadGallery();
-</script>
+        loadGallery();
+    </script>
 </body>
 </html>
