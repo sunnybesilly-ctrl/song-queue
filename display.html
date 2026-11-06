@@ -237,10 +237,19 @@ if (mediaList.length === 0) return;
 
 // Loop back to the beginning if we reach the end
 if (currentIndex >= mediaList.length) {
-currentIndex = 0;
-}
+mediaOverlay.classList.remove('active'); // Hide photo
+idleScreen.style.opacity = '1'; // Show QR Code
 
-const currentMedia = mediaList[currentIndex];
+// Wait 8 seconds, then restart the album
+imageTimeout = setTimeout(() => {
+currentIndex = 0;
+idleScreen.style.opacity = '0'; // Hide QR Code
+mediaOverlay.classList.add('active');// Show photo
+playNext();
+}, 8000);
+return;
+}
+const currentMedia = medialist[currentIndex];
 clearTimeout(imageTimeout);
 
 if (currentMedia.type === 'video') {
