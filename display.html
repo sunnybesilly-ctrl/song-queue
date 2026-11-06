@@ -52,7 +52,6 @@ font-size: 16vw;
 color: #e2ff00;
 text-shadow: 0 0 40px rgba(226, 255, 0, 0.6);
 letter-spacing: -2px;
-/* Flashing Animation */
 animation: pulse 2s infinite alternate;
 }
 @keyframes pulse {
@@ -172,7 +171,7 @@ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A V
 
 <!-- MEDIA PLAYER (Hidden until a photo arrives) -->
 <div id="media-overlay">
-<img id="display-img" src="" style="display:none;">
+<img id="display-img" src="" style="display:none;" alt="Party Media">
 <video id="display-video" style="display:none;" muted playsinline></video>
 </div>
 
@@ -197,7 +196,7 @@ const db = getFirestore(app);
 let mediaList = [];
 let currentIndex = 0;
 let isPlaying = false;
-let imageTimeout;
+let slideTimer = null;
 
 const idleScreen = document.getElementById('idle-screen');
 const mediaOverlay = document.getElementById('media-overlay');
@@ -213,63 +212,88 @@ snapshot.forEach((doc) => {
 mediaList.push(doc.data());
 });
 
+// If photos exist and we aren't playing, start the show
 if (!isPlaying && mediaList.length > 0) {
-startShow();
+isPlaying = true;
+currentIndex = 0;
+showMedia();
 }
+// If the queue is empty, show the QR code
 if (mediaList.length === 0 && isPlaying) {
 isPlaying = false;
-mediaOverlay.classList.remove('active');
-idleScreen.style.opacity = '1';
+showIdle();
 }
 });
 
-function startShow() {
-isPlaying = true;
-idleScreen.style.opacity = '0';
-mediaOverlay.classList.add('active');
-playNext();
+function showIdle() {
+clearTimeout(slideTimer);
+vidEl.pause();
+vidEl.src = "";
+imgEl.src = "";
+
+mediaOverlay.classList.remove('active');
+idleScreen.style.opacity = '1';
 }
 
-function playNext() {
-if (mediaList.length === 0) return;
-
-// Loop back to the QR code after the last photo
+function showMedia() {
+// If we've reached the end of the list, show QR code for 8 seconds, then loop
 if (currentIndex >= mediaList.length) {
-mediaOverlay.classList.remove('active'); // Hide photo
-idleScreen.style.opacity = '1'; // Show QR Code
-
-imageTimeout = setTimeout(() => {
+showIdle();
+slideTimer = setTimeout(() => {
 currentIndex = 0;
-idleScreen.style.opacity = '0'; // Hide QR Code
-mediaOverlay.classList.add('active');// Show photo
-playNext();
+if (mediaList.length > 0) showMedia();
 }, 8000); // 8 seconds of QR code
 return;
 }
 
 const currentMedia = mediaList[currentIndex];
-clearTimeout(imageTimeout);
+
+// Show the overlay
+idleScreen.style.opacity = '0';
+mediaOverlay.classList.add('active');
+
+clearTimeout(slideTimer);
+vidEl.pause();
 
 if (currentMedia.type === 'video') {
 imgEl.style.display = 'none';
 vidEl.style.display = 'block';
 vidEl.src = currentMedia.url;
-vidEl.play().catch(e => console.log("Autoplay blocked", e));
 
+// Play video
+vidEl.play().catch(e => {
+console.log("Autoplay blocked, skipping video...");
+currentIndex++;
+showMedia();
+});
+
+// When video ends, move to next
 vidEl.onended = () => {
 currentIndex++;
-playNext();
+showMedia();
 };
+
 } else {
 vidEl.style.display = 'none';
 imgEl.style.display = 'block';
-imgEl.src = currentMedia.url;
 
-// Show image for 10 seconds
-imageTimeout = setTimeout(() => {
+// Wait for image to load before starting the 10s timer
+imgEl.onload = () => {
+clearTimeout(slideTimer);
+slideTimer = setTimeout(() => {
 currentIndex++;
-playNext();
-}, 10000);
+showMedia();
+}, 10000); // 10 seconds
+};
+
+// If the image fails to load (broken link), skip it
+imgEl.onerror = () => {
+console.log("Image failed to load, skipping...");
+currentIndex++;
+showMedia();
+};
+
+imgEl.src = currentMedia.url;
 }
 }
 </script>
