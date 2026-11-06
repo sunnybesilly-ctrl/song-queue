@@ -1,298 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Party Album Display</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<style>
-body {
-margin: 0;
-padding: 0;
-background-color: #0a140c;
-background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%);
-color: white;
-font-family: 'Inter', sans-serif;
-overflow: hidden;
-height: 100vh;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Album Display</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background-color: #0a140c; background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%); color: white; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
+        
+        /* IDLE SCREEN */
+        #idle-screen { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; position: absolute; top: 0; left: 0; z-index: 1; transition: opacity 0.8s ease; }
+        .main-content { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 5vw; height: 100%; }
+        .title-container { display: flex; flex-direction: column; line-height: 0.85; }
+        .title-container span { font-family: 'Anton', sans-serif; font-size: 16vw; color: #e2ff00; text-shadow: 0 0 40px rgba(226, 255, 0, 0.6); letter-spacing: -2px; animation: pulse 2s infinite alternate; }
+        @keyframes pulse { 0% { text-shadow: 0 0 20px rgba(226, 255, 0, 0.4); } 100% { text-shadow: 0 0 60px rgba(226, 255, 0, 0.8), 0 0 20px #e2ff00; } }
+        .instructions { max-width: 35vw; border-left: 8px solid #7dff4a; padding-left: 20px; }
+        .instructions p { font-size: 1.5vw; color: #a3bca3; margin: 10px 0; line-height: 1.4; }
+        .instructions h2 { font-size: 3.5vw; color: #e2ff00; margin: 10px 0; font-weight: bold; }
+        .qr-container { margin-top: 20px; background: white; padding: 15px; border-radius: 10px; display: inline-block; box-shadow: 0 0 30px rgba(226, 255, 0, 0.3); }
+        .qr-container img { width: 15vw; height: 15vw; display: block; }
+        .marquee { background-color: #e2ff00; color: #000; font-family: 'Anton', sans-serif; font-size: 3vw; padding: 10px 0; white-space: nowrap; overflow: hidden; position: absolute; bottom: 0; width: 100%; z-index: 2; }
+        .marquee-content { display: inline-block; animation: scroll 20s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-/* --- IDLE SCREEN (The "SEND YOUR SHOTS" layout) --- */
-#idle-screen {
-width: 100vw;
-height: 100vh;
-display: flex;
-flex-direction: column;
-justify-content: space-between;
-position: absolute;
-top: 0;
-left: 0;
-z-index: 1;
-transition: opacity 0.5s ease;
-}
+        /* --- 3D MEDIA PLAYER --- */
+        #media-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; display: none; justify-content: center; align-items: center; z-index: 10; opacity: 0; overflow: hidden; }
+        #media-overlay.active { display: flex; opacity: 1; }
+        
+        #bg-media { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(40px) brightness(0.4) saturate(1.5); z-index: 1; pointer-events: none; }
+        
+        /* The 3D Stage */
+        .collage-container { 
+            display: flex; gap: 30px; justify-content: center; align-items: center; 
+            width: 95vw; height: 85vh; z-index: 2; position: relative; 
+            perspective: 1200px; /* Creates the 3D depth field */
+        }
 
-.main-content {
-display: flex;
-flex-direction: row;
-align-items: center;
-justify-content: space-between;
-padding: 0 5vw;
-height: 100%;
-}
+        /* The 3D Floating Media */
+        .media-element { 
+            max-width: 100%; max-height: 100%; object-fit: contain; 
+            border-radius: 15px; border: 3px solid #3a5a3e; 
+            /* Deep 3D shadow */
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9), 0 0 20px rgba(226, 255, 0, 0.3); 
+            will-change: transform, opacity; transition: width 0.5s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .collage-container.split .media-element { width: 48%; height: 100%; border-color: #e2ff00; }
+        
+        /* Like Counter */
+        .like-counter { position: absolute; bottom: 20px; right: 20px; font-size: 2.5vw; color: #e2ff00; text-shadow: 0 0 10px rgba(0,0,0,1); z-index: 20; display: none; font-family: 'Anton', sans-serif; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 2px solid #e2ff00; }
 
-.title-container {
-display: flex;
-flex-direction: column;
-line-height: 0.85;
-}
-.title-container span {
-font-family: 'Anton', sans-serif;
-font-size: 16vw;
-color: #e2ff00;
-text-shadow: 0 0 40px rgba(226, 255, 0, 0.6);
-letter-spacing: -2px;
-animation: pulse 2s infinite alternate;
-}
-@keyframes pulse {
-0% { text-shadow: 0 0 20px rgba(226, 255, 0, 0.4); }
-100% { text-shadow: 0 0 60px rgba(226, 255, 0, 0.8), 0 0 20px #e2ff00; }
-}
+        /* YEARBOOK GRID */
+        #yearbook-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #050a06; display: none; flex-direction: column; z-index: 30; padding: 20px; box-sizing: border-box; }
+        #yearbook-overlay.active { display: flex; }
+        .yearbook-title { font-family: 'Anton', sans-serif; color: #e2ff00; font-size: 4vw; text-align: center; margin: 0 0 20px 0; text-shadow: 0 0 20px rgba(226,255,0,0.5); }
+        .yearbook-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; overflow-y: hidden; flex-grow: 1; }
+        .yearbook-item { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #3a5a3e; }
 
-.instructions {
-max-width: 35vw;
-border-left: 8px solid #7dff4a;
-padding-left: 20px;
-}
-.instructions p {
-font-size: 1.5vw;
-color: #a3bca3;
-margin: 10px 0;
-line-height: 1.4;
-}
-.instructions h2 {
-font-size: 3.5vw;
-color: #e2ff00;
-margin: 10px 0;
-font-weight: bold;
-}
-.qr-container {
-margin-top: 20px;
-background: white;
-padding: 15px;
-border-radius: 10px;
-display: inline-block;
-box-shadow: 0 0 30px rgba(226, 255, 0, 0.3);
-}
-.qr-container img {
-width: 15vw;
-height: 15vw;
-display: block;
-}
+        /* FLOATING REACTIONS */
+        .reaction-emoji { position: absolute; bottom: 0; font-size: 5vw; z-index: 50; animation: floatUp 3s ease-out forwards; pointer-events: none; text-shadow: 0 0 20px rgba(226, 255, 0, 0.8); }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 1; } 50% { transform: translateY(-40vh) scale(1.2); opacity: 1; } 100% { transform: translateY(-80vh) scale(1); opacity: 0; } }
 
-.marquee {
-background-color: #e2ff00;
-color: #000;
-font-family: 'Anton', sans-serif;
-font-size: 3vw;
-padding: 10px 0;
-white-space: nowrap;
-overflow: hidden;
-position: absolute;
-bottom: 0;
-width: 100%;
-z-index: 2;
-}
-.marquee-content {
-display: inline-block;
-animation: scroll 20s linear infinite;
-}
-@keyframes scroll {
-0% { transform: translateX(0); }
-100% { transform: translateX(-50%); }
-}
+        /* AUDIO TOGGLE BUTTON */
+        #audio-toggle {
+            position: absolute; bottom: 10vh; left: 2vw; z-index: 100;
+            background: rgba(0,0,0,0.7); border: 2px solid #e2ff00; color: #e2ff00;
+            font-size: 2vw; padding: 10px 20px; border-radius: 30px;
+            cursor: pointer; font-family: 'Anton', sans-serif; display: none;
+            transition: all 0.3s ease;
+        }
+        #audio-toggle:hover { background: #e2ff00; color: #000; }
+        #audio-toggle.active { display: block; }
 
-#media-overlay {
-position: absolute;
-top: 0;
-left: 0;
-width: 100vw;
-height: 100vh;
-background: #000;
-display: none;
-justify-content: center;
-align-items: center;
-z-index: 10;
-opacity: 0;
-transition: opacity 0.5s ease;
-}
-#media-overlay.active {
-display: flex;
-opacity: 1;
-}
-#media-overlay img, #media-overlay video {
-width: 100%;
-height: 100%;
-object-fit: contain;
-}
-</style>
+        /* --- SPATIAL 3D TRANSITIONS --- */
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* 3D Swing In */
+        @keyframes swingIn3D { 
+            0% { transform: perspective(1000px) rotateY(-45deg) translateX(100px) scale(0.8); opacity: 0; } 
+            100% { transform: perspective(1000px) rotateY(0deg) translateX(0) scale(1); opacity: 1; } 
+        }
+        
+        /* 3D Flip Down */
+        @keyframes flipDown3D { 
+            0% { transform: perspective(1000px) rotateX(60deg) translateY(-100px) scale(0.8); opacity: 0; } 
+            100% { transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1); opacity: 1; } 
+        }
+        
+        /* 3D Pop Out */
+        @keyframes popOut3D { 
+            0% { transform: perspective(1000px) translateZ(-300px) scale(0.5); opacity: 0; } 
+            70% { transform: perspective(1000px) translateZ(50px) scale(1.05); opacity: 1; } 
+            100% { transform: perspective(1000px) translateZ(0) scale(1); opacity: 1; } 
+        }
+
+        .anim-fade-out { animation: fadeOut 0.5s ease forwards; }
+        .anim-swing { animation: swingIn3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .anim-flip { animation: flipDown3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .anim-pop { animation: popOut3D 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    </style>
 </head>
 <body>
+    <div id="idle-screen">
+        <div class="main-content">
+            <div class="title-container"><span>SEND</span><span>YOUR</span><span>SHOTS</span></div>
+            <div class="instructions">
+                <p>Scan the QR code with your camera to</p><h2>SEND TO THE ALBUM</h2>
+                <p>Pick a photo or video. It joins the album instantly!</p>
+                <div class="qr-container"><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/upload.html" alt="Scan to Upload"></div>
+            </div>
+        </div>
+        <div class="marquee"><div class="marquee-content">PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦</div></div>
+    </div>
 
-<div id="idle-screen">
-<div class="main-content">
-<div class="title-container">
-<span>SEND</span>
-<span>YOUR</span>
-<span>SHOTS</span>
-</div>
+    <div id="media-overlay">
+        <img id="bg-media" src="" alt="Background">
+        <div class="collage-container" id="collage-container">
+            <img id="display-img-1" class="media-element" style="display:none;">
+            <div id="likes-1" class="like-counter">❤️ 0</div>
+            
+            <img id="display-img-2" class="media-element" style="display:none;">
+            <div id="likes-2" class="like-counter">❤️ 0</div>
+            
+            <video id="display-video" class="media-element" style="display:none;" playsinline></video>
+        </div>
+        
+        <!-- Audio Toggle Button -->
+        <div id="audio-toggle" onclick="toggleAudio()">🔇 TAP FOR SOUND</div>
+    </div>
 
-<div class="instructions">
-<p>Scan the QR code with your camera to</p>
-<h2>SEND TO THE ALBUM</h2>
-<p>Pick a photo or video. It joins the album instantly!</p>
-<div class="qr-container">
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/upload.html" alt="Scan to Upload">
-</div>
-</div>
-</div>
+    <div id="yearbook-overlay">
+        <h2 class="yearbook-title">THE PARTY ALBUM</h2>
+        <div class="yearbook-grid" id="yearbook-grid"></div>
+    </div>
 
-<div class="marquee">
-<div class="marquee-content">
-PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦
-</div>
-</div>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Album Display</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background-color: #0a140c; background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%); color: white; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
+        
+        /* IDLE SCREEN */
+        #idle-screen { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; position: absolute; top: 0; left: 0; z-index: 1; transition: opacity 0.8s ease; }
+        .main-content { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 5vw; height: 100%; }
+        .title-container { display: flex; flex-direction: column; line-height: 0.85; }
+        .title-container span { font-family: 'Anton', sans-serif; font-size: 16vw; color: #e2ff00; text-shadow: 0 0 40px rgba(226, 255, 0, 0.6); letter-spacing: -2px; animation: pulse 2s infinite alternate; }
+        @keyframes pulse { 0% { text-shadow: 0 0 20px rgba(226, 255, 0, 0.4); } 100% { text-shadow: 0 0 60px rgba(226, 255, 0, 0.8), 0 0 20px #e2ff00; } }
+        .instructions { max-width: 35vw; border-left: 8px solid #7dff4a; padding-left: 20px; }
+        .instructions p { font-size: 1.5vw; color: #a3bca3; margin: 10px 0; line-height: 1.4; }
+        .instructions h2 { font-size: 3.5vw; color: #e2ff00; margin: 10px 0; font-weight: bold; }
+        .qr-container { margin-top: 20px; background: white; padding: 15px; border-radius: 10px; display: inline-block; box-shadow: 0 0 30px rgba(226, 255, 0, 0.3); }
+        .qr-container img { width: 15vw; height: 15vw; display: block; }
+        .marquee { background-color: #e2ff00; color: #000; font-family: 'Anton', sans-serif; font-size: 3vw; padding: 10px 0; white-space: nowrap; overflow: hidden; position: absolute; bottom: 0; width: 100%; z-index: 2; }
+        .marquee-content { display: inline-block; animation: scroll 20s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-<div id="media-overlay">
-<img id="display-img" src="" style="display:none;" alt="Party Media">
-<video id="display-video" style="display:none;" muted playsinline></video>
-</div>
+        /* --- 3D MEDIA PLAYER --- */
+        #media-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; display: none; justify-content: center; align-items: center; z-index: 10; opacity: 0; overflow: hidden; }
+        #media-overlay.active { display: flex; opacity: 1; }
+        
+        #bg-media { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(40px) brightness(0.4) saturate(1.5); z-index: 1; pointer-events: none; }
+        
+        /* The 3D Stage */
+        .collage-container { 
+            display: flex; gap: 30px; justify-content: center; align-items: center; 
+            width: 95vw; height: 85vh; z-index: 2; position: relative; 
+            perspective: 1200px; /* Creates the 3D depth field */
+        }
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        /* The 3D Floating Media */
+        .media-element { 
+            max-width: 100%; max-height: 100%; object-fit: contain; 
+            border-radius: 15px; border: 3px solid #3a5a3e; 
+            /* Deep 3D shadow */
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9), 0 0 20px rgba(226, 255, 0, 0.3); 
+            will-change: transform, opacity; transition: width 0.5s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .collage-container.split .media-element { width: 48%; height: 100%; border-color: #e2ff00; }
+        
+        /* Like Counter */
+        .like-counter { position: absolute; bottom: 20px; right: 20px; font-size: 2.5vw; color: #e2ff00; text-shadow: 0 0 10px rgba(0,0,0,1); z-index: 20; display: none; font-family: 'Anton', sans-serif; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 2px solid #e2ff00; }
 
-// ⚠️ REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ⚠️
-const firebaseConfig = {
-  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
-  authDomain: "dj-photo-wall.firebaseapp.com",
-  projectId: "dj-photo-wall",
-  storageBucket: "dj-photo-wall.firebasestorage.app",
-  messagingSenderId: "187308843014",
-  appId: "1:187308843014:web:a4dbf9c17011767890a387"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+        /* YEARBOOK GRID */
+        #yearbook-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #050a06; display: none; flex-direction: column; z-index: 30; padding: 20px; box-sizing: border-box; }
+        #yearbook-overlay.active { display: flex; }
+        .yearbook-title { font-family: 'Anton', sans-serif; color: #e2ff00; font-size: 4vw; text-align: center; margin: 0 0 20px 0; text-shadow: 0 0 20px rgba(226,255,0,0.5); }
+        .yearbook-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; overflow-y: hidden; flex-grow: 1; }
+        .yearbook-item { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #3a5a3e; }
 
-let mediaList = [];
-let currentIndex = 0;
-let isPlaying = false;
-let slideTimer = null;
+        /* FLOATING REACTIONS */
+        .reaction-emoji { position: absolute; bottom: 0; font-size: 5vw; z-index: 50; animation: floatUp 3s ease-out forwards; pointer-events: none; text-shadow: 0 0 20px rgba(226, 255, 0, 0.8); }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 1; } 50% { transform: translateY(-40vh) scale(1.2); opacity: 1; } 100% { transform: translateY(-80vh) scale(1); opacity: 0; } }
 
-const idleScreen = document.getElementById('idle-screen');
-const mediaOverlay = document.getElementById('media-overlay');
-const imgEl = document.getElementById('display-img');
-const vidEl = document.getElementById('display-video');
+        /* AUDIO TOGGLE BUTTON */
+        #audio-toggle {
+            position: absolute; bottom: 10vh; left: 2vw; z-index: 100;
+            background: rgba(0,0,0,0.7); border: 2px solid #e2ff00; color: #e2ff00;
+            font-size: 2vw; padding: 10px 20px; border-radius: 30px;
+            cursor: pointer; font-family: 'Anton', sans-serif; display: none;
+            transition: all 0.3s ease;
+        }
+        #audio-toggle:hover { background: #e2ff00; color: #000; }
+        #audio-toggle.active { display: block; }
 
-const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
+        /* --- SPATIAL 3D TRANSITIONS --- */
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* 3D Swing In */
+        @keyframes swingIn3D { 
+            0% { transform: perspective(1000px) rotateY(-45deg) translateX(100px) scale(0.8); opacity: 0; } 
+            100% { transform: perspective(1000px) rotateY(0deg) translateX(0) scale(1); opacity: 1; } 
+        }
+        
+        /* 3D Flip Down */
+        @keyframes flipDown3D { 
+            0% { transform: perspective(1000px) rotateX(60deg) translateY(-100px) scale(0.8); opacity: 0; } 
+            100% { transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1); opacity: 1; } 
+        }
+        
+        /* 3D Pop Out */
+        @keyframes popOut3D { 
+            0% { transform: perspective(1000px) translateZ(-300px) scale(0.5); opacity: 0; } 
+            70% { transform: perspective(1000px) translateZ(50px) scale(1.05); opacity: 1; } 
+            100% { transform: perspective(1000px) translateZ(0) scale(1); opacity: 1; } 
+        }
 
-onSnapshot(q, (snapshot) => {
-mediaList = [];
-snapshot.forEach((doc) => {
-mediaList.push(doc.data());
-});
+        .anim-fade-out { animation: fadeOut 0.5s ease forwards; }
+        .anim-swing { animation: swingIn3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .anim-flip { animation: flipDown3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .anim-pop { animation: popOut3D 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    </style>
+</head>
+<body>
+    <div id="idle-screen">
+        <div class="main-content">
+            <div class="title-container"><span>SEND</span><span>YOUR</span><span>SHOTS</span></div>
+            <div class="instructions">
+                <p>Scan the QR code with your camera to</p><h2>SEND TO THE ALBUM</h2>
+                <p>Pick a photo or video. It joins the album instantly!</p>
+                <div class="qr-container"><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/upload.html" alt="Scan to Upload"></div>
+            </div>
+        </div>
+        <div class="marquee"><div class="marquee-content">PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦</div></div>
+    </div>
 
-if (!isPlaying && mediaList.length > 0) {
-isPlaying = true;
-currentIndex = 0;
-showMedia();
-}
-if (mediaList.length === 0 && isPlaying) {
-isPlaying = false;
-showIdle();
-}
-});
+    <div id="media-overlay">
+        <img id="bg-media" src="" alt="Background">
+        <div class="collage-container" id="collage-container">
+            <img id="display-img-1" class="media-element" style="display:none;">
+            <div id="likes-1" class="like-counter">❤️ 0</div>
+            
+            <img id="display-img-2" class="media-element" style="display:none;">
+            <div id="likes-2" class="like-counter">❤️ 0</div>
+            
+            <video id="display-video" class="media-element" style="display:none;" playsinline></video>
+        </div>
+        
+        <!-- Audio Toggle Button -->
+        <div id="audio-toggle" onclick="toggleAudio()">🔇 TAP FOR SOUND</div>
+    </div>
 
-function showIdle() {
-clearTimeout(slideTimer);
-vidEl.pause();
-vidEl.src = "";
-// Notice we DO NOT clear imgEl.src here. This keeps the image cached.
+    <div id="yearbook-overlay">
+        <h2 class="yearbook-title">THE PARTY ALBUM</h2>
+        <div class="yearbook-grid" id="yearbook-grid"></div>
+    </div>
 
-mediaOverlay.classList.remove('active');
-idleScreen.style.opacity = '1';
-}
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-function showMedia() {
-if (!isPlaying || mediaList.length === 0) {
-showIdle();
-return;
-}
+        const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain: "YOUR_PROJECT_ID.firebaseapp.com", projectId: "YOUR_PROJECT_ID", storageBucket: "YOUR_PROJECT_ID.appspot.com", messagingSenderId: "YOUR_SENDER_ID", appId: "YOUR_APP_ID" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-// If we've reached the end of the list, show QR code for 8 seconds, then loop
-if (currentIndex >= mediaList.length) {
-showIdle();
-clearTimeout(slideTimer);
-slideTimer = setTimeout(() => {
-if (isPlaying && mediaList.length > 0) {
-currentIndex = 0;
-showMedia();
-}
-}, 8000);
-return;
-}
+        let mediaList = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let slideTimer = null;
+        let lastLikes = {}; 
+        
+        // Audio State
+        let isMuted = true; 
 
-const currentMedia = mediaList[currentIndex];
-clearTimeout(slideTimer);
+        const transitions = ['anim-swing', 'anim-flip', 'anim-pop'];
 
-idleScreen.style.opacity = '0';
-mediaOverlay.classList.add('active');
+        const idleScreen = document.getElementById('idle-screen');
+        const mediaOverlay = document.getElementById('media-overlay');
+        const yearbookOverlay = document.getElementById('yearbook-overlay');
+        const collageContainer = document.getElementById('collage-container');
+        const yearbookGrid = document.getElementById('yearbook-grid');
+        const audioToggle = document.getElementById('audio-toggle');
+        
+        const img1 = document.getElementById('display-img-1');
+        const img2 = document.getElementById('display-img-2');
+        const vid = document.getElementById('display-video');
+        const bgEl = document.getElementById('bg-media');
+        const likes1 = document.getElementById('likes-1');
+        const likes2 = document.getElementById('likes-2');
 
-if (currentMedia.type === 'video') {
-imgEl.style.display = 'none';
-vidEl.style.display = 'block';
-vidEl.src = currentMedia.url;
+        // AUDIO TOGGLE LOGIC
+        window.toggleAudio = function() {
+            isMuted = !isMuted;
+            vid.muted = isMuted;
+            if(isMuted) {
+                audioToggle.innerHTML = "🔇 TAP FOR SOUND";
+                audioToggle.style.borderColor = "#e2ff00";
+                audioToggle.style.color = "#e2ff00";
+            } else {
+                audioToggle.innerHTML = "🔊 SOUND ON";
+                audioToggle.style.borderColor = "#ff4444";
+                audioToggle.style.color = "#ff4444";
+            }
+        }
 
-vidEl.play().catch(e => {
-console.log("Autoplay blocked");
-currentIndex++;
-showMedia();
-});
+        const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
+        
+        onSnapshot(q, (snapshot) => {
+            mediaList = [];
+            snapshot.forEach((doc) => { 
+                const data = doc.data();
+                mediaList.push(data); 
+                const docId = doc.id;
+                const currentLikes = data.likes || 0;
+                if (lastLikes[docId] !== undefined && currentLikes > lastLikes[docId]) { spawnReaction(); }
+                lastLikes[docId] = currentLikes;
+            });
 
-vidEl.onended = () => {
-currentIndex++;
-showMedia();
-};
-} else {
-vidEl.style.display = 'none';
-vidEl.pause();
-imgEl.style.display = 'block';
+            if (!isPlaying && mediaList.length > 0) { isPlaying = true; currentIndex = 0; showMedia(); }
+            if (mediaList.length === 0 && isPlaying) { isPlaying = false; showIdle(); }
+        });
 
-// 1. When the image loads, start the 10-second timer
-imgEl.onload = () => {
-clearTimeout(slideTimer);
-slideTimer = setTimeout(() => {
-currentIndex++;
-showMedia();
-}, 10000);
-};
+        function spawnReaction() {
+            if (document.querySelectorAll('.reaction-emoji').length > 5) return;
+            const emojis = ['❤️', '🔥', '💃', '🕺', '😍', '🎉'];
+            const el = document.createElement('div');
+            el.className = 'reaction-emoji';
+            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.left = Math.random() * 80 + 10 + 'vw';
+            mediaOverlay.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
 
-// 2. If the image is broken, skip it
-imgEl.onerror = () => {
-console.log("Image failed to load, skipping...");
-currentIndex++;
-showMedia();
-};
+        function hideAll() {
+            img1.style.display = 'none'; img1.className = 'media-element';
+            img2.style.display = 'none'; img2.className = 'media-element';
+            vid.style.display = 'none'; vid.className = 'media-element'; vid.pause();
+            likes1.style.display = 'none'; likes2.style.display = 'none';
+            collageContainer.classList.remove('split');
+            audioToggle.classList.remove('active'); // Hide audio button by default
+        }
 
-imgEl.src = currentMedia.url;
+        function showIdle() {
+            clearTimeout(slideTimer);
+            hideAll();
+            mediaOverlay.classList.remove('active');
+            yearbookOverlay.classList.remove('active');
+            idleScreen.style.opacity = '1';
+        }
 
-// 3. THE FIX: A fail-safe timer in case the browser skips 'onload' because it's cached
-slideTimer = setTimeout(() => {
-currentIndex++;
-showMedia();
-}, 12000); // If it hasn't moved after 12 seconds, force it to move
-}
-}
-</script>
+        function showYearbook() {
+            hideAll();
+            mediaOverlay.classList.remove('active');
+            idleScreen.style.opacity = '0';
+            yearbookOverlay.classList.add('active');
+            yearbookGrid.innerHTML = '';
+            mediaList.slice(-12).forEach(item => {
+                if(item.type === 'image') { yearbookGrid.innerHTML += `<img src="${item.url}" class="yearbook-item">`; }
+            });
+            slideTimer = setTimeout(() => { yearbookOverlay.classList.remove('active'); currentIndex = 0; showMedia(); }, 10000);
+        }
+
+        function showMedia() {
+            if (!isPlaying || mediaList.length === 0) { showIdle(); return; }
+            if (currentIndex >= mediaList.length) { showYearbook(); return; }
+
+            clearTimeout(slideTimer);
+            hideAll();
+            idleScreen.style.opacity = '0';
+            mediaOverlay.classList.add('active');
+
+            const randomAnim = transitions[Math.floor(Math.random() * transitions.length)];
+            const current = mediaList[currentIndex];
+            
+            if (current.type === 'video') {
+                bgEl.src = current.url;
+                vid.style.display = 'block';
+                vid.src = current.url;
+                vid.muted = isMuted; // Apply current mute state
+                vid.classList.add(randomAnim);
+                
+                // Show the audio toggle button if this is a video
+                audioToggle.classList.add('active');
+                
+                vid.play().catch(e => { 
+                    // If autoplay blocked because of sound, default back to mute
+                    if(!isMuted) { toggleAudio(); vid.play(); }
+                    else { currentIndex++; showMedia(); }
+                });
+                
+                vid.onended = () => {
+                    vid.classList.add('anim-fade-out');
+                    setTimeout(() => { currentIndex++; showMedia(); }, 500);
+                };
+                return;
+            }
+
+            // If it's a photo, skip to the next logic
+            let nextPhoto = null;
+            if (currentIndex + 1 < mediaList.length && mediaList[currentIndex + 1].type === 'image') { nextPhoto = mediaList[currentIndex + 1]; }
+
+            if (nextPhoto) {
+                collageContainer.classList.add('split');
+                bgEl.src = current.url;
+                
+                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
+                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
+
+                img2.src = nextPhoto.url; img2.style.display = 'block'; img2.classList.add(randomAnim);
+                likes2.innerText = `❤️ ${nextPhoto.likes || 0}`; likes2.style.display = 'block';
+
+                slideTimer = setTimeout(() => {
+                    img1.classList.add('anim-fade-out'); img2.classList.add('anim-fade-out');
+                    setTimeout(() => { currentIndex += 2; showMedia(); }, 500);
+                }, 15000); 
+            } else {
+                bgEl.src = current.url;
+                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
+                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
+
+                slideTimer = setTimeout(() => {
+                    img1.classList.add('anim-fade-out');
+                    setTimeout(() => { currentIndex += 1; showMedia(); }, 500);
+                }, 10000);
+            }
+        }
+    </script>
+</body>
+</html>
+        const db = getFirestore(app);
+
+        let mediaList = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let slideTimer = null;
+        let lastLikes = {}; 
+        
+        // Audio State
+        let isMuted = true; 
+
+        const transitions = ['anim-swing', 'anim-flip', 'anim-pop'];
+
+        const idleScreen = document.getElementById('idle-screen');
+        const mediaOverlay = document.getElementById('media-overlay');
+        const yearbookOverlay = document.getElementById('yearbook-overlay');
+        const collageContainer = document.getElementById('collage-container');
+        const yearbookGrid = document.getElementById('yearbook-grid');
+        const audioToggle = document.getElementById('audio-toggle');
+        
+        const img1 = document.getElementById('display-img-1');
+        const img2 = document.getElementById('display-img-2');
+        const vid = document.getElementById('display-video');
+        const bgEl = document.getElementById('bg-media');
+        const likes1 = document.getElementById('likes-1');
+        const likes2 = document.getElementById('likes-2');
+
+        // AUDIO TOGGLE LOGIC
+        window.toggleAudio = function() {
+            isMuted = !isMuted;
+            vid.muted = isMuted;
+            if(isMuted) {
+                audioToggle.innerHTML = "🔇 TAP FOR SOUND";
+                audioToggle.style.borderColor = "#e2ff00";
+                audioToggle.style.color = "#e2ff00";
+            } else {
+                audioToggle.innerHTML = "🔊 SOUND ON";
+                audioToggle.style.borderColor = "#ff4444";
+                audioToggle.style.color = "#ff4444";
+            }
+        }
+
+        const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
+        
+        onSnapshot(q, (snapshot) => {
+            mediaList = [];
+            snapshot.forEach((doc) => { 
+                const data = doc.data();
+                mediaList.push(data); 
+                const docId = doc.id;
+                const currentLikes = data.likes || 0;
+                if (lastLikes[docId] !== undefined && currentLikes > lastLikes[docId]) { spawnReaction(); }
+                lastLikes[docId] = currentLikes;
+            });
+
+            if (!isPlaying && mediaList.length > 0) { isPlaying = true; currentIndex = 0; showMedia(); }
+            if (mediaList.length === 0 && isPlaying) { isPlaying = false; showIdle(); }
+        });
+
+        function spawnReaction() {
+            if (document.querySelectorAll('.reaction-emoji').length > 5) return;
+            const emojis = ['❤️', '🔥', '💃', '🕺', '😍', '🎉'];
+            const el = document.createElement('div');
+            el.className = 'reaction-emoji';
+            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            el.style.left = Math.random() * 80 + 10 + 'vw';
+            mediaOverlay.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        function hideAll() {
+            img1.style.display = 'none'; img1.className = 'media-element';
+            img2.style.display = 'none'; img2.className = 'media-element';
+            vid.style.display = 'none'; vid.className = 'media-element'; vid.pause();
+            likes1.style.display = 'none'; likes2.style.display = 'none';
+            collageContainer.classList.remove('split');
+            audioToggle.classList.remove('active'); // Hide audio button by default
+        }
+
+        function showIdle() {
+            clearTimeout(slideTimer);
+            hideAll();
+            mediaOverlay.classList.remove('active');
+            yearbookOverlay.classList.remove('active');
+            idleScreen.style.opacity = '1';
+        }
+
+        function showYearbook() {
+            hideAll();
+            mediaOverlay.classList.remove('active');
+            idleScreen.style.opacity = '0';
+            yearbookOverlay.classList.add('active');
+            yearbookGrid.innerHTML = '';
+            mediaList.slice(-12).forEach(item => {
+                if(item.type === 'image') { yearbookGrid.innerHTML += `<img src="${item.url}" class="yearbook-item">`; }
+            });
+            slideTimer = setTimeout(() => { yearbookOverlay.classList.remove('active'); currentIndex = 0; showMedia(); }, 10000);
+        }
+
+        function showMedia() {
+            if (!isPlaying || mediaList.length === 0) { showIdle(); return; }
+            if (currentIndex >= mediaList.length) { showYearbook(); return; }
+
+            clearTimeout(slideTimer);
+            hideAll();
+            idleScreen.style.opacity = '0';
+            mediaOverlay.classList.add('active');
+
+            const randomAnim = transitions[Math.floor(Math.random() * transitions.length)];
+            const current = mediaList[currentIndex];
+            
+            if (current.type === 'video') {
+                bgEl.src = current.url;
+                vid.style.display = 'block';
+                vid.src = current.url;
+                vid.muted = isMuted; // Apply current mute state
+                vid.classList.add(randomAnim);
+                
+                // Show the audio toggle button if this is a video
+                audioToggle.classList.add('active');
+                
+                vid.play().catch(e => { 
+                    // If autoplay blocked because of sound, default back to mute
+                    if(!isMuted) { toggleAudio(); vid.play(); }
+                    else { currentIndex++; showMedia(); }
+                });
+                
+                vid.onended = () => {
+                    vid.classList.add('anim-fade-out');
+                    setTimeout(() => { currentIndex++; showMedia(); }, 500);
+                };
+                return;
+            }
+
+            // If it's a photo, skip to the next logic
+            let nextPhoto = null;
+            if (currentIndex + 1 < mediaList.length && mediaList[currentIndex + 1].type === 'image') { nextPhoto = mediaList[currentIndex + 1]; }
+
+            if (nextPhoto) {
+                collageContainer.classList.add('split');
+                bgEl.src = current.url;
+                
+                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
+                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
+
+                img2.src = nextPhoto.url; img2.style.display = 'block'; img2.classList.add(randomAnim);
+                likes2.innerText = `❤️ ${nextPhoto.likes || 0}`; likes2.style.display = 'block';
+
+                slideTimer = setTimeout(() => {
+                    img1.classList.add('anim-fade-out'); img2.classList.add('anim-fade-out');
+                    setTimeout(() => { currentIndex += 2; showMedia(); }, 500);
+                }, 15000); 
+            } else {
+                bgEl.src = current.url;
+                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
+                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
+
+                slideTimer = setTimeout(() => {
+                    img1.classList.add('anim-fade-out');
+                    setTimeout(() => { currentIndex += 1; showMedia(); }, 500);
+                }, 10000);
+            }
+        }
+    </script>
 </body>
 </html>
