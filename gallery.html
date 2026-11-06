@@ -3,239 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Party Album | Download Gallery</title>
-
+<title>Party Album - Download Portal</title>
 <style>
-* {
-box-sizing: border-box;
-}
-
 body {
+background-color: #001a00;
+color: white;
+font-family: Arial, sans-serif;
 margin: 0;
 padding: 20px;
-background: #020a05;
-color: #ccff00;
-font-family: Arial, sans-serif;
-}
-
-header {
 text-align: center;
-padding: 30px 10px;
 }
-
 h1 {
-font-size: clamp(28px, 5vw, 48px);
-text-shadow: 0 0 15px #39ff14;
-margin-bottom: 10px;
+color: #ccff00;
+font-size: 2.5rem;
+text-transform: uppercase;
+text-shadow: 0 0 10px rgba(204, 255, 0, 0.5);
 }
-
-header p {
-color: #b6ff80;
-}
-
-#gallery {
+#gallery-grid {
 display: grid;
-grid-template-columns:
-repeat(auto-fill, minmax(250px, 1fr));
-gap: 22px;
+grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+gap: 20px;
+padding: 20px;
 max-width: 1400px;
-margin: 30px auto;
+margin: 0 auto;
 }
-
 .media-card {
-background: #07140a;
-border: 1px solid #39ff14;
+background-color: #002b00;
+border: 2px solid #ccff00;
 border-radius: 12px;
 overflow: hidden;
-box-shadow: 0 0 12px rgba(57,255,20,.2);
-transition: .2s;
+display: flex;
+flex-direction: column;
 }
-
-.media-card:hover {
-box-shadow: 0 0 20px #39ff14;
-transform: translateY(-3px);
-}
-
-.media-preview {
+.media-container {
 width: 100%;
-height: 230px;
-object-fit: cover;
-display: block;
-background: #000;
+height: 250px;
+background-color: black;
+display: flex;
+align-items: center;
+justify-content: center;
 }
-
-.media-info {
-padding: 15px;
+.media-container img, .media-container video {
+width: 100%;
+height: 100%;
+object-fit: contain;
 }
-
-.uploader {
-color: #b6ff80;
-margin-bottom: 12px;
-font-size: 14px;
-}
-
+.card-info { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+.uploader-name { font-weight: bold; color: #ccff00; margin: 0; }
 .download-btn {
-display: block;
-width: 100%;
-padding: 12px;
-background: #ccff00;
-color: #020a05;
-text-align: center;
+background-color: #ccff00;
+color: black;
 text-decoration: none;
-font-weight: bold;
+padding: 10px;
 border-radius: 6px;
-transition: .2s;
+font-weight: bold;
+text-transform: uppercase;
 }
-
-.download-btn:hover {
-background: #39ff14;
-box-shadow: 0 0 15px #39ff14;
-}
-
-#status {
-text-align: center;
-padding: 30px;
-color: #b6ff80;
-}
-
+#loading, #empty-message { font-size: 1.5rem; color: #ccff00; margin-top: 50px; }
 </style>
 </head>
-
 <body>
 
-<header>
-<h1>PARTY ALBUM</h1>
-<p>Relive the night. Download your memories.</p>
-</header>
+<h1>Party Album</h1>
+<p>View and download the memories from tonight!</p>
 
-<div id="status">LOADING PARTY ALBUM...</div>
-
-<main id="gallery"></main>
+<div id="loading">Loading the album...</div>
+<div id="empty-message" style="display: none;">No media has been uploaded yet.</div>
+<div id="gallery-grid"></div>
 
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-getFirestore,
-collection,
-query,
-orderBy,
-onSnapshot
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-
-// YOUR EXISTING FIREBASE CONFIG
+// ⚠️ REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ⚠️
 const firebaseConfig = {
-  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
-  authDomain: "dj-photo-wall.firebaseapp.com",
-  projectId: "dj-photo-wall",
-  storageBucket: "dj-photo-wall.firebasestorage.app",
-  messagingSenderId: "187308843014",
-  appId: "1:187308843014:web:a4dbf9c17011767890a387"
+apiKey: "YOUR_API_KEY",
+authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+projectId: "YOUR_PROJECT_ID",
+storageBucket: "YOUR_PROJECT_ID.appspot.com",
+messagingSenderId: "YOUR_SENDER_ID",
+appId: "YOUR_APP_ID"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const gallery = document.getElementById("gallery");
-const status = document.getElementById("status");
+const grid = document.getElementById('gallery-grid');
+const loading = document.getElementById('loading');
+const emptyMessage = document.getElementById('empty-message');
 
-const mediaQuery = query(
-collection(db, "media_queue"),
-orderBy("timestamp", "asc")
-);
+async function loadGallery() {
+try {
+const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
+const querySnapshot = await getDocs(q);
 
+loading.style.display = 'none';
 
-function createMediaCard(item) {
-
-const card = document.createElement("div");
-card.className = "media-card";
-
-let preview;
-
-if (item.type?.startsWith("video/")) {
-
-preview = document.createElement("video");
-
-preview.controls = true;
-preview.preload = "metadata";
-preview.playsInline = true;
-
-} else {
-
-preview = document.createElement("img");
-
-preview.alt = "Party photo";
-preview.loading = "lazy";
-
-}
-
-preview.src = item.url;
-preview.className = "media-preview";
-
-const info = document.createElement("div");
-info.className = "media-info";
-
-const uploader = document.createElement("div");
-uploader.className = "uploader";
-
-uploader.textContent =
-"Uploaded by: " + (item.name || "Anonymous");
-
-const download = document.createElement("a");
-
-download.href = item.url;
-download.download = item.name || "party-media";
-download.target = "_blank";
-download.rel = "noopener";
-
-download.className = "download-btn";
-download.textContent = "⬇ DOWNLOAD";
-
-info.appendChild(uploader);
-info.appendChild(download);
-
-card.appendChild(preview);
-card.appendChild(info);
-
-return card;
-}
-
-
-onSnapshot(mediaQuery, snapshot => {
-
-gallery.innerHTML = "";
-
-if (snapshot.empty) {
-
-status.textContent = "NO MEDIA UPLOADED YET.";
-
+if (querySnapshot.empty) {
+emptyMessage.style.display = 'block';
 return;
 }
 
-status.textContent =
-snapshot.size + " MEMORIES IN THE PARTY ALBUM";
+querySnapshot.forEach((doc) => {
+const data = doc.data();
+const card = document.createElement('div');
+card.className = 'media-card';
 
-snapshot.docs.forEach(doc => {
+let mediaElement = data.type === 'video'
+? `<video src="${data.url}" controls preload="metadata"></video>`
+: `<img src="${data.url}" alt="Photo">`;
 
-const item = doc.data();
-
-gallery.appendChild(createMediaCard(item));
-
+card.innerHTML = `
+<div class="media-container">${mediaElement}</div>
+<div class="card-info">
+<p class="uploader-name">Uploaded by: ${data.name}</p>
+<a href="${data.url}" download="${data.name}-party-media" target="_blank" class="download-btn">Download</a>
+</div>
+`;
+grid.appendChild(card);
 });
-
-}, error => {
-
-console.error("Gallery error:", error);
-
-status.textContent =
-"UNABLE TO LOAD ALBUM. PLEASE TRY AGAIN.";
-
-});
-
+} catch (error) {
+console.error("Error loading gallery: ", error);
+loading.innerText = "Error loading gallery.";
+}
+}
+loadGallery();
 </script>
+</body>
+</html>
