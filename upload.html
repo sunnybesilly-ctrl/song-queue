@@ -432,7 +432,8 @@ form.addEventListener("submit", async (e) => {
     done.hidden = false;
     window.scrollTo(0, 0);
   } catch (err) {
-    console.error(err);
+      alert(err.message);
+      console.error(err);
     if (uploaded) deleteObject(uploaded).catch(() => {});
     fail("Upload failed. Check your signal and tap Send again.");
   } finally {
