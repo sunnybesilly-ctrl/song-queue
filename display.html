@@ -1,191 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Photo wall</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Familjen+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Party Album Display</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --base:#04140A;
-  --deep:#020A05;
-  --line:#1F6B3A;
-  --acid:#F4FF1A;
-  --lime:#37FF76;
-  --bone:#E9FFEA;
-  --dim:#7FB391;
-  --alarm:#FF4058;
-  --display:"Big Shoulders Display",sans-serif;
-  --body:"Familjen Grotesk",sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--deep);cursor:none}
-body{
-  font-family:var(--body);color:var(--bone);
-  background:
-    radial-gradient(120% 70% at 100% 100%,rgba(55,255,118,.22),transparent 62%),
-    radial-gradient(80% 50% at 0% 0%,rgba(244,255,26,.10),transparent 58%),
-    linear-gradient(180deg,var(--deep) 0%,var(--base) 100%);
+body {
+margin: 0;
+padding: 0;
+background-color: #0a140c;
+background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%);
+color: white;
+font-family: 'Inter', sans-serif;
+overflow: hidden;
+height: 100vh;
 }
 
-/* ---------- idle screen (stand-in for your music UI) ---------- */
-/* Replace the contents of #musicUI with your real music UI, or add your own selectors to MUSIC_UI_SELECTORS in the script. */
-#musicUI{
-  position:fixed;left:0;top:0;width:100%;height:100%;z-index:10;
-  opacity:1;visibility:visible;transition:opacity .5s ease,visibility 0s;
+/* --- IDLE SCREEN (The "SEND YOUR SHOTS" layout) --- */
+#idle-screen {
+width: 100vw;
+height: 100vh;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+position: absolute;
+top: 0;
+left: 0;
+z-index: 1;
+transition: opacity 0.5s ease;
 }
-#musicUI.media-hidden,.media-hidden{opacity:0!important;visibility:hidden!important;transition:opacity .35s ease,visibility 0s linear .35s}
 
-.floor{
-  position:absolute;left:-20%;right:-20%;bottom:0;height:60%;opacity:.45;
-  background:
-    repeating-linear-gradient(90deg,rgba(55,255,118,.35) 0 2px,transparent 2px 9vh),
-    repeating-linear-gradient(0deg,rgba(55,255,118,.35) 0 2px,transparent 2px 9vh);
-  -webkit-transform:perspective(60vh) rotateX(64deg);transform:perspective(60vh) rotateX(64deg);
-  -webkit-transform-origin:50% 100%;transform-origin:50% 100%;
-  -webkit-mask-image:linear-gradient(to top,#000 0%,transparent 85%);
-  mask-image:linear-gradient(to top,#000 0%,transparent 85%);
+.main-content {
+display: flex;
+flex-direction: row;
+align-items: center;
+justify-content: space-between;
+padding: 0 5vw;
+height: 100%;
 }
-.idle{position:absolute;left:5vw;top:6vh;right:5vw;bottom:15vh}
-.title{
-  font-family:var(--display);font-weight:900;text-transform:uppercase;color:var(--acid);
-  font-size:21vh;line-height:.8;letter-spacing:-.01em;
-  -webkit-transform:rotate(-4deg);transform:rotate(-4deg);
-  -webkit-transform-origin:0 100%;transform-origin:0 100%;
-}
-.title span{display:block;opacity:.14;animation:tube 1.5s steps(1,end) forwards}
-.title span:nth-child(1){animation-delay:.2s}
-.title span:nth-child(2){margin-left:6vw;animation-delay:.6s}
-.title span:nth-child(3){margin-left:2vw;animation-delay:1s}
-@keyframes tube{
-  0%{opacity:.14;text-shadow:none}
-  14%{opacity:1;text-shadow:0 0 1.6vh rgba(244,255,26,.75),0 0 5vh rgba(244,255,26,.4)}
-  22%{opacity:.18;text-shadow:none}
-  30%{opacity:1;text-shadow:0 0 1.6vh rgba(244,255,26,.75),0 0 5vh rgba(244,255,26,.4)}
-  38%{opacity:.3;text-shadow:none}
-  46%,100%{opacity:1;text-shadow:0 0 1.6vh rgba(244,255,26,.75),0 0 5vh rgba(244,255,26,.4)}
-}
-.how{
-  position:absolute;right:0;bottom:0;max-width:52vw;
-  padding-left:2vw;border-left:.7vh solid var(--lime);
-}
-.how-step{font-size:3.3vh;line-height:1.3;color:var(--dim)}
-.how-url{
-  display:block;margin:1vh 0 1.4vh;
-  font-family:var(--display);font-weight:900;font-size:7.4vh;line-height:.95;color:var(--acid);word-break:break-all;
-}
-.how-fine{font-size:2.6vh;color:var(--dim)}
 
-.ticker{
-  position:absolute;left:0;right:0;bottom:0;height:8vh;overflow:hidden;background:var(--acid);color:#061207;
+/* Huge Glowing Text */
+.title-container {
+display: flex;
+flex-direction: column;
+line-height: 0.85;
 }
-.track{
-  display:inline-block;white-space:nowrap;line-height:8vh;
-  font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:4.6vh;
-  -webkit-animation:slide 40s linear infinite;animation:slide 40s linear infinite;
+.title-container span {
+font-family: 'Anton', sans-serif;
+font-size: 16vw;
+color: #e2ff00;
+text-shadow: 0 0 40px rgba(226, 255, 0, 0.6);
+letter-spacing: -2px;
+/* Flashing Animation */
+animation: pulse 2s infinite alternate;
 }
-.track b{font-weight:900;margin:0 2.4vw}
-.track i{display:inline-block;width:1.6vh;height:1.6vh;background:#061207;-webkit-transform:rotate(45deg);transform:rotate(45deg)}
-@-webkit-keyframes slide{from{-webkit-transform:translateX(0)}to{-webkit-transform:translateX(-50%)}}
-@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes pulse {
+0% { text-shadow: 0 0 20px rgba(226, 255, 0, 0.4); }
+100% { text-shadow: 0 0 60px rgba(226, 255, 0, 0.8), 0 0 20px #e2ff00; }
+}
 
-/* ---------- media overlay ---------- */
-#overlay{
-  position:fixed;left:0;top:0;width:100%;height:100%;z-index:50;background:#000;
-  opacity:0;visibility:hidden;transition:opacity .35s ease,visibility 0s linear .35s;
+/* Right Side Instructions */
+.instructions {
+max-width: 35vw;
+border-left: 8px solid #7dff4a;
+padding-left: 20px;
 }
-#overlay.on{opacity:1;visibility:visible;transition:opacity .35s ease,visibility 0s}
-.stage{position:absolute;left:3vw;right:3vw;top:3vh;bottom:3vh}
-.m{
-  display:none;position:absolute;left:0;top:0;width:100%;height:100%;
-  -o-object-fit:contain;object-fit:contain;background:#000;
+.instructions p {
+font-size: 1.5vw;
+color: #a3bca3;
+margin: 10px 0;
+line-height: 1.4;
 }
-.m.live{display:block;animation:wipe .75s cubic-bezier(.2,.7,.2,1) both}
-@keyframes wipe{
-  from{-webkit-clip-path:inset(0 100% 0 0);clip-path:inset(0 100% 0 0);opacity:.2}
-  to{-webkit-clip-path:inset(0 0 0 0);clip-path:inset(0 0 0 0);opacity:1}
+.instructions h2 {
+font-size: 3.5vw;
+color: #e2ff00;
+margin: 10px 0;
+font-weight: bold;
 }
-.br{position:absolute;width:5vh;height:5vh;border:0 solid var(--lime);z-index:3}
-.br.tl{left:1.2vh;top:1.2vh;border-top-width:.6vh;border-left-width:.6vh}
-.br.tr{right:1.2vh;top:1.2vh;border-top-width:.6vh;border-right-width:.6vh}
-.br.bl{left:1.2vh;bottom:1.2vh;border-bottom-width:.6vh;border-left-width:.6vh}
-.br.brr{right:1.2vh;bottom:1.2vh;border-bottom-width:.6vh;border-right-width:.6vh}
+.qr-container {
+margin-top: 20px;
+background: white;
+padding: 15px;
+border-radius: 10px;
+display: inline-block;
+box-shadow: 0 0 30px rgba(226, 255, 0, 0.3);
+}
+.qr-container img {
+width: 15vw;
+height: 15vw;
+display: block;
+}
 
-.tag{
-  position:absolute;left:3vw;bottom:8vh;z-index:4;
-  background:var(--acid);color:#061207;padding:1.2vh 4vw 1.4vh 1.8vw;
-  -webkit-clip-path:polygon(0 0,100% 0,calc(100% - 2vh) 100%,0 100%);clip-path:polygon(0 0,100% 0,calc(100% - 2vh) 100%,0 100%);
-  -webkit-transform:translateX(-130%);transform:translateX(-130%);
+/* Bottom Marquee */
+.marquee {
+background-color: #e2ff00;
+color: #000;
+font-family: 'Anton', sans-serif;
+font-size: 3vw;
+padding: 10px 0;
+white-space: nowrap;
+overflow: hidden;
+position: absolute;
+bottom: 0;
+width: 100%;
+z-index: 2;
 }
-.tag.pop{animation:tag 6s cubic-bezier(.2,.8,.2,1) both}
-@keyframes tag{
-  0%{-webkit-transform:translateX(-130%);transform:translateX(-130%)}
-  7%{-webkit-transform:translateX(0);transform:translateX(0)}
-  82%{-webkit-transform:translateX(0);transform:translateX(0)}
-  92%,100%{-webkit-transform:translateX(-130%);transform:translateX(-130%)}
+.marquee-content {
+display: inline-block;
+animation: scroll 20s linear infinite;
 }
-.tag small{display:block;font-size:2.2vh;font-weight:700;line-height:1}
-.tag b{display:block;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:8vh;line-height:.9}
-
-.meter{position:absolute;left:0;bottom:0;width:100%;height:1vh;background:rgba(55,255,118,.16);z-index:5}
-.meter i{display:block;height:100%;width:0;background:-webkit-linear-gradient(left,var(--lime),var(--acid));background:linear-gradient(90deg,var(--lime),var(--acid))}
-
-/* ---------- connection chip ---------- */
-#link{
-  position:fixed;right:2vw;top:2vh;z-index:20;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;
-  font-size:2vh;font-weight:700;color:var(--dim);
+@keyframes scroll {
+0% { transform: translateX(0); }
+100% { transform: translateX(-50%); }
 }
-#link i{display:block;width:1.4vh;height:1.4vh;margin-right:.8vh;background:#6B6B1F}
-#link.ok i{background:var(--lime)}
-#link.bad{color:var(--alarm)}
-#link.bad i{background:var(--alarm)}
 
-@media (prefers-reduced-motion:reduce){
-  .title span{animation:none;opacity:1}
+/* --- MEDIA PLAYER OVERLAY --- */
+#media-overlay {
+position: absolute;
+top: 0;
+left: 0;
+width: 100vw;
+height: 100vh;
+background: #000;
+display: none; /* Hidden by default */
+justify-content: center;
+align-items: center;
+z-index: 10;
+opacity: 0;
+transition: opacity 0.5s ease;
+}
+#media-overlay.active {
+display: flex;
+opacity: 1;
+}
+#media-overlay img, #media-overlay video {
+width: 100%;
+height: 100%;
+object-fit: contain;
 }
 </style>
 </head>
 <body>
 
-<!-- MUSIC UI (idle screen). Swap in your real music UI here, or list your own selectors in MUSIC_UI_SELECTORS. -->
-<div id="musicUI">
-  <div class="floor"></div>
-  <div class="idle">
-    <h1 class="title"><span>Send</span><span>your</span><span>shots</span></h1>
-    <div class="how">
-      <p class="how-step">On your phone, open</p>
-      <b class="how-url" id="uploadUrl">upload.html</b>
-      <p class="how-fine">Pick a photo or video. It plays here, then it joins the album</p>
-    </div>
-  </div>
-  <div class="ticker" aria-hidden="true">
-    <div class="track">
-      <b>Send a photo</b><i></i><b>Send a video up to 30 seconds</b><i></i><b>Put your name on the big screen</b><i></i><b>Send a photo</b><i></i><b>Send a video up to 30 seconds</b><i></i><b>Put your name on the big screen</b><i></i>
-      <b>Send a photo</b><i></i><b>Send a video up to 30 seconds</b><i></i><b>Put your name on the big screen</b><i></i><b>Send a photo</b><i></i><b>Send a video up to 30 seconds</b><i></i><b>Put your name on the big screen</b><i></i>
-    </div>
-  </div>
+<!-- IDLE SCREEN -->
+<div id="idle-screen">
+<div class="main-content">
+<div class="title-container">
+<span>SEND</span>
+<span>YOUR</span>
+<span>SHOTS</span>
 </div>
 
-<!-- MEDIA OVERLAY (hidden until something is in the queue) -->
-<div id="overlay" aria-hidden="true">
-  <div class="stage">
-    <img id="photo" class="m" alt="">
-    <video id="clip" class="m" muted playsinline preload="auto"></video>
-  </div>
-  <i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br brr"></i>
-  <div class="tag" id="tag"><small>from</small><b id="tagName"></b></div>
-  <div class="meter"><i id="meterFill"></i></div>
+<div class="instructions">
+<p>On your phone, scan the code or open</p>
+<h2>upload.html</h2>
+<p>Pick a photo or video. It joins the album instantly!</p>
+<div class="qr-container">
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/upload.html" alt="Scan to Upload">
+</div>
+</div>
 </div>
 
-<div id="link"><i></i><span id="linkText">Connecting</span></div>
+<!-- Scrolling Banner -->
+<div class="marquee">
+<div class="marquee-content">
+PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦
+</div>
+</div>
+</div>
 
+<!-- MEDIA PLAYER -->
+<div id="media-overlay">
+<img id="display-img" src="" style="display:none;">
+<video id="display-video" style="display:none;" muted playsinline></video>
+</div>
+
+<!-- FIREBASE LOGIC -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getStorage, ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// ⚠️ REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ⚠️
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
   authDomain: "dj-photo-wall.firebaseapp.com",
@@ -195,183 +191,81 @@ const firebaseConfig = {
   appId: "1:187308843014:web:a4dbf9c17011767890a387"
 };
 
-const IMAGE_MS = 15000;          // photo on screen time
-const VIDEO_MAX_MS = 30000;      // video fallback timeout
-const LOAD_TIMEOUT_MS = 20000;   // skip anything that won't load
-const MUSIC_UI_SELECTORS = ["#musicUI"]; // everything here is hidden while media plays (audio keeps running)
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
-const overlay = document.getElementById("overlay");
-const photo = document.getElementById("photo");
-const clip = document.getElementById("clip");
-const tag = document.getElementById("tag");
-const tagName = document.getElementById("tagName");
-const meter = document.getElementById("meterFill");
-const linkEl = document.getElementById("link");
-const linkText = document.getElementById("linkText");
+let mediaList = [];
+let currentIndex = 0;
+let isPlaying = false;
+let imageTimeout;
 
-try {
-  document.getElementById("uploadUrl").textContent = new URL("upload.html", location.href).href.replace(/^https?:\/\//, "");
-} catch (e) {}
+const idleScreen = document.getElementById('idle-screen');
+const mediaOverlay = document.getElementById('media-overlay');
+const imgEl = document.getElementById('display-img');
+const vidEl = document.getElementById('display-video');
 
-const sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
-function fire(n) { try { window.dispatchEvent(new CustomEvent(n)); } catch (e) {} }
-function setLink(state, text) { linkEl.className = state; linkText.textContent = text; }
+// Listen to Firestore in real-time
+const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
 
-function setMusicUI(show) {
-  MUSIC_UI_SELECTORS.forEach(function (sel) {
-    document.querySelectorAll(sel).forEach(function (el) { el.classList.toggle("media-hidden", !show); });
-  });
-}
-
-function meterReset() {
-  meter.style.transition = "none";
-  meter.style.width = "0%";
-  void meter.offsetWidth;
-}
-function meterRun(ms) {
-  meterReset();
-  meter.style.transition = "width " + ms + "ms linear";
-  meter.style.width = "100%";
-}
-function showStage(el) {
-  photo.classList.remove("live");
-  clip.classList.remove("live");
-  void el.offsetWidth;
-  el.classList.add("live");
-}
-function hideStage() {
-  photo.classList.remove("live");
-  clip.classList.remove("live");
-  try { clip.pause(); } catch (e) {}
-  meterReset();
-}
-function releaseMedia() {
-  try { clip.pause(); } catch (e) {}
-  clip.removeAttribute("src");
-  clip.load();
-  photo.removeAttribute("src");
-}
-
-/* ---------- cleanup: delete Storage file + Firestore doc ---------- */
-async function retry(fn, tries, wait) {
-  for (let i = 0; i < tries; i++) {
-    try { await fn(); return true; }
-    catch (e) {
-      if (e && e.code === "storage/object-not-found") return true;
-      console.warn("cleanup retry " + (i + 1), e);
-      await sleep(wait);
-    }
-  }
-  return false;
-}
-function cleanup(item) {
-// DISABLED: Keep files in Firebase for the 24-hour gallery
-return Promise.resolve();
-}
-
-/* ---------- playback state machine ---------- */
-let busy = false;
-let head = null;
-const finished = new Set();
-
-function tick() {
-  if (busy || !head || finished.has(head.id)) return false;
-  play(head);
-  return true;
-}
-
-async function finish(item) {
-  finished.add(item.id);
-  hideStage();
-  const gone = cleanup(item);
-  await Promise.race([gone, sleep(2500)]);
-  await sleep(300);
-  busy = false;
-  if (!tick()) {
-    overlay.classList.remove("on");
-    setTimeout(function () {
-      if (!busy) { releaseMedia(); setMusicUI(true); fire("photowall:end"); }
-    }, 700);
-  }
-}
-
-function play(item) {
-  busy = true;
-  const d = item.data || {};
-  if (!d.url) { finish(item); return; }
-
-  const isVideo = d.type === "video";
-  let over = false;
-  const timers = [];
-  const later = function (fn, ms) { const t = setTimeout(fn, ms); timers.push(t); return t; };
-  const end = function () {
-    if (over) return;
-    over = true;
-    timers.forEach(clearTimeout);
-    photo.onload = photo.onerror = null;
-    clip.oncanplay = clip.onended = clip.onerror = null;
-    finish(item);
-  };
-
-  releaseMedia();
-  setMusicUI(false);
-  fire("photowall:start");
-  overlay.classList.add("on");
-
-  tagName.textContent = d.name || "a guest";
-  tag.classList.remove("pop");
-  void tag.offsetWidth;
-  tag.classList.add("pop");
-
-  const loadTimer = later(end, LOAD_TIMEOUT_MS);
-
-  if (isVideo) {
-    clip.muted = true;
-    clip.setAttribute("muted", "");
-    clip.setAttribute("playsinline", "");
-    clip.onerror = end;
-    clip.onended = end;
-    clip.oncanplay = function () {
-      clip.oncanplay = null;
-      if (over) return;
-      clearTimeout(loadTimer);
-      showStage(clip);
-      const p = clip.play();
-      if (p && p.catch) p.catch(end);
-      const dur = isFinite(clip.duration) ? clip.duration * 1000 : VIDEO_MAX_MS;
-      meterRun(Math.min(dur, VIDEO_MAX_MS));
-      later(end, VIDEO_MAX_MS);
-    };
-    clip.src = d.url;
-    clip.load();
-  } else {
-    photo.onload = function () {
-      if (over) return;
-      clearTimeout(loadTimer);
-      showStage(photo);
-      meterRun(IMAGE_MS);
-      later(end, IMAGE_MS);
-    };
-    photo.onerror = end;
-    photo.src = d.url;
-  }
-}
-
-/* ---------- live queue ---------- */
-const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"), limit(1));
-
-onSnapshot(q, function (snap) {
-  head = snap.empty ? null : { id: snap.docs[0].id, data: snap.docs[0].data() };
-  setLink("ok", "Listening for uploads");
-  tick();
-}, function (err) {
-  console.error("Queue listener failed:", err);
-  setLink("bad", "Can't reach the queue (" + (err && err.code ? err.code : "error") + ")");
+onSnapshot(q, (snapshot) => {
+mediaList = [];
+snapshot.forEach((doc) => {
+mediaList.push(doc.data());
 });
+
+// If photos exist but we aren't playing, start the show!
+if (!isPlaying && mediaList.length > 0) {
+startShow();
+}
+// If the album is empty, go back to the idle screen
+if (mediaList.length === 0 && isPlaying) {
+isPlaying = false;
+mediaOverlay.classList.remove('active');
+idleScreen.style.opacity = '1';
+}
+});
+
+function startShow() {
+isPlaying = true;
+idleScreen.style.opacity = '0';
+mediaOverlay.classList.add('active');
+playNext();
+}
+
+function playNext() {
+if (mediaList.length === 0) return;
+
+// Loop back to the beginning if we reach the end
+if (currentIndex >= mediaList.length) {
+currentIndex = 0;
+}
+
+const currentMedia = mediaList[currentIndex];
+clearTimeout(imageTimeout);
+
+if (currentMedia.type === 'video') {
+imgEl.style.display = 'none';
+vidEl.style.display = 'block';
+vidEl.src = currentMedia.url;
+vidEl.play().catch(e => console.log("Autoplay blocked", e));
+
+// Move to the next video when this one ends
+vidEl.onended = () => {
+currentIndex++;
+playNext();
+};
+} else {
+vidEl.style.display = 'none';
+imgEl.style.display = 'block';
+imgEl.src = currentMedia.url;
+
+// Show images for 10 seconds
+imageTimeout = setTimeout(() => {
+currentIndex++;
+playNext();
+}, 10000);
+}
+}
 </script>
 </body>
 </html>
