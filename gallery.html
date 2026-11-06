@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Party Album | Download Gallery</title>
+
+<style>
+* {
+box-sizing: border-box;
+}
+
+body {
+margin: 0;
+padding: 20px;
+background: #020a05;
+color: #ccff00;
+font-family: Arial, sans-serif;
+}
+
+header {
+text-align: center;
+padding: 30px 10px;
+}
+
+h1 {
+font-size: clamp(28px, 5vw, 48px);
+text-shadow: 0 0 15px #39ff14;
+margin-bottom: 10px;
+}
+
+header p {
+color: #b6ff80;
+}
+
+#gallery {
+display: grid;
+grid-template-columns:
+repeat(auto-fill, minmax(250px, 1fr));
+gap: 22px;
+max-width: 1400px;
+margin: 30px auto;
+}
+
+.media-card {
+background: #07140a;
+border: 1px solid #39ff14;
+border-radius: 12px;
+overflow: hidden;
+box-shadow: 0 0 12px rgba(57,255,20,.2);
+transition: .2s;
+}
+
+.media-card:hover {
+box-shadow: 0 0 20px #39ff14;
+transform: translateY(-3px);
+}
+
+.media-preview {
+width: 100%;
+height: 230px;
+object-fit: cover;
+display: block;
+background: #000;
+}
+
+.media-info {
+padding: 15px;
+}
+
+.uploader {
+color: #b6ff80;
+margin-bottom: 12px;
+font-size: 14px;
+}
+
+.download-btn {
+display: block;
+width: 100%;
+padding: 12px;
+background: #ccff00;
+color: #020a05;
+text-align: center;
+text-decoration: none;
+font-weight: bold;
+border-radius: 6px;
+transition: .2s;
+}
+
+.download-btn:hover {
+background: #39ff14;
+box-shadow: 0 0 15px #39ff14;
+}
+
+#status {
+text-align: center;
+padding: 30px;
+color: #b6ff80;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>PARTY ALBUM</h1>
+<p>Relive the night. Download your memories.</p>
+</header>
+
+<div id="status">LOADING PARTY ALBUM...</div>
+
+<main id="gallery"></main>
+
+<script type="module">
+
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+query,
+orderBy,
+onSnapshot
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+// YOUR EXISTING FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
+  authDomain: "dj-photo-wall.firebaseapp.com",
+  projectId: "dj-photo-wall",
+  storageBucket: "dj-photo-wall.firebasestorage.app",
+  messagingSenderId: "187308843014",
+  appId: "1:187308843014:web:a4dbf9c17011767890a387"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const gallery = document.getElementById("gallery");
+const status = document.getElementById("status");
+
+const mediaQuery = query(
+collection(db, "media_queue"),
+orderBy("timestamp", "asc")
+);
+
+
+function createMediaCard(item) {
+
+const card = document.createElement("div");
+card.className = "media-card";
+
+let preview;
+
+if (item.type?.startsWith("video/")) {
+
+preview = document.createElement("video");
+
+preview.controls = true;
+preview.preload = "metadata";
+preview.playsInline = true;
+
+} else {
+
+preview = document.createElement("img");
+
+preview.alt = "Party photo";
+preview.loading = "lazy";
+
+}
+
+preview.src = item.url;
+preview.className = "media-preview";
+
+const info = document.createElement("div");
+info.className = "media-info";
+
+const uploader = document.createElement("div");
+uploader.className = "uploader";
+
+uploader.textContent =
+"Uploaded by: " + (item.name || "Anonymous");
+
+const download = document.createElement("a");
+
+download.href = item.url;
+download.download = item.name || "party-media";
+download.target = "_blank";
+download.rel = "noopener";
+
+download.className = "download-btn";
+download.textContent = "⬇ DOWNLOAD";
+
+info.appendChild(uploader);
+info.appendChild(download);
+
+card.appendChild(preview);
+card.appendChild(info);
+
+return card;
+}
+
+
+onSnapshot(mediaQuery, snapshot => {
+
+gallery.innerHTML = "";
+
+if (snapshot.empty) {
+
+status.textContent = "NO MEDIA UPLOADED YET.";
+
+return;
+}
+
+status.textContent =
+snapshot.size + " MEMORIES IN THE PARTY ALBUM";
+
+snapshot.docs.forEach(doc => {
+
+const item = doc.data();
+
+gallery.appendChild(createMediaCard(item));
+
+});
+
+}, error => {
+
+console.error("Gallery error:", error);
+
+status.textContent =
+"UNABLE TO LOAD ALBUM. PLEASE TRY AGAIN.";
+
+});
+
+</script>
