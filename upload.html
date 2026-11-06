@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04140A">
+<title>Drop your shot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Familjen+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#04140A;
+  --deep:#020A05;
+  --bog:#0B2615;
+  --line:#1F6B3A;
+  --acid:#F4FF1A;
+  --lime:#37FF76;
+  --bone:#E9FFEA;
+  --dim:#7FB391;
+  --alarm:#FF4058;
+  --display:"Big Shoulders Display",sans-serif;
+  --body:"Familjen Grotesk",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{background:var(--deep)}
+body{
+  min-height:100vh;min-height:100dvh;
+  font-family:var(--body);font-size:16px;line-height:1.45;color:var(--bone);
+  background:
+    radial-gradient(130% 55% at 100% 100%,rgba(55,255,118,.24),transparent 62%),
+    radial-gradient(90% 45% at 0% 0%,rgba(244,255,26,.12),transparent 58%),
+    linear-gradient(180deg,var(--deep) 0%,var(--base) 100%);
+  background-attachment:fixed;
+  overflow-x:hidden;
+}
+
+/* atmosphere: perspective floor + grain */
+.floor{
+  position:fixed;left:-20%;right:-20%;bottom:0;height:70vh;pointer-events:none;z-index:0;opacity:.5;
+  background:
+    repeating-linear-gradient(90deg,rgba(55,255,118,.35) 0 1px,transparent 1px 56px),
+    repeating-linear-gradient(0deg,rgba(55,255,118,.35) 0 1px,transparent 1px 56px);
+  transform:perspective(380px) rotateX(64deg);transform-origin:50% 100%;
+  -webkit-mask-image:linear-gradient(to top,#000 0%,transparent 85%);
+  mask-image:linear-gradient(to top,#000 0%,transparent 85%);
+}
+.grain{
+  position:fixed;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:1;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.wrap{
+  position:relative;z-index:2;max-width:480px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top,0px) + 30px) 20px calc(env(safe-area-inset-bottom,0px) + 56px) 20px;
+}
+
+/* the one orchestrated moment: the sign powers on */
+.title{
+  font-family:var(--display);font-weight:900;text-transform:uppercase;
+  font-size:clamp(104px,34vw,176px);line-height:.8;letter-spacing:-.01em;color:var(--acid);
+  transform:rotate(-4deg);transform-origin:0 100%;margin:6px 0 30px -4px;
+}
+.title span{display:block;opacity:.14;animation:tube 1.5s steps(1,end) forwards}
+.title span:nth-child(1){animation-delay:.15s}
+.title span:nth-child(2){margin-left:11%;animation-delay:.55s}
+.title span:nth-child(3){margin-left:3%;animation-delay:.95s}
+@keyframes tube{
+  0%{opacity:.14;text-shadow:none}
+  14%{opacity:1;text-shadow:0 0 14px rgba(244,255,26,.75),0 0 48px rgba(244,255,26,.4)}
+  22%{opacity:.18;text-shadow:none}
+  30%{opacity:1;text-shadow:0 0 14px rgba(244,255,26,.75),0 0 48px rgba(244,255,26,.4)}
+  38%{opacity:.3;text-shadow:none}
+  46%,100%{opacity:1;text-shadow:0 0 14px rgba(244,255,26,.75),0 0 48px rgba(244,255,26,.4)}
+}
+
+.lede{max-width:28ch;margin:0 0 4px 4px;padding-left:12px;border-left:3px solid var(--lime);color:var(--dim);font-size:17px}
+
+/* steps */
+.step{margin-top:28px;padding-top:14px;border-top:2px solid var(--line)}
+.step.s2{margin-left:16px}
+.step.s3{margin-left:6px}
+.sh{display:flex;align-items:baseline;flex-wrap:wrap;margin-bottom:12px}
+.num{font-family:var(--display);font-weight:900;font-size:54px;line-height:.8;color:transparent;-webkit-text-stroke:1.5px var(--lime);margin-right:12px}
+.sl{font-weight:700;font-size:18px;color:var(--acid);margin-right:10px}
+.sn{font-size:14px;color:var(--dim)}
+
+.in{
+  display:block;width:100%;-webkit-appearance:none;appearance:none;border-radius:0;outline:none;
+  background:rgba(2,10,5,.75);border:2px solid var(--line);color:var(--bone);
+  font-family:var(--body);font-weight:700;font-size:21px;padding:14px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.in::placeholder{color:#3F7655;font-weight:400}
+.in:focus{border-color:var(--acid);box-shadow:0 0 0 3px rgba(244,255,26,.16),0 0 26px rgba(244,255,26,.16)}
+.in:disabled{opacity:.55}
+
+/* file picker */
+.drop{
+  display:block;position:relative;min-height:176px;overflow:hidden;cursor:pointer;padding:16px;
+  border:2px dashed var(--acid);
+  background:repeating-linear-gradient(135deg,rgba(244,255,26,.06) 0 10px,transparent 10px 20px);
+}
+.drop::after{
+  content:"+";position:absolute;right:12px;top:-18px;pointer-events:none;
+  font-family:var(--display);font-weight:900;font-size:150px;line-height:1;
+  color:transparent;-webkit-text-stroke:1.5px var(--lime);opacity:.5;
+}
+.drop input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.drop-idle{display:block}
+.drop-big{display:block;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:64px;line-height:.84;color:var(--acid)}
+.drop-sm{display:block;margin-top:14px;max-width:24ch;color:var(--dim);font-size:15px}
+.prev{display:block}
+.prev img,.prev video{display:block;width:100%;max-height:280px;object-fit:cover;background:#000}
+.meta{display:block;padding:10px 14px;font-size:14px;color:var(--dim);word-break:break-all}
+.drop.has{padding:0;border-style:solid;border-color:var(--lime);background:var(--bog)}
+.drop.has::after{display:none}
+.drop.has .drop-idle{display:none}
+
+/* send button */
+.go-wrap{margin-top:6px;filter:drop-shadow(0 0 16px rgba(244,255,26,.4))}
+.go-wrap.busy{filter:none}
+.go{
+  display:block;width:100%;-webkit-appearance:none;appearance:none;border:0;border-radius:0;cursor:pointer;
+  background:var(--acid);color:#061207;
+  font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:42px;line-height:1;
+  padding:16px 20px 14px;text-align:left;
+  clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px);
+  transition:transform .08s;
+}
+.go:active{transform:translate(2px,2px)}
+.go:disabled{background:#8A9210;cursor:default}
+.go:focus-visible,.again:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
+.go.ghost{background:transparent;color:var(--lime);box-shadow:inset 0 0 0 2px var(--lime);clip-path:none}
+
+/* LED upload meter */
+.meter{margin-top:16px}
+.led{display:flex;height:22px}
+.led i{flex:1;margin-right:3px;background:#0F2E1B}
+.led i:last-child{margin-right:0}
+.led i.on{background:var(--lime);box-shadow:0 0 10px rgba(55,255,118,.7)}
+.led i.hot{background:var(--acid);box-shadow:0 0 10px rgba(244,255,26,.7)}
+
+.status{margin-top:14px;min-height:22px;font-weight:700;font-size:15px;color:var(--dim)}
+.status.err{color:var(--alarm);padding-left:10px;border-left:3px solid var(--alarm)}
+
+/* success */
+.done{margin-top:6px}
+.stamp{display:inline-block;margin:10px 0 18px 6px;animation:slam .55s cubic-bezier(.2,1.4,.4,1) both}
+.stamp span{
+  display:block;font-family:var(--display);font-weight:900;text-transform:uppercase;
+  font-size:clamp(110px,38vw,190px);line-height:.82;color:var(--acid);
+  border:7px solid var(--acid);padding:.02em .12em 0;transform:rotate(-6deg);
+  text-shadow:0 0 14px rgba(244,255,26,.6),0 0 40px rgba(244,255,26,.3);
+}
+@keyframes slam{
+  0%{transform:scale(2.6);opacity:0}
+  65%{transform:scale(.94);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+.rank{font-weight:700;font-size:30px;line-height:1.1;color:var(--lime);margin:0 0 10px 6px}
+.done .lede{margin-bottom:26px}
+
+@media (prefers-reduced-motion:reduce){
+  .title span{animation:none;opacity:1;text-shadow:0 0 14px rgba(244,255,26,.75),0 0 48px rgba(244,255,26,.4)}
+  .stamp{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="floor"></div>
+<div class="grain"></div>
+
+<main class="wrap">
+  <h1 class="title"><span>Drop</span><span>your</span><span>shot.</span></h1>
+  <p class="lede">Send a photo or video from your phone. It plays on the big screen, then it's deleted.</p>
+
+  <form id="form" novalidate>
+    <div class="step s1">
+      <div class="sh"><span class="num">1</span><label class="sl" for="name">Your name</label><span class="sn">shows with your shot</span></div>
+      <input class="in" id="name" type="text" maxlength="24" placeholder="Who's sending this?" autocomplete="given-name" autocapitalize="words" enterkeyhint="done">
+    </div>
+
+    <div class="step s2">
+      <div class="sh"><span class="num">2</span><span class="sl">Photo or video</span><span class="sn">videos play up to 30 seconds</span></div>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="image/*,video/*" aria-label="Photo or video">
+        <span class="drop-idle">
+          <span class="drop-big">Tap<br>to pick</span>
+          <span class="drop-sm">Choose from your camera roll or shoot a new one.</span>
+        </span>
+        <span class="prev" id="prev" hidden></span>
+        <span class="meta" id="meta" hidden></span>
+      </label>
+    </div>
+
+    <div class="step s3">
+      <div class="sh"><span class="num">3</span><span class="sl">Send it</span></div>
+      <div class="go-wrap" id="goWrap">
+        <button class="go" id="go" type="submit"><span id="goLabel">Send to the screen</span></button>
+      </div>
+      <div class="meter" id="meter" hidden><div class="led" id="led"></div></div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </div>
+  </form>
+
+  <section class="done" id="done" hidden>
+    <div class="stamp"><span>Sent.</span></div>
+    <p class="rank" id="rank"></p>
+    <p class="lede">Watch the big screen. Your file is deleted right after it plays.</p>
+    <div class="go-wrap"><button class="go ghost again" id="again" type="button">Send another</button></div>
+  </section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
+  authDomain: "dj-photo-wall.firebaseapp.com",
+  projectId: "dj-photo-wall",
+  storageBucket: "dj-photo-wall.firebasestorage.app",
+  messagingSenderId: "187308843014",
+  appId: "1:187308843014:web:a4dbf9c17011767890a387"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const MAX_VIDEO_MB = 75;
+const MAX_EDGE = 2048;
+const SEGMENTS = 24;
+const NAME_KEY = "photowall_name";
+
+const $ = (s) => document.querySelector(s);
+const form = $("#form"), nameIn = $("#name"), fileIn = $("#file"), drop = $("#drop");
+const prev = $("#prev"), meta = $("#meta"), go = $("#go"), goWrap = $("#goWrap"), goLabel = $("#goLabel");
+const meter = $("#meter"), led = $("#led"), statusEl = $("#status");
+const done = $("#done"), rank = $("#rank"), again = $("#again");
+
+for (let i = 0; i < SEGMENTS; i++) led.appendChild(document.createElement("i"));
+const segs = led.children;
+
+try { nameIn.value = localStorage.getItem(NAME_KEY) || ""; } catch (e) {}
+
+let busy = false;
+let objUrl = null;
+
+function setPct(p) {
+  const n = Math.round(p * SEGMENTS);
+  for (let i = 0; i < SEGMENTS; i++) {
+    segs[i].className = i < n ? (i >= SEGMENTS * 0.75 ? "hot" : "on") : "";
+  }
+  goLabel.textContent = "Sending " + Math.round(p * 100) + "%";
+}
+function setBusy(b) {
+  busy = b;
+  go.disabled = b;
+  nameIn.disabled = b;
+  fileIn.disabled = b;
+  goWrap.classList.toggle("busy", b);
+  meter.hidden = !b;
+  if (!b) goLabel.textContent = "Send to the screen";
+}
+function clearStatus() { statusEl.textContent = ""; statusEl.className = "status"; }
+function fail(msg, focusEl) {
+  statusEl.textContent = msg;
+  statusEl.className = "status err";
+  if (focusEl) focusEl.focus();
+  return false;
+}
+function fmtSize(b) {
+  return b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+}
+function clearPreview() {
+  if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = null; }
+  prev.innerHTML = "";
+  prev.hidden = true;
+  meta.hidden = true;
+  drop.classList.remove("has");
+}
+
+fileIn.addEventListener("change", () => {
+  clearStatus();
+  clearPreview();
+  const f = fileIn.files && fileIn.files[0];
+  if (!f) return;
+  const isV = f.type.indexOf("video/") === 0;
+  const isI = f.type.indexOf("image/") === 0;
+  if (!isV && !isI) {
+    fileIn.value = "";
+    fail("That file type can't play on the screen. Pick a photo or a video.");
+    return;
+  }
+  objUrl = URL.createObjectURL(f);
+  const el = document.createElement(isV ? "video" : "img");
+  if (isV) {
+    el.muted = true;
+    el.playsInline = true;
+    el.preload = "metadata";
+    el.src = objUrl + "#t=0.1";
+  } else {
+    el.alt = "";
+    el.src = objUrl;
+  }
+  prev.appendChild(el);
+  prev.hidden = false;
+  meta.textContent = f.name + " (" + fmtSize(f.size) + "). Tap to change.";
+  meta.hidden = false;
+  drop.classList.add("has");
+  if (isV && f.size > MAX_VIDEO_MB * 1048576) {
+    fail("That video is " + fmtSize(f.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Trim it or pick a shorter one.");
+  }
+});
+
+function decodeViaImg(file) {
+  return new Promise((resolve, reject) => {
+    const u = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => { URL.revokeObjectURL(u); resolve(im); };
+    im.onerror = (e) => { URL.revokeObjectURL(u); reject(e); };
+    im.src = u;
+  });
+}
+
+// Shrinks phone photos (and converts HEIC to JPEG) so they upload fast and load fast on the projector.
+async function squeezeImage(file) {
+  if (/gif|svg/.test(file.type)) return file;
+  try {
+    let bmp, w, h;
+    try {
+      bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+      w = bmp.width; h = bmp.height;
+    } catch (_) {
+      bmp = await decodeViaImg(file);
+      w = bmp.naturalWidth; h = bmp.naturalHeight;
+    }
+    const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+    const cw = Math.round(w * scale), ch = Math.round(h * scale);
+    const c = document.createElement("canvas");
+    c.width = cw; c.height = ch;
+    c.getContext("2d").drawImage(bmp, 0, 0, cw, ch);
+    if (bmp.close) bmp.close();
+    const blob = await new Promise((res) => c.toBlob(res, "image/jpeg", 0.86));
+    if (!blob) return file;
+    const keepable = /image\/(jpeg|png|webp)/.test(file.type);
+    if (keepable && scale === 1 && blob.size >= file.size) return file;
+    return new File([blob], "shot.jpg", { type: "image/jpeg" });
+  } catch (e) {
+    console.warn("Image squeeze skipped:", e);
+    return file;
+  }
+}
+
+function extFor(file) {
+  const map = {
+    "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
+    "image/heic": "heic", "image/heif": "heif",
+    "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm"
+  };
+  if (map[file.type]) return map[file.type];
+  const m = /\.([a-z0-9]{2,5})$/i.exec(file.name || "");
+  return m ? m[1].toLowerCase() : "bin";
+}
+
+function sendFile(r, file) {
+  return new Promise((resolve, reject) => {
+    const task = uploadBytesResumable(r, file, { contentType: file.type || "application/octet-stream" });
+    task.on("state_changed",
+      (s) => setPct(s.totalBytes ? s.bytesTransferred / s.totalBytes : 0),
+      reject,
+      resolve
+    );
+  });
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (busy) return;
+  clearStatus();
+
+  const name = nameIn.value.trim().slice(0, 24);
+  const file = fileIn.files && fileIn.files[0];
+  if (!name) return fail("Add your name first.", nameIn);
+  if (!file) return fail("Pick a photo or video first.");
+
+  const isVideo = file.type.indexOf("video/") === 0;
+  const isImage = file.type.indexOf("image/") === 0;
+  if (!isVideo && !isImage) return fail("That file type can't play on the screen. Pick a photo or a video.");
+  if (isVideo && file.size > MAX_VIDEO_MB * 1048576) {
+    return fail("That video is " + fmtSize(file.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Trim it or pick a shorter one.");
+  }
+
+  setBusy(true);
+  setPct(0);
+  let uploaded = null;
+
+  try {
+    try { localStorage.setItem(NAME_KEY, name); } catch (_) {}
+
+    if (isImage) goLabel.textContent = "Resizing";
+    const prepared = isImage ? await squeezeImage(file) : file;
+
+    const path = "party_media/" + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + "." + extFor(prepared);
+    const r = ref(storage, path);
+    setPct(0);
+    await sendFile(r, prepared);
+    uploaded = r;
+
+    const url = await getDownloadURL(r);
+    await addDoc(collection(db, "media_queue"), {
+      name: name,
+      url: url,
+      storagePath: path,
+      type: isVideo ? "video" : "image",
+      timestamp: serverTimestamp()
+    });
+    uploaded = null;
+
+    let n = 0;
+    try {
+      const snap = await getCountFromServer(collection(db, "media_queue"));
+      n = snap.data().count;
+    } catch (_) {}
+    rank.textContent = n > 1 ? "You're #" + n + " in line." : (n === 1 ? "You're up next." : "You're in.");
+
+    form.hidden = true;
+    done.hidden = false;
+    window.scrollTo(0, 0);
+  } catch (err) {
+    console.error(err);
+    if (uploaded) deleteObject(uploaded).catch(() => {});
+    fail("Upload failed. Check your signal and tap Send again.");
+  } finally {
+    setBusy(false);
+  }
+});
+
+again.addEventListener("click", () => {
+  fileIn.value = "";
+  clearPreview();
+  clearStatus();
+  setPct(0);
+  done.hidden = true;
+  form.hidden = false;
+  window.scrollTo(0, 0);
+});
+</script>
+</body>
+</html>
