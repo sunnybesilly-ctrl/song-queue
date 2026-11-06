@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Moderation</title>
+<style>
+body {
+background-color: #111;
+color: white;
+font-family: Arial, sans-serif;
+padding: 20px;
+margin: 0;
+}
+h1 { color: #ff4444; text-align: center; }
+p { text-align: center; color: #888; font-size: 14px; }
+#grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+gap: 15px;
+margin-top: 20px;
+}
+.card {
+background: #222;
+border: 1px solid #333;
+border-radius: 8px;
+overflow: hidden;
+display: flex;
+flex-direction: column;
+text-align: center;
+}
+.card img, .card video {
+width: 100%;
+height: 120px;
+object-fit: cover;
+background: #000;
+}
+.card p {
+margin: 5px 0;
+font-size: 12px;
+color: white;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+padding: 0 5px;
+}
+.delete-btn {
+background: #ff4444;
+color: white;
+border: none;
+padding: 10px;
+font-weight: bold;
+cursor: pointer;
+}
+.delete-btn:active { background: #cc0000; }
+#clear-all {
+display: block;
+width: 100%;
+padding: 15px;
+background: #ff4444;
+color: white;
+font-size: 18px;
+font-weight: bold;
+border: none;
+border-radius: 8px;
+margin-bottom: 20px;
+cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<h1>Moderation Panel</h1>
+<p>Do not share this link. Changes happen instantly.</p>
+
+<button id="clear-all" onclick="deleteAll()">🚨 DELETE EVERYTHING 🚨</button>
+<div id="grid"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage, ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// ⚠️ REPLACE WITH YOUR REAL FIREBASE CONFIG ⚠️
+const firebaseConfig = {
+  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
+  authDomain: "dj-photo-wall.firebaseapp.com",
+  projectId: "dj-photo-wall",
+  storageBucket: "dj-photo-wall.firebasestorage.app",
+  messagingSenderId: "187308843014",
+  appId: "1:187308843014:web:a4dbf9c17011767890a387"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const grid = document.getElementById('grid');
+let currentMediaList = [];
+
+// Listen to Firestore in real-time
+const q = collection(db, "media_queue");
+
+onSnapshot(q, (snapshot) => {
+grid.innerHTML = ''; // Clear the screen
+currentMediaList = [];
+
+if (snapshot.empty) {
+grid.innerHTML = '<p style="grid-column: 1/-1;">No media in the queue right now.</p>';
+return;
+}
+
+snapshot.forEach((docSnap) => {
+const data = docSnap.data();
+const id = docSnap.id;
+currentMediaList.push({ id, data });
+
+const card = document.createElement('div');
+card.className = 'card';
+
+let mediaHtml = data.type === 'video'
+? `<video src="${data.url}" muted></video>`
+: `<img src="${data.url}">`;
+
+card.innerHTML = `
+${mediaHtml}
+<p>${data.name}</p>
+<button class="delete-btn" onclick="deleteItem('${id}', '${data.url}')">DELETE</button>
+`;
+grid.appendChild(card);
+});
+});
+
+// Delete a single item
+window.deleteItem = async function(docId, url) {
+if (!confirm("Are you sure you want to delete this?")) return;
+
+try {
+// 1. Delete from Storage
+// We use the URL to find the file reference in Storage
+const fileRef = ref(storage, url);
+await deleteObject(fileRef).catch(e => console.log("Storage file might already be deleted", e));
+
+// 2. Delete from Firestore (This instantly removes it from the display)
+await deleteDoc(doc(db, "media_queue", docId));
+
+} catch (error) {
+console.error("Error deleting: ", error);
+alert("Error deleting item.");
+}
+}
+
+// Delete EVERYTHING
+window.deleteAll = async function() {
+if (!confirm("🚨 DANGER: Are you sure you want to delete EVERYTHING? This cannot be undone.")) return;
+
+try {
+const querySnapshot = await getDocs(collection(db, "media_queue"));
+
+for (const document of querySnapshot.docs) {
+const data = document.data();
+
+// Delete from Storage
+const fileRef = ref(storage, data.url);
+await deleteObject(fileRef).catch(e => console.log(e));
+
+// Delete from Firestore
+await deleteDoc(doc(db, "media_queue", document.id));
+}
+alert("All media deleted successfully.");
+} catch (error) {
+console.error("Error deleting all: ", error);
+alert("Error deleting all items.");
+}
+}
+</script>
+</body>
+</html>
