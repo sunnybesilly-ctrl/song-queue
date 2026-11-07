@@ -358,8 +358,13 @@ function playUrl(m) {
   if (!p) return m.url;
   if (m.type === "video") {
     if (m.url.indexOf("vc_h264") >= 0 && /\.mp4$/i.test(m.url)) return m.url;
-    return p.pre + "video/upload/vc_h264,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".mp4");
+    // Dropped to 960px wide and q_60 for maximum compatibility on weak browsers
+    return p.pre + "video/upload/vc_h264,c_limit,w_960,q_60/" + swapExt(p.tail, ".mp4");
   }
+  if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url)) return m.url;
+  const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
+  return p.pre + "image/upload/c_limit,w_2048,h_2048,q_auto/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
+}
   if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url)) return m.url;
   const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
   return p.pre + "image/upload/c_limit,w_2048,h_2048,q_auto/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
