@@ -289,7 +289,7 @@ let mode = "boot";            // boot | loop | qr | idle | yearbook
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
 let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null;
-const bad = {}, counts = {}, lastLikes = {};
+const bad = {}, counts = {}, lastLikes = {}, warmed = {};
 
 /* ---- helpers ---- */
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -327,6 +327,59 @@ function thumb(m) {
   const t = "c_fill,w_480,h_480,q_auto";
   if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
   return u.replace(re, "/upload/" + t + "/");
+}
+/* ---- Cloudinary: always play a browser-friendly version (H.264 MP4 video, JPEG/PNG photos) ---- */
+function kindOf(x) {
+  const u = String(x.url || "");
+  if (u.indexOf("res.cloudinary.com") >= 0) {
+    if (u.indexOf("/video/upload/") >= 0) return "video";
+    if (u.indexOf("/image/upload/") >= 0) return "image";
+  }
+  if (x.type === "image" || x.type === "video") return x.type;
+  if (/\.(mp4|mov|m4v|webm|3gp)(\?|#|$)/i.test(u)) return "video";
+  if (/\.(jpe?g|png|gif|webp|heic|heif|avif)(\?|#|$)/i.test(u)) return "image";
+  return "";
+}
+function cld(u) {
+  const mt = /^(https?:\/\/res\.cloudinary\.com\/[^\/]+\/)(image|video)\/upload\/(.*)$/.exec(u || "");
+  if (!mt) return null;
+  const rest = mt[3], vi = rest.search(/(^|\/)v\d+\//);
+  const tail = vi < 0 ? rest : rest.slice(rest.charAt(vi) === "/" ? vi + 1 : vi);
+  return { pre: mt[1], res: mt[2], tail: tail };
+}
+function swapExt(t, ext) { return /\.[^.\/]+$/.test(t) ? t.replace(/\.[^.\/]+$/, ext) : t + ext; }
+function playUrl(m) {
+  if (m.still) return m.url;
+  const p = cld(m.url);
+  if (!p) return m.url;
+  if (m.type === "video") {
+    if (m.url.indexOf("vc_h264") >= 0 && /\.mp4$/i.test(m.url)) return m.url;
+    return p.pre + "video/upload/vc_h264,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".mp4");
+  }
+  if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url)) return m.url;
+  const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
+  return p.pre + "image/upload/c_limit,w_2048,h_2048,q_auto/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
+}
+function stillUrl(m) {
+  const p = cld(m.url);
+  return p ? p.pre + "video/upload/so_0,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".jpg") : "";
+}
+function stillOf(m) {
+  const u = stillUrl(m);
+  return u ? { id: m.id, name: m.name, likes: m.likes, type: "image", url: u, still: true } : null;
+}
+function probe(url) {
+  return new Promise(function (res) {
+    let done = false;
+    const fin = function (v) { if (!done) { done = true; res(v); } };
+    setTimeout(function () { fin("slow"); }, 8000);
+    try {
+      fetch(url, { headers: { Range: "bytes=0-0" } }).then(function (r) {
+        try { if (r.body && r.body.cancel) r.body.cancel(); } catch (e) {}
+        fin(r.status === 423 ? 423 : (r.ok ? "ok" : "bad"));
+      }, function () { fin("err"); });
+    } catch (e) { fin("err"); }
+  });
 }
 /* ---- bar ---- */
 function setHearts(id, bumpIt) {
@@ -384,22 +437,34 @@ function drop(w) {
 }
 function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); cur = null; curItem = null; }
 
+function usable(m) {
+  if (!isBad(m)) return m;
+  if (m.type === "video") { const s = stillOf(m); if (s && !isBad(s)) return s; }
+  return null;
+}
 function pick() {
   while (fresh.length) {
     const m = find(fresh.shift());
-    if (m && !isBad(m)) return { m: m, fresh: true };
+    const r = m && usable(m);
+    if (r) return { m: r, fresh: true };
   }
   const n = items.length;
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 0; i < n; i++) {
       pos = (pos + 1) % n;
       const m = items[pos];
-      if (isBad(m)) continue;
+      const r = usable(m);
+      if (!r) continue;
       if (pass === 0 && n > 1 && m.id === lastId) continue;
-      return { m: m, fresh: false };
+      return { m: r, fresh: false };
     }
   }
   return null;
+}
+function videoFail(m, isFresh) {
+  markBad(m, 1);
+  const s = stillOf(m);
+  if (s) show(s, isFresh); else next();
 }
 
 function show(m, isFresh) {
@@ -407,6 +472,7 @@ function show(m, isFresh) {
   clearTimeout(timer); clearTimeout(wd);
   mode = "loop";
   const isV = m.type === "video";
+  const src = playUrl(m);
   const w = document.createElement("div"); w.className = "w";
   const el = document.createElement(isV ? "video" : "img"); el.className = "mi";
   w.appendChild(el);
@@ -417,21 +483,34 @@ function show(m, isFresh) {
     ready = true; clearTimeout(wd);
     try { reveal(w, m, isFresh, my); } catch (e) { console.error(e); timer = setTimeout(next, 5000); }
   };
-  el.onerror = function () {
+  const fail = function () {
     if (my !== tok) { drop(w); return; }
+    clearTimeout(wd);
     if (!ready) drop(w);
-    markBad(m, 3); next();
+    if (isV) videoFail(m, isFresh); else { markBad(m, 3); next(); }
   };
+  el.onerror = fail;
   if (isV) {
-    el.muted = true; el.playsInline = true; el.preload = "auto";
-    el.setAttribute("muted", ""); el.setAttribute("playsinline", "");
-    el.onloadeddata = go;
+    el.muted = true; el.defaultMuted = true; el.playsInline = true; el.preload = "auto";
+    el.setAttribute("muted", ""); el.setAttribute("playsinline", ""); el.setAttribute("webkit-playsinline", "");
+    el.onloadeddata = go; el.oncanplay = go;
+    el.onloadedmetadata = function () { setTimeout(go, 1200); };   // iPhone often stops at metadata until play() is called
   } else {
     el.onload = go;
   }
-  wd = setTimeout(function () { if (!ready && my === tok) { drop(w); markBad(m, 3); next(); } }, 15000);
-  el.src = m.url;
-  stage.appendChild(w);
+  wd = setTimeout(function () { if (!ready && my === tok) fail(); }, isV ? 20000 : 15000);
+  const start = function () {
+    if (my !== tok) { drop(w); return; }
+    el.src = src;
+    stage.appendChild(w);
+  };
+  if (isV && !warmed[src]) {
+    probe(src).then(function (st) {
+      if (my !== tok) { drop(w); return; }
+      if (st === 423 || st === "bad") { fail(); return; }   // Cloudinary still converting: show a still, retry soon
+      warmed[src] = 1; start();
+    });
+  } else start();
 }
 
 function reveal(w, m, isFresh, my) {
@@ -456,8 +535,8 @@ function reveal(w, m, isFresh, my) {
       if (!el.muted) {
         soundOn = false; el.muted = true; toast("Sound off");
         const p2 = el.play();
-        if (p2 && p2.catch) p2.catch(function () { markBad(m, 3); next(); });
-      } else { markBad(m, 3); next(); }
+        if (p2 && p2.catch) p2.catch(function () { if (my === tok) videoFail(m, isFresh); });
+      } else { videoFail(m, isFresh); }
     });
     armVideo(el, my);
   } else {
@@ -561,7 +640,7 @@ function mediaEl(m) {
   const v = m.type === "video";
   const e = document.createElement(v ? "video" : "img"); e.className = "mi";
   if (v) { e.muted = true; e.loop = true; e.autoplay = true; e.playsInline = true; e.setAttribute("playsinline", ""); }
-  e.src = m.url; return e;
+  e.src = playUrl(m); return e;
 }
 function coverPage(sub) {
   const pg = h("div", "pg cover"), box = h("div");
@@ -685,7 +764,8 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
   const list = []; let curChanged = false;
   snap.docs.forEach(function (d) {
     const x = d.data(); x.id = d.id;
-    if (!x.url || (x.type !== "image" && x.type !== "video")) return;
+    x.type = kindOf(x);
+    if (!x.url || !x.type) return;
     list.push(x);
     const lk = x.likes || 0;
     if (lastLikes[d.id] !== undefined && lk > lastLikes[d.id]) {
@@ -766,7 +846,7 @@ requestAnimationFrame(fpsTick);
 
 /* a frozen video never freezes the show */
 setInterval(function () {
-  if (mode === "loop" && curItem && curItem.type === "video" && !document.hidden && Date.now() - lastTU > 12000) { markBad(curItem, 3); next(); }
+  if (mode === "loop" && curItem && curItem.type === "video" && !document.hidden && Date.now() - lastTU > 12000) { videoFail(curItem, false); }
 }, 4000);
 
 async function wake() { try { if (navigator.wakeLock) await navigator.wakeLock.request("screen"); } catch (e) {} }
