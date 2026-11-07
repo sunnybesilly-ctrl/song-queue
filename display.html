@@ -576,13 +576,14 @@ function reveal(w, m, isFresh, my) {
     lastTU = Date.now();
     el.ontimeupdate = function () { lastTU = Date.now(); };
     
+    // Play muted first so it never freezes
     el.muted = !soundOn; 
     const p = el.play();
     
     if (p && p.catch) p.catch(function (err) {
       if (my !== tok) return;
       if (!el.muted) {
-        // If it failed with sound, force mute so it plays anyway
+        // If sound was blocked, mute it and try again
         soundOn = false; 
         el.muted = true;
         el.play().catch(function(e2) { if (my === tok) videoFail(m, isFresh, playWhy(e2)); });
@@ -601,6 +602,8 @@ function reveal(w, m, isFresh, my) {
     }
     timer = setTimeout(next, ms);
   }
+}
+
 }
 
 function armVideo(v, my) {
