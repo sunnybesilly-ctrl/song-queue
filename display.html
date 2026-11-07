@@ -567,14 +567,19 @@ function reveal(w, m, isFresh, my) {
     lastTU = Date.now();
     el.ontimeupdate = function () { lastTU = Date.now(); };
     
-    // FORCE MUTE so it autoplays without requiring manual interaction on the projector
-    el.muted = true; 
+    el.muted = !soundOn; 
     const p = el.play();
     
     if (p && p.catch) p.catch(function (err) {
       if (my !== tok) return;
-      // If the browser STILL blocks it (rare), just skip the video
-      videoFail(m, isFresh, playWhy(err)); 
+      if (!el.muted) {
+        // If it failed with sound, force mute so it plays anyway
+        soundOn = false; 
+        el.muted = true;
+        el.play().catch(function(e2) { if (my === tok) videoFail(m, isFresh, playWhy(e2)); });
+      } else {
+        videoFail(m, isFresh, playWhy(err)); 
+      }
     });
     armVideo(el, my);
   } else {
