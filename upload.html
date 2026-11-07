@@ -174,7 +174,7 @@ body{
 
 <main class="wrap">
   <h1 class="title"><span>Drop</span><span>your</span><span>shot.</span></h1>
-  <p class="lede">Send a photo or video from your phone. It plays on the big screen, then it's deleted.</p>
+  <p class="lede">Send a photo or video from your phone. It joins the album instantly!</p>
 
   <form id="form" novalidate>
     <div class="step s1">
@@ -208,7 +208,7 @@ body{
   <section class="done" id="done" hidden>
     <div class="stamp"><span>Sent.</span></div>
     <p class="rank" id="rank"></p>
-    <p class="lede">Watch the big screen. Your file is deleted right after it plays.</p>
+    <p class="lede">Watch the big screen. Your file is now in the album!</p>
     <div class="go-wrap"><button class="go ghost again" id="again" type="button">Send another</button></div>
   </section>
 </main>
@@ -217,9 +217,11 @@ body{
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, addDoc, serverTimestamp, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-const CLOUD_NAME = "yl4yzjh5";
-const UPLOAD_PRESET = "djparty";
+// ⚠️ YOUR CLOUDINARY CREDENTIALS ⚠️
+const CLOUD_NAME = "yl4yzjh5"; 
+const UPLOAD_PRESET = "djparty"; 
 
+// ⚠️ YOUR FIREBASE CONFIG ⚠️
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
   authDomain: "dj-photo-wall.firebaseapp.com",
@@ -328,7 +330,6 @@ function decodeViaImg(file) {
   });
 }
 
-// Shrinks phone photos (and converts HEIC to JPEG) so they upload fast and load fast on the projector.
 async function squeezeImage(file) {
   if (/gif|svg/.test(file.type)) return file;
   try {
@@ -357,7 +358,6 @@ async function squeezeImage(file) {
   }
 }
 
-// Unsigned upload to Cloudinary (resource type auto-detected).
 function cloudinaryUpload(file, onProgress) {
   return new Promise((resolve, reject) => {
     const fd = new FormData();
@@ -378,7 +378,6 @@ function cloudinaryUpload(file, onProgress) {
   });
 }
 
-// secure_url keeps the original extension (.mov / .heic), so force MP4 (H.264, max 1080p wide) and JPEG.
 function finalUrl(r) {
   if (r.resource_type === "video") {
     return r.secure_url
@@ -390,7 +389,6 @@ function finalUrl(r) {
     : r.secure_url.replace(/\.[^./]+$/, ".jpg");
 }
 
-// Cloudinary converts on first request; wait until the MP4 is ready so the display never gets a half-baked video.
 async function warmVideo(url) {
   const end = Date.now() + 90000;
   while (Date.now() < end) {
@@ -438,12 +436,14 @@ form.addEventListener("submit", async (e) => {
       await warmVideo(url);
     }
 
+    // ⚠️ THIS IS THE CRUCIAL FIREBASE SAVE - I ADDED likes: 0
     await addDoc(collection(db, "media_queue"), {
       name: name,
       url: url,
       publicId: r.public_id,
       type: vid ? "video" : "image",
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
+      likes: 0 // <--- ADDED THIS
     });
 
     let n = 0;
