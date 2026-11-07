@@ -144,7 +144,80 @@ body{font-family:var(--body);color:var(--bone)}
 /* lite mode (auto on slow browsers, L key) */
 .lite .mi.kb,.lite .new,.lite #qrcard.on .qb .tile,.lite #qrcard.on .a{animation:none}
 .lite .cell,.lite .note{animation:none;opacity:1}
-</style>
+
+        /* --- MOBILE OVERRIDE (Phones Only) --- */
+        @media (max-width: 768px) {
+            /* 1. Stack the Idle Screen vertically */
+            .main-content {
+                flex-direction: column !important;
+                justify-content: center !important;
+                padding: 20px !important;
+                text-align: center;
+            }
+            .title-container {
+                align-items: center;
+                margin-bottom: 20px;
+            }
+            .title-container span {
+                font-size: 24vw !important; /* Keeps it huge but prevents overflow */
+                letter-spacing: 0px;
+            }
+            
+            /* 2. Adjust the instructions and QR code */
+            .instructions {
+                border-left: none !important;
+                border-top: 6px solid #7dff4a !important;
+                padding-left: 0 !important;
+                padding-top: 20px;
+                text-align: center;
+                max-width: 90vw;
+            }
+            .instructions p {
+                font-size: 1.1rem !important;
+            }
+            .instructions h2 {
+                font-size: 2.5rem !important;
+            }
+            .qr-container img {
+                width: 45vw !important;
+                height: 45vw !important;
+            }
+
+            /* 3. Make the scrolling marquee readable */
+            .marquee {
+                font-size: 6vw !important;
+                padding: 8px 0;
+            }
+
+            /* 4. Stack the Photo Collage vertically on phones */
+            .collage-container {
+                flex-direction: column !important;
+                gap: 10px !important;
+                height: 80vh;
+            }
+            .collage-container.split .media-element {
+                width: 95% !important;
+                height: 48% !important; /* Each photo gets half the screen */
+                border-width: 2px;
+            }
+            
+            /* 5. Fix the floating UI elements (Likes and Audio Toggle) */
+            .media-element {
+                max-height: 75vh !important;
+            }
+            .like-counter {
+                font-size: 1.2rem !important;
+                bottom: 70px !important;
+                right: 10px !important;
+                padding: 5px 10px !important;
+            }
+            #audio-toggle {
+                font-size: 1rem !important;
+                bottom: 70px !important;
+                left: 10px !important;
+                padding: 8px 15px !important;
+            }
+        }</style>
 </head>
 <body>
 <div id="stage"></div>
