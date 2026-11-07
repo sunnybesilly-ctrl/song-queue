@@ -365,7 +365,6 @@ function playUrl(m) {
   return p.pre + "image/upload/c_limit,w_2048,h_2048,q_auto/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
 }
 
-
 function stillUrl(m) {
   const p = cld(m.url);
   return p ? p.pre + "video/upload/so_0,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".jpg") : "";
@@ -374,19 +373,6 @@ function stillUrl(m) {
 function stillOf(m) {
   const u = stillUrl(m);
   return u ? { id: m.id, name: m.name, likes: m.likes, type: "image", url: u, still: true } : null;
-}
-function probe(url) {
-  return new Promise(function (res) {
-    let done = false;
-    const fin = function (v) { if (!done) { done = true; res(v); } };
-    setTimeout(function () { fin("slow"); }, 8000);
-    try {
-      fetch(url, { headers: { Range: "bytes=0-0" } }).then(function (r) {
-        try { if (r.body && r.body.cancel) r.body.cancel(); } catch (e) {}
-        fin(r.status === 423 ? 423 : (r.ok ? "ok" : r.status));
-      }, function () { fin("err"); });
-    } catch (e) { fin("err"); }
-  });
 }
 function playWhy(e) {
   return (e && e.name === "NotAllowedError") ? "TAP SCREEN TO PLAY VIDEO" : "VIDEO ERROR: " + ((e && e.name) || "PLAY FAILED");
@@ -553,7 +539,6 @@ function show(m, isFresh, gesture) {
   if (gesture && isV) { try { const pp = el.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {} }
 }
 
-
 function reveal(w, m, isFresh, my) {
   const old = cur;
   cur = w; curItem = m; lastId = m.id; revealAt = Date.now();
@@ -598,8 +583,6 @@ function reveal(w, m, isFresh, my) {
     }
     timer = setTimeout(next, ms);
   }
-}
-
 }
 
 function armVideo(v, my) {
@@ -682,7 +665,7 @@ function nextComment() {
   setTimeout(nextComment, 4800);
 }
 
-/* ---- yearbook ---- */
+/* ---- yearbook (press Y at the end of the night) ---- */
 function clearYB() {
   $$("#yb video").forEach(function (v) { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} });
   yb.innerHTML = "";
@@ -826,7 +809,6 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
     lastLikes[d.id] = lk;
   });
   items = list;
-  warmVideos();
   if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added") fresh.push(c.doc.id); });
   const first = !seen; seen = true;
   if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
