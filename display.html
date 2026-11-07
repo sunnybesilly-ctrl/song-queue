@@ -361,7 +361,7 @@ function show(m, isFresh) {
   } else {
     el.onload = go;
   }
-  wd = setTimeout(function () { if (!ready && my === tok) { drop(w); markBad(m, 3); next(); } }, 12000);
+  wd = setTimeout(function () { if (!ready && my === tok) { drop(w); markBad(m, 3); next(); } }, 70000);
   el.src = m.url;
   stage.appendChild(w);
 }
