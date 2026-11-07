@@ -371,10 +371,18 @@ function pickT(isFresh) {
   lastT = i; return T[i];
 }
 function holdFor(isFresh) {
-  const n = items.length;
-  let b = n <= 6 ? 9000 : n <= 15 ? 7500 : n <= 30 ? 6500 : 5500;   // fewer shots = linger, big pile = move faster
-  b += Math.random() * 2000 - 1000;
-  if (isFresh) b += 2000;
+  const n = items.length; // n = total items
+  
+  // Change these numbers to adjust speed (1000 = 1 second)
+  let b = n <= 6 ? 4000      // 4 seconds for small queues
+        : n <= 15 ? 3500     // 3.5 seconds for medium queues
+        : n <= 30 ? 3000     // 3 seconds for large queues
+        : 2500;              // 2.5 seconds for massive queues
+        
+  b += Math.random() * 1000 - 500; // Random +/- 0.5 sec so it doesn't feel robotic
+  
+  if (isFresh) b += 1500;          // Extra 1.5 seconds if it was JUST uploaded
+  
   return Math.round(b);
 }
 function drop(w) {
