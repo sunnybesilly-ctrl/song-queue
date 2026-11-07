@@ -340,7 +340,6 @@ function thumb(m) {
   if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
   return u.replace(re, "/upload/" + t + "/");
 }
-
 /* ---- bar ---- */
 function setHearts(id, bumpIt) {
   const m = find(id);
