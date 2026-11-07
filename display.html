@@ -143,6 +143,8 @@ body{font-family:var(--body);color:var(--bone)}
 .cell img{display:block;width:100%;height:100%;object-fit:cover}
 .foot{position:absolute;left:6vw;bottom:3vh;font-family:var(--ink);font-size:4vh;color:var(--bone)}
 
+#vbadge{position:absolute;left:2vw;bottom:calc(var(--bar) + 1.2vh);z-index:6;max-width:96vw;padding:.4vh 1.4vh;background:var(--alarm);color:#fff;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.8vh;line-height:1.05;display:none}
+
 /* lite mode (auto on slow browsers, L key) */
 .lite .mi.kb,.lite .new,.lite #qrcard.on .qb .tile,.lite #qrcard.on .a{animation:none}
 .lite .cell,.lite .note{animation:none;opacity:1}
@@ -181,6 +183,7 @@ body{font-family:var(--body);color:var(--bone)}
 
   /* toast */
   #toast{top:calc(var(--dv)*1.5);right:3vw;font-size:6vw;padding:.4vh 3vw;max-width:94vw}
+  #vbadge{font-size:4.6vw;padding:.4vh 2.4vw}
 
   /* yearbook */
   .pg{flex-direction:column;justify-content:center;align-items:stretch;padding:calc(var(--dv)*3) 6vw}
@@ -241,6 +244,7 @@ body{font-family:var(--body);color:var(--bone)}
 </div>
 
 <div id="yb"></div>
+<div id="vbadge"></div>
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
@@ -288,7 +292,7 @@ let items = [], pos = -1, fresh = [], seen = false;
 let mode = "boot";            // boot | loop | qr | idle | yearbook
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
-let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null;
+let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null, needTap = null;
 const bad = {}, counts = {}, lastLikes = {}, warmed = {};
 
 /* ---- helpers ---- */
@@ -376,11 +380,45 @@ function probe(url) {
     try {
       fetch(url, { headers: { Range: "bytes=0-0" } }).then(function (r) {
         try { if (r.body && r.body.cancel) r.body.cancel(); } catch (e) {}
-        fin(r.status === 423 ? 423 : (r.ok ? "ok" : "bad"));
+        fin(r.status === 423 ? 423 : (r.ok ? "ok" : r.status));
       }, function () { fin("err"); });
     } catch (e) { fin("err"); }
   });
 }
+function playWhy(e) {
+  return (e && e.name === "NotAllowedError") ? "TAP SCREEN TO PLAY VIDEO" : "VIDEO ERROR: " + ((e && e.name) || "PLAY FAILED");
+}
+function showWhy(m) {
+  const b = $("#vbadge");
+  if (m.still && m.why) { b.textContent = m.why; b.style.display = "block"; needTap = m.why.indexOf("TAP") === 0 ? m.vid : null; }
+  else { b.style.display = "none"; needTap = null; }
+}
+/* start Cloudinary converting every video as soon as it shows up, so it is ready before its turn */
+const warming = {};
+function warmVideos() {
+  items.forEach(function (m) {
+    if (m.type !== "video") return;
+    const src = playUrl(m);
+    if (warmed[src] || warming[src]) return;
+    warming[src] = 1;
+    let tries = 0;
+    (function tick() {
+      probe(src).then(function (st) {
+        if (st === 423 && tries++ < 60) { setTimeout(tick, 3000); return; }
+        if (st !== 423 && typeof st !== "number") warmed[src] = 1;
+        delete warming[src];
+      });
+    })();
+  });
+}
+/* iPhone Low Power Mode blocks autoplay: one tap anywhere starts the video */
+document.addEventListener("pointerdown", function () {
+  const v = needTap;
+  if (!v || mode !== "loop") return;
+  needTap = null;
+  warmed[playUrl(v)] = 1;
+  show(v, false, true);
+}, true);
 /* ---- bar ---- */
 function setHearts(id, bumpIt) {
   const m = find(id);
@@ -435,7 +473,7 @@ function drop(w) {
   }
   if (w.parentNode) w.parentNode.removeChild(w);
 }
-function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); cur = null; curItem = null; }
+function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; }
 
 function usable(m) {
   if (!isBad(m)) return m;
@@ -461,13 +499,14 @@ function pick() {
   }
   return null;
 }
-function videoFail(m, isFresh) {
-  markBad(m, 1);
+function videoFail(m, isFresh, why) {
+  why = why || "VIDEO UNAVAILABLE";
+  markBad(m, why.indexOf("CONVERTING") >= 0 ? 0.25 : 1);
   const s = stillOf(m);
-  if (s) show(s, isFresh); else next();
+  if (s) { s.why = why; s.vid = m; show(s, isFresh); } else next();
 }
 
-function show(m, isFresh) {
+function show(m, isFresh, gesture) {
   const my = ++tok;
   clearTimeout(timer); clearTimeout(wd);
   mode = "loop";
@@ -483,13 +522,16 @@ function show(m, isFresh) {
     ready = true; clearTimeout(wd);
     try { reveal(w, m, isFresh, my); } catch (e) { console.error(e); timer = setTimeout(next, 5000); }
   };
-  const fail = function () {
+  const fail = function (why) {
     if (my !== tok) { drop(w); return; }
     clearTimeout(wd);
     if (!ready) drop(w);
-    if (isV) videoFail(m, isFresh); else { markBad(m, 3); next(); }
+    if (isV) videoFail(m, isFresh, why); else { markBad(m, 3); next(); }
   };
-  el.onerror = fail;
+  el.onerror = function () {
+    const c = el.error ? el.error.code : 0;
+    fail("VIDEO ERROR " + c + (c === 4 ? " (FORMAT NOT SUPPORTED)" : ""));
+  };
   if (isV) {
     el.muted = true; el.defaultMuted = true; el.playsInline = true; el.preload = "auto";
     el.setAttribute("muted", ""); el.setAttribute("playsinline", ""); el.setAttribute("webkit-playsinline", "");
@@ -498,16 +540,18 @@ function show(m, isFresh) {
   } else {
     el.onload = go;
   }
-  wd = setTimeout(function () { if (!ready && my === tok) fail(); }, isV ? 20000 : 15000);
+  wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 20000 : 15000);
   const start = function () {
     if (my !== tok) { drop(w); return; }
     el.src = src;
     stage.appendChild(w);
+    if (gesture && isV) { try { const pp = el.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {} }
   };
   if (isV && !warmed[src]) {
     probe(src).then(function (st) {
       if (my !== tok) { drop(w); return; }
-      if (st === 423 || st === "bad") { fail(); return; }   // Cloudinary still converting: show a still, retry soon
+      if (st === 423) { fail("VIDEO CONVERTING ON CLOUDINARY..."); return; }
+      if (typeof st === "number") { fail("VIDEO HTTP ERROR " + st); return; }
       warmed[src] = 1; start();
     });
   } else start();
@@ -523,6 +567,7 @@ function reveal(w, m, isFresh, my) {
   if (old) { old.className = "w old"; setTimeout(function () { drop(old); }, t.ms + 150); }
   Array.prototype.slice.call(stage.children).forEach(function (c) { if (c !== w && c !== old) drop(c); });
   setBar(m, isFresh);
+  showWhy(m);
   publish(m);
   const el = w.firstChild;
   if (m.type === "video") {
@@ -530,13 +575,13 @@ function reveal(w, m, isFresh, my) {
     el.ontimeupdate = function () { lastTU = Date.now(); };
     el.muted = !soundOn;
     const p = el.play();
-    if (p && p.catch) p.catch(function () {
+    if (p && p.catch) p.catch(function (err) {
       if (my !== tok) return;
       if (!el.muted) {
         soundOn = false; el.muted = true; toast("Sound off");
         const p2 = el.play();
-        if (p2 && p2.catch) p2.catch(function () { if (my === tok) videoFail(m, isFresh); });
-      } else { videoFail(m, isFresh); }
+        if (p2 && p2.catch) p2.catch(function (e2) { if (my === tok) videoFail(m, isFresh, playWhy(e2)); });
+      } else { videoFail(m, isFresh, playWhy(err)); }
     });
     armVideo(el, my);
   } else {
@@ -775,6 +820,7 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
     lastLikes[d.id] = lk;
   });
   items = list;
+  warmVideos();
   if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added") fresh.push(c.doc.id); });
   const first = !seen; seen = true;
   if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
@@ -846,7 +892,7 @@ requestAnimationFrame(fpsTick);
 
 /* a frozen video never freezes the show */
 setInterval(function () {
-  if (mode === "loop" && curItem && curItem.type === "video" && !document.hidden && Date.now() - lastTU > 12000) { videoFail(curItem, false); }
+  if (mode === "loop" && curItem && curItem.type === "video" && !document.hidden && Date.now() - lastTU > 12000) { videoFail(curItem, false, "VIDEO STALLED"); }
 }, 4000);
 
 async function wake() { try { if (navigator.wakeLock) await navigator.wakeLock.request("screen"); } catch (e) {} }
