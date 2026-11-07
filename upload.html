@@ -381,7 +381,7 @@ function cloudinaryUpload(file, onProgress) {
 function finalUrl(r) {
   if (r.resource_type === "video") {
     return r.secure_url
-     .replace("/upload/", "/upload/vc_h264,c_limit,w_1280,q_70/")
+     .replace("/upload/", "/upload/w_1280,q_60,f_mp4,vc_h264/")
       .replace(/\.[^./]+$/, ".mp4");
   }
   return /^(jpe?g|png|webp|gif|svg)$/i.test(r.format || "")
