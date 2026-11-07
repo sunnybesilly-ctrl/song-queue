@@ -292,9 +292,8 @@ let items = [], pos = -1, fresh = [], seen = false;
 let mode = "boot";            // boot | loop | qr | idle | yearbook
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
-let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = true, fxN = 0, toastT = null, needTap = null;
+let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null, needTap = null;
 const bad = {}, counts = {}, lastLikes = {}, warmed = {};
-
 /* ---- helpers ---- */
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function find(id) { for (let i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
