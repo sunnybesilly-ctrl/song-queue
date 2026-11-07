@@ -292,7 +292,7 @@ let items = [], pos = -1, fresh = [], seen = false;
 let mode = "boot";            // boot | loop | qr | idle | yearbook
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
-let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null, needTap = null;
+let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = true, fxN = 0, toastT = null, needTap = null;
 const bad = {}, counts = {}, lastLikes = {}, warmed = {};
 
 /* ---- helpers ---- */
@@ -514,6 +514,7 @@ function videoFail(m, isFresh, why) {
   const s = stillOf(m);
   if (s) { s.why = why; s.vid = m; show(s, isFresh); } else next();
 }
+}
 
 function show(m, isFresh, gesture) {
   const my = ++tok;
@@ -578,28 +579,27 @@ function reveal(w, m, isFresh, my) {
   setBar(m, isFresh);
   showWhy(m);
   publish(m);
-    const el = w.firstChild;
+  const el = w.firstChild;
   if (m.type === "video") {
     lastTU = Date.now();
     el.ontimeupdate = function () { lastTU = Date.now(); };
     
-    el.muted = true; // ALWAYS start muted to guarantee autoplay bypasses iOS rules
+    // NEVER MUTE. If the browser blocks it, we ask for a tap.
+    el.muted = false; 
     const p = el.play();
     
     if (p && p.catch) p.catch(function (err) {
       if (my !== tok) return;
       
-      // If sound was on, try playing unmuted (might fail on iOS)
-      if (soundOn) {
-        el.muted = false;
-        const p2 = el.play();
-        if (p2 && p2.catch) p2.catch(function (e2) { if (my === tok) videoFail(m, isFresh, playWhy(e2)); });
-      } else {
-        videoFail(m, isFresh, playWhy(err)); 
-      }
+      // The browser blocked autoplay with sound.
+      // Do NOT skip the video. Just prompt the user to tap the screen once.
+      needTap = m;
+      toast("Tap screen for sound");
+      showWhy({ still: true, why: "TAP SCREEN TO PLAY VIDEO", vid: m });
     });
     armVideo(el, my);
   }
+  
   else {
     const ms = holdFor(isFresh);
     planned = ms;
