@@ -507,7 +507,10 @@ function pick() {
 }
 function videoFail(m, isFresh, why) {
   why = why || "VIDEO UNAVAILABLE";
-  markBad(m, why.indexOf("CONVERTING") >= 0 ? 0.25 : 1);
+  // DON'T mark as bad if it just needs a tap
+  if (why.indexOf("TAP SCREEN") === -1) {
+    markBad(m, why.indexOf("CONVERTING") >= 0 ? 0.25 : 1);
+  }
   const s = stillOf(m);
   if (s) { s.why = why; s.vid = m; show(s, isFresh); } else next();
 }
