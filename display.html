@@ -1,615 +1,716 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Album Display</title>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { margin: 0; padding: 0; background-color: #0a140c; background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%); color: white; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
-        
-        /* IDLE SCREEN */
-        #idle-screen { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; position: absolute; top: 0; left: 0; z-index: 1; transition: opacity 0.8s ease; }
-        .main-content { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 5vw; height: 100%; }
-        .title-container { display: flex; flex-direction: column; line-height: 0.85; }
-        .title-container span { font-family: 'Anton', sans-serif; font-size: 16vw; color: #e2ff00; text-shadow: 0 0 40px rgba(226, 255, 0, 0.6); letter-spacing: -2px; animation: pulse 2s infinite alternate; }
-        @keyframes pulse { 0% { text-shadow: 0 0 20px rgba(226, 255, 0, 0.4); } 100% { text-shadow: 0 0 60px rgba(226, 255, 0, 0.8), 0 0 20px #e2ff00; } }
-        .instructions { max-width: 35vw; border-left: 8px solid #7dff4a; padding-left: 20px; }
-        .instructions p { font-size: 1.5vw; color: #a3bca3; margin: 10px 0; line-height: 1.4; }
-        .instructions h2 { font-size: 3.5vw; color: #e2ff00; margin: 10px 0; font-weight: bold; }
-        .qr-container { margin-top: 20px; background: white; padding: 15px; border-radius: 10px; display: inline-block; box-shadow: 0 0 30px rgba(226, 255, 0, 0.3); }
-        .qr-container img { width: 15vw; height: 15vw; display: block; }
-        .marquee { background-color: #e2ff00; color: #000; font-family: 'Anton', sans-serif; font-size: 3vw; padding: 10px 0; white-space: nowrap; overflow: hidden; position: absolute; bottom: 0; width: 100%; z-index: 2; }
-        .marquee-content { display: inline-block; animation: scroll 20s linear infinite; }
-        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drop your shot - Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Familjen+Grotesk:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#04140A;--deep:#020A05;--bog:#0B2615;--line:#1F6B3A;
+  --acid:#F4FF1A;--lime:#37FF76;--bone:#E9FFEA;--dim:#7FB391;--alarm:#FF4058;
+  --bar:16vh;
+  --display:"Big Shoulders Display",Impact,sans-serif;
+  --body:"Familjen Grotesk",sans-serif;
+  --ink:"Permanent Marker","Comic Sans MS",cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--deep);cursor:none}
+body{font-family:var(--body);color:var(--bone)}
 
-        /* --- 3D MEDIA PLAYER --- */
-        #media-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; display: none; justify-content: center; align-items: center; z-index: 10; opacity: 0; overflow: hidden; }
-        #media-overlay.active { display: flex; opacity: 1; }
-        
-        #bg-media { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(40px) brightness(0.4) saturate(1.5); z-index: 1; pointer-events: none; }
-        
-        /* The 3D Stage */
-        .collage-container { 
-            display: flex; gap: 30px; justify-content: center; align-items: center; 
-            width: 95vw; height: 85vh; z-index: 2; position: relative; 
-            perspective: 1200px; /* Creates the 3D depth field */
-        }
+/* stage + media layers */
+#stage{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:1;overflow:hidden;
+  background:radial-gradient(120% 90% at 85% 10%,#0e2a17 0%,transparent 60%),radial-gradient(90% 70% at 10% 100%,#2a0a0a 0%,transparent 55%),#050a07}
+.w{position:absolute;left:0;top:0;right:0;bottom:0;opacity:0;z-index:1;overflow:hidden}
+.w.top{z-index:3}
+.w.old{opacity:1;z-index:2}
+.mi{display:block;width:100%;height:100%;object-fit:contain}
+.mi.kb{animation:kb 8s linear forwards}
+@keyframes kb{0%{transform:scale(1)}100%{transform:scale(1.07)}}
 
-        /* The 3D Floating Media */
-        .media-element { 
-            max-width: 100%; max-height: 100%; object-fit: contain; 
-            border-radius: 15px; border: 3px solid #3a5a3e; 
-            /* Deep 3D shadow */
-            box-shadow: 0 25px 50px rgba(0,0,0,0.9), 0 0 20px rgba(226, 255, 0, 0.3); 
-            will-change: transform, opacity; transition: width 0.5s ease;
-            transform-style: preserve-3d;
-        }
-        
-        .collage-container.split .media-element { width: 48%; height: 100%; border-color: #e2ff00; }
-        
-        /* Like Counter */
-        .like-counter { position: absolute; bottom: 20px; right: 20px; font-size: 2.5vw; color: #e2ff00; text-shadow: 0 0 10px rgba(0,0,0,1); z-index: 20; display: none; font-family: 'Anton', sans-serif; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 2px solid #e2ff00; }
+/* transitions: transform + opacity only */
+@keyframes tZoom{0%{opacity:0;transform:scale(1.4)}55%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes tWhipL{0%{opacity:1;transform:translateX(105%)}70%{opacity:1;transform:translateX(-2%)}100%{opacity:1;transform:translateX(0)}}
+@keyframes tWhipR{0%{opacity:1;transform:translateX(-105%)}70%{opacity:1;transform:translateX(2%)}100%{opacity:1;transform:translateX(0)}}
+@keyframes tDrop{0%{opacity:1;transform:translateY(-105%)}60%{opacity:1;transform:translateY(3%)}80%{opacity:1;transform:translateY(-1.5%)}100%{opacity:1;transform:translateY(0)}}
+@keyframes tSpin{0%{opacity:0;transform:rotate(-12deg) scale(.55)}60%{opacity:1}100%{opacity:1;transform:rotate(0) scale(1)}}
+@keyframes tPop{0%{opacity:0;transform:scale(.4)}65%{opacity:1;transform:scale(1.07)}100%{opacity:1;transform:scale(1)}}
+@keyframes tCut{0%,100%{opacity:1}}
+@keyframes tFade{0%{opacity:0}100%{opacity:1}}
+.in-zoom{animation:tZoom .62s cubic-bezier(.2,.8,.2,1) forwards}
+.in-whipl{animation:tWhipL .6s cubic-bezier(.2,.9,.25,1) forwards}
+.in-whipr{animation:tWhipR .6s cubic-bezier(.2,.9,.25,1) forwards}
+.in-drop{animation:tDrop .75s ease-out forwards}
+.in-spin{animation:tSpin .72s cubic-bezier(.2,1.2,.4,1) forwards}
+.in-pop{animation:tPop .56s ease-out forwards}
+.in-cut{animation:tCut .45s linear forwards}
+.in-fade{animation:tFade .5s linear forwards}
 
-        /* YEARBOOK GRID */
-        #yearbook-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #050a06; display: none; flex-direction: column; z-index: 30; padding: 20px; box-sizing: border-box; }
-        #yearbook-overlay.active { display: flex; }
-        .yearbook-title { font-family: 'Anton', sans-serif; color: #e2ff00; font-size: 4vw; text-align: center; margin: 0 0 20px 0; text-shadow: 0 0 20px rgba(226,255,0,0.5); }
-        .yearbook-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; overflow-y: hidden; flex-grow: 1; }
-        .yearbook-item { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #3a5a3e; }
+#flash{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:5;background:#fff;opacity:0;pointer-events:none}
+#flash.go{animation:flash .45s ease-out}
+@keyframes flash{0%{opacity:0}18%{opacity:.5}100%{opacity:0}}
 
-        /* FLOATING REACTIONS */
-        .reaction-emoji { position: absolute; bottom: 0; font-size: 5vw; z-index: 50; animation: floatUp 3s ease-out forwards; pointer-events: none; text-shadow: 0 0 20px rgba(226, 255, 0, 0.8); }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 1; } 50% { transform: translateY(-40vh) scale(1.2); opacity: 1; } 100% { transform: translateY(-80vh) scale(1); opacity: 0; } }
+/* QR interlude / idle */
+#qrcard{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:4;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;
+  background:radial-gradient(120% 90% at 85% 10%,#0e2a17 0%,transparent 60%),radial-gradient(90% 70% at 10% 100%,#2a0a0a 0%,transparent 55%),#050a07;
+  opacity:0;visibility:hidden;transition:opacity .5s linear,visibility 0s linear .5s}
+#qrcard.on{opacity:1;visibility:visible;transition:opacity .5s linear}
+.qt .a{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:23vh;line-height:.8;color:var(--acid);text-shadow:0 0 2vh rgba(244,255,26,.55)}
+.qt .a2{margin-left:7%}
+.qt .a3{margin-left:2%}
+.qt .qs{margin-top:3vh;padding-left:1.2vw;border-left:.6vh solid var(--lime);font-weight:700;font-size:3.4vh;color:var(--dim);max-width:30vw}
+#qrcard.on .a{animation:tube 1.3s steps(1,end) both}
+#qrcard.on .a2{animation-delay:.35s}
+#qrcard.on .a3{animation-delay:.7s}
+@keyframes tube{0%{opacity:.14}14%{opacity:1}22%{opacity:.2}30%{opacity:1}38%{opacity:.3}46%,100%{opacity:1}}
+.qq{display:flex;align-items:flex-start}
+.qb{margin-left:3vw}
+.qb.b2{margin-top:8vh}
+.qb .tile{width:34vh;height:34vh;box-shadow:0 0 0 .7vh var(--lime),0 0 5vh rgba(55,255,118,.45)}
+.qb .ql{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:4.6vh;line-height:1;color:var(--acid);margin-top:2vh}
+#qrcard.on .qb .tile{animation:pulse2 2.4s ease-in-out infinite}
+@keyframes pulse2{50%{transform:scale(1.035)}}
+.tile svg,.tile img{display:block;width:100%;height:100%}
 
-        /* AUDIO TOGGLE BUTTON */
-        #audio-toggle {
-            position: absolute; bottom: 10vh; left: 2vw; z-index: 100;
-            background: rgba(0,0,0,0.7); border: 2px solid #e2ff00; color: #e2ff00;
-            font-size: 2vw; padding: 10px 20px; border-radius: 30px;
-            cursor: pointer; font-family: 'Anton', sans-serif; display: none;
-            transition: all 0.3s ease;
-        }
-        #audio-toggle:hover { background: #e2ff00; color: #000; }
-        #audio-toggle.active { display: block; }
+/* floating reactions */
+#fx{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:7;pointer-events:none;overflow:hidden}
+.fl{position:absolute;bottom:0;animation:rise 3s ease-out forwards;line-height:1}
+.fl svg{display:block;width:100%;height:100%}
+.fl .tx{display:block;font-family:var(--display);font-weight:900;font-size:1em;line-height:1;text-shadow:0 0 1vh #000}
+@keyframes rise{0%{opacity:0;transform:translateY(0) scale(.6)}12%{opacity:1;transform:translateY(-6vh) scale(1)}100%{opacity:0;transform:translateY(-78vh) translateX(var(--sx,0)) scale(1.1)}}
 
-        /* --- SPATIAL 3D TRANSITIONS --- */
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        
-        /* 3D Swing In */
-        @keyframes swingIn3D { 
-            0% { transform: perspective(1000px) rotateY(-45deg) translateX(100px) scale(0.8); opacity: 0; } 
-            100% { transform: perspective(1000px) rotateY(0deg) translateX(0) scale(1); opacity: 1; } 
-        }
-        
-        /* 3D Flip Down */
-        @keyframes flipDown3D { 
-            0% { transform: perspective(1000px) rotateX(60deg) translateY(-100px) scale(0.8); opacity: 0; } 
-            100% { transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1); opacity: 1; } 
-        }
-        
-        /* 3D Pop Out */
-        @keyframes popOut3D { 
-            0% { transform: perspective(1000px) translateZ(-300px) scale(0.5); opacity: 0; } 
-            70% { transform: perspective(1000px) translateZ(50px) scale(1.05); opacity: 1; } 
-            100% { transform: perspective(1000px) translateZ(0) scale(1); opacity: 1; } 
-        }
+/* bottom bar */
+#bar{position:absolute;left:0;right:0;bottom:0;height:var(--bar);z-index:8;display:flex;align-items:stretch;
+  background:linear-gradient(90deg,#020A05,#07200F 55%,#0B2615);border-top:.6vh solid var(--acid)}
+.who{flex:0 0 26vw;position:relative;padding:0 1.6vw;display:flex;flex-direction:column;justify-content:center;border-right:2px solid var(--line);overflow:hidden}
+.lab{font-weight:700;font-size:1.8vh;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+.nm{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:5.8vh;line-height:.92;color:var(--acid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm.slam{animation:slam .5s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes slam{0%{opacity:0;transform:translateX(-4vw) scale(1.25)}100%{opacity:1;transform:none}}
+.hr{display:flex;align-items:center;margin-top:.8vh;font-weight:700;font-size:2.8vh}
+.hr svg{width:3.2vh;height:3.2vh;margin-right:1vh;display:block}
+.hr b{display:inline-block}
+.hr b.bump{animation:bump .35s ease-out}
+@keyframes bump{0%{transform:scale(1.6)}100%{transform:scale(1)}}
+.new{position:absolute;right:1vw;top:1vh;display:none;background:var(--alarm);color:#fff;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.6vh;padding:.3vh 1vh;transform:rotate(4deg);animation:blink 1s steps(2,end) infinite}
+@keyframes blink{50%{opacity:.45}}
+.say{flex:1;min-width:0;display:flex;align-items:center;padding:0 2vw;overflow:hidden}
+.hint{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:3.8vh;line-height:.98;color:var(--lime)}
+.cmt{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.cmt.pop{animation:cin .45s cubic-bezier(.2,.9,.2,1) both}
+@keyframes cin{0%{opacity:0;transform:translateY(5vh)}100%{opacity:1;transform:none}}
+.cmt b{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.8vh;letter-spacing:.08em;color:var(--acid)}
+.cmt span{font-weight:700;font-size:3.6vh;line-height:1.05;color:var(--bone);max-height:7.6vh;overflow:hidden}
+.qrs{flex:0 0 auto;display:flex;align-items:center;padding:0 1.2vw}
+.q{margin-left:1.2vw;text-align:center}
+.q .tile{width:9.6vh;height:9.6vh}
+.q i{display:block;font-style:normal;font-weight:700;font-size:1.5vh;letter-spacing:.14em;color:var(--lime);margin-top:.5vh;white-space:nowrap}
 
-        .anim-fade-out { animation: fadeOut 0.5s ease forwards; }
-        .anim-swing { animation: swingIn3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .anim-flip { animation: flipDown3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .anim-pop { animation: popOut3D 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    </style>
+#toast{position:absolute;top:2vh;right:2vw;z-index:20;background:var(--acid);color:#061207;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:3.4vh;padding:.6vh 1.6vh;opacity:0;transition:opacity .25s}
+#toast.on{opacity:1}
+
+/* yearbook */
+#yb{position:absolute;left:0;top:0;right:0;bottom:0;z-index:9;display:none;overflow:hidden;
+  background:radial-gradient(120% 90% at 85% 10%,#0e2a17 0%,transparent 60%),radial-gradient(90% 70% at 10% 100%,#2a0a0a 0%,transparent 55%),#050a07}
+#yb.on{display:block}
+.pg{position:absolute;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;padding:0 6vw;animation:pgIn .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pgIn{0%{opacity:0;transform:scale(1.08)}100%{opacity:1;transform:none}}
+.pg.sig,.pg.cls{display:block}
+.pg.cover{justify-content:flex-start}
+.cover .k,.cap .k{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:4.2vh;letter-spacing:.3em;color:var(--lime)}
+.cover .t{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:34vh;line-height:.8;color:transparent;-webkit-text-stroke:.6vh var(--acid);transform:rotate(-3deg);margin:2vh 0 3vh -.5vw}
+.cover .n{font-family:var(--ink);font-size:5vh;color:var(--bone)}
+.snap{flex:0 0 52vw;height:78vh;background:#F3EBD5;padding:2.2vh 2.2vh 7.5vh;position:relative;transform:rotate(-2.2deg)}
+.snap .mi{background:#0a1a10}
+.snap em{position:absolute;left:2.4vh;bottom:1.6vh;font-family:var(--ink);font-style:normal;font-size:3.6vh;color:#1a2b1d}
+.cap{flex:1;min-width:0;margin-left:5vw}
+.cap .t{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:14vh;line-height:.84;color:var(--acid);margin:1.4vh 0 2vh -.3vw;transform:rotate(-3deg);transform-origin:0 100%}
+.cap .n{font-family:var(--ink);font-size:6vh;color:var(--bone)}
+.cap .s{margin-top:1.6vh;font-weight:700;font-size:3vh;color:var(--dim)}
+.t2{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:11vh;line-height:.85;color:var(--acid);padding-top:3vh}
+.note{position:absolute;width:27vw;opacity:0;animation:noteIn .5s cubic-bezier(.2,1.3,.4,1) forwards}
+@keyframes noteIn{0%{opacity:0;transform:scale(.6)}100%{opacity:1}}
+.note span{display:block;font-family:var(--ink);font-size:4vh;line-height:1.1}
+.note em{display:block;margin-top:.8vh;font-style:normal;font-weight:700;font-size:2.4vh;color:var(--dim)}
+.grid{display:flex;flex-wrap:wrap;justify-content:center;padding:1vh 0 0}
+.cell{width:11.8vw;height:11.8vw;margin:0 .8vw 1.2vh;opacity:0;animation:cellIn .5s cubic-bezier(.2,1.3,.4,1) forwards}
+@keyframes cellIn{0%{opacity:0;transform:scale(.3) rotate(0)}100%{opacity:1;transform:scale(1) rotate(var(--r,0deg))}}
+.cell img{display:block;width:100%;height:100%;object-fit:cover}
+.foot{position:absolute;left:6vw;bottom:3vh;font-family:var(--ink);font-size:4vh;color:var(--bone)}
+
+/* lite mode (auto on slow browsers, L key) */
+.lite .mi.kb,.lite .new,.lite #qrcard.on .qb .tile,.lite #qrcard.on .a{animation:none}
+.lite .cell,.lite .note{animation:none;opacity:1}
+</style>
 </head>
 <body>
-    <div id="idle-screen">
-        <div class="main-content">
-            <div class="title-container"><span>SEND</span><span>YOUR</span><span>SHOTS</span></div>
-            <div class="instructions">
-                <p>Scan the QR code with your camera to</p><h2>SEND TO THE ALBUM</h2>
-                <p>Pick a photo or video. It joins the album instantly!</p>
-                <div class="qr-container"><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/upload.html" alt="Scan to Upload"></div>
-            </div>
-        </div>
-        <div class="marquee"><div class="marquee-content">PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦</div></div>
-    </div>
+<div id="stage"></div>
+<div id="flash"></div>
 
-    <div id="media-overlay">
-        <img id="bg-media" src="" alt="Background">
-        <div class="collage-container" id="collage-container">
-            <img id="display-img-1" class="media-element" style="display:none;">
-            <div id="likes-1" class="like-counter">❤️ 0</div>
-            
-            <img id="display-img-2" class="media-element" style="display:none;">
-            <div id="likes-2" class="like-counter">❤️ 0</div>
-            
-            <video id="display-video" class="media-element" style="display:none;" playsinline></video>
-        </div>
-        
-        <!-- Audio Toggle Button -->
-        <div id="audio-toggle" onclick="toggleAudio()">🔇 TAP FOR SOUND</div>
-    </div>
+<div id="qrcard">
+  <div class="qt">
+    <div class="a">Drop</div><div class="a a2">your</div><div class="a a3">shot.</div>
+    <div class="qs">Then heart it. Sign the yearbook.</div>
+  </div>
+  <div class="qq">
+    <div class="qb"><div class="tile qU"></div><div class="ql">1. Add yours</div></div>
+    <div class="qb b2"><div class="tile qR"></div><div class="ql">2. React + sign</div></div>
+  </div>
+</div>
 
-    <div id="yearbook-overlay">
-        <h2 class="yearbook-title">THE PARTY ALBUM</h2>
-        <div class="yearbook-grid" id="yearbook-grid"></div>
-    </div>
+<div id="fx"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Album Display</title>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { margin: 0; padding: 0; background-color: #0a140c; background: radial-gradient(circle at top, #1a2e1d 0%, #050a06 100%); color: white; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
-        
-        /* IDLE SCREEN */
-        #idle-screen { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; position: absolute; top: 0; left: 0; z-index: 1; transition: opacity 0.8s ease; }
-        .main-content { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 5vw; height: 100%; }
-        .title-container { display: flex; flex-direction: column; line-height: 0.85; }
-        .title-container span { font-family: 'Anton', sans-serif; font-size: 16vw; color: #e2ff00; text-shadow: 0 0 40px rgba(226, 255, 0, 0.6); letter-spacing: -2px; animation: pulse 2s infinite alternate; }
-        @keyframes pulse { 0% { text-shadow: 0 0 20px rgba(226, 255, 0, 0.4); } 100% { text-shadow: 0 0 60px rgba(226, 255, 0, 0.8), 0 0 20px #e2ff00; } }
-        .instructions { max-width: 35vw; border-left: 8px solid #7dff4a; padding-left: 20px; }
-        .instructions p { font-size: 1.5vw; color: #a3bca3; margin: 10px 0; line-height: 1.4; }
-        .instructions h2 { font-size: 3.5vw; color: #e2ff00; margin: 10px 0; font-weight: bold; }
-        .qr-container { margin-top: 20px; background: white; padding: 15px; border-radius: 10px; display: inline-block; box-shadow: 0 0 30px rgba(226, 255, 0, 0.3); }
-        .qr-container img { width: 15vw; height: 15vw; display: block; }
-        .marquee { background-color: #e2ff00; color: #000; font-family: 'Anton', sans-serif; font-size: 3vw; padding: 10px 0; white-space: nowrap; overflow: hidden; position: absolute; bottom: 0; width: 100%; z-index: 2; }
-        .marquee-content { display: inline-block; animation: scroll 20s linear infinite; }
-        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+<div id="bar">
+  <div class="who">
+    <div class="lab">Shot by</div>
+    <div class="nm" id="nm">Nobody yet</div>
+    <div class="hr"><span id="hi"></span><b id="hn">0</b></div>
+    <div class="new" id="newb">Just dropped</div>
+  </div>
+  <div class="say">
+    <div class="hint" id="hint">Heart it. Sign the yearbook. Scan the codes.</div>
+    <div class="cmt" id="cmt" hidden><b id="cn"></b><span id="ct"></span></div>
+  </div>
+  <div class="qrs">
+    <div class="q"><div class="tile qU"></div><i>ADD YOURS</i></div>
+    <div class="q"><div class="tile qR"></div><i>REACT + SIGN</i></div>
+  </div>
+</div>
 
-        /* --- 3D MEDIA PLAYER --- */
-        #media-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; display: none; justify-content: center; align-items: center; z-index: 10; opacity: 0; overflow: hidden; }
-        #media-overlay.active { display: flex; opacity: 1; }
-        
-        #bg-media { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(40px) brightness(0.4) saturate(1.5); z-index: 1; pointer-events: none; }
-        
-        /* The 3D Stage */
-        .collage-container { 
-            display: flex; gap: 30px; justify-content: center; align-items: center; 
-            width: 95vw; height: 85vh; z-index: 2; position: relative; 
-            perspective: 1200px; /* Creates the 3D depth field */
-        }
+<div id="yb"></div>
+<div id="toast"></div>
 
-        /* The 3D Floating Media */
-        .media-element { 
-            max-width: 100%; max-height: 100%; object-fit: contain; 
-            border-radius: 15px; border: 3px solid #3a5a3e; 
-            /* Deep 3D shadow */
-            box-shadow: 0 25px 50px rgba(0,0,0,0.9), 0 0 20px rgba(226, 255, 0, 0.3); 
-            will-change: transform, opacity; transition: width 0.5s ease;
-            transform-style: preserve-3d;
-        }
-        
-        .collage-container.split .media-element { width: 48%; height: 100%; border-color: #e2ff00; }
-        
-        /* Like Counter */
-        .like-counter { position: absolute; bottom: 20px; right: 20px; font-size: 2.5vw; color: #e2ff00; text-shadow: 0 0 10px rgba(0,0,0,1); z-index: 20; display: none; font-family: 'Anton', sans-serif; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 2px solid #e2ff00; }
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-        /* YEARBOOK GRID */
-        #yearbook-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #050a06; display: none; flex-direction: column; z-index: 30; padding: 20px; box-sizing: border-box; }
-        #yearbook-overlay.active { display: flex; }
-        .yearbook-title { font-family: 'Anton', sans-serif; color: #e2ff00; font-size: 4vw; text-align: center; margin: 0 0 20px 0; text-shadow: 0 0 20px rgba(226,255,0,0.5); }
-        .yearbook-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; overflow-y: hidden; flex-grow: 1; }
-        .yearbook-item { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 2px solid #3a5a3e; }
+const firebaseConfig = {
+  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
+  authDomain: "dj-photo-wall.firebaseapp.com",
+  projectId: "dj-photo-wall",
+  storageBucket: "dj-photo-wall.firebasestorage.app",
+  messagingSenderId: "187308843014",
+  appId: "1:187308843014:web:a4dbf9c17011767890a387"
+};
+const db = getFirestore(initializeApp(firebaseConfig));
 
-        /* FLOATING REACTIONS */
-        .reaction-emoji { position: absolute; bottom: 0; font-size: 5vw; z-index: 50; animation: floatUp 3s ease-out forwards; pointer-events: none; text-shadow: 0 0 20px rgba(226, 255, 0, 0.8); }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 1; } 50% { transform: translateY(-40vh) scale(1.2); opacity: 1; } 100% { transform: translateY(-80vh) scale(1); opacity: 0; } }
+/* ---- tuning ---- */
+const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
+const UPLOAD_URL = BASE + "upload.html";
+const REACT_URL = BASE + "react.html";
+const QR_EVERY_MS = 90000;   // full-screen QR interlude cadence
+const QR_HOLD_MS = 7000;     // how long the interlude stays up
+const MIN_VIDEO_MS = 8000;   // short clips loop until at least this long
+const MAX_VIDEO_MS = 30000;
+const RELOAD_MS = 50 * 60000; // self-refresh to keep a weak browser healthy
 
-        /* AUDIO TOGGLE BUTTON */
-        #audio-toggle {
-            position: absolute; bottom: 10vh; left: 2vw; z-index: 100;
-            background: rgba(0,0,0,0.7); border: 2px solid #e2ff00; color: #e2ff00;
-            font-size: 2vw; padding: 10px 20px; border-radius: 30px;
-            cursor: pointer; font-family: 'Anton', sans-serif; display: none;
-            transition: all 0.3s ease;
-        }
-        #audio-toggle:hover { background: #e2ff00; color: #000; }
-        #audio-toggle.active { display: block; }
+const ICON = {
+  heart: '<svg viewBox="0 0 24 24"><path fill="#FF4058" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><polygon fill="#F4FF1A" points="12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 2,9.3 9.1,8.6"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24"><polygon fill="#37FF76" points="13,2 4,14 11,14 10,22 20,9 13,9"/></svg>',
+  lol: '<b class="tx" style="color:#F4FF1A">LOL</b>',
+  wow: '<b class="tx" style="color:#37FF76">WOW</b>'
+};
 
-        /* --- SPATIAL 3D TRANSITIONS --- */
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        
-        /* 3D Swing In */
-        @keyframes swingIn3D { 
-            0% { transform: perspective(1000px) rotateY(-45deg) translateX(100px) scale(0.8); opacity: 0; } 
-            100% { transform: perspective(1000px) rotateY(0deg) translateX(0) scale(1); opacity: 1; } 
-        }
-        
-        /* 3D Flip Down */
-        @keyframes flipDown3D { 
-            0% { transform: perspective(1000px) rotateX(60deg) translateY(-100px) scale(0.8); opacity: 0; } 
-            100% { transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1); opacity: 1; } 
-        }
-        
-        /* 3D Pop Out */
-        @keyframes popOut3D { 
-            0% { transform: perspective(1000px) translateZ(-300px) scale(0.5); opacity: 0; } 
-            70% { transform: perspective(1000px) translateZ(50px) scale(1.05); opacity: 1; } 
-            100% { transform: perspective(1000px) translateZ(0) scale(1); opacity: 1; } 
-        }
+const $ = function (s) { return document.querySelector(s); };
+const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+const stage = $("#stage"), flashEl = $("#flash"), qrcard = $("#qrcard"), fx = $("#fx"), yb = $("#yb"), toastEl = $("#toast");
+const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint"), cmt = $("#cmt"), cn = $("#cn"), ct = $("#ct");
+$("#hi").innerHTML = ICON.heart;
 
-        .anim-fade-out { animation: fadeOut 0.5s ease forwards; }
-        .anim-swing { animation: swingIn3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .anim-flip { animation: flipDown3D 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .anim-pop { animation: popOut3D 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    </style>
-</head>
-<body>
-    <div id="idle-screen">
-        <div class="main-content">
-            <div class="title-container"><span>SEND</span><span>YOUR</span><span>SHOTS</span></div>
-            <div class="instructions">
-                <p>Scan the QR code with your camera to</p><h2>SEND TO THE ALBUM</h2>
-                <p>Pick a photo or video. It joins the album instantly!</p>
-                <div class="qr-container"><img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://sunnybesilly-ctrl.github.io/song-queue/upload.html" alt="Scan to Upload"></div>
-            </div>
-        </div>
-        <div class="marquee"><div class="marquee-content">PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦ PHOTO ✦ SEND A VIDEO UP TO 30 SECONDS ✦ PUT YOUR NAME ✦</div></div>
-    </div>
+/* ---- state ---- */
+let items = [], pos = -1, fresh = [], seen = false;
+let mode = "boot";            // boot | loop | qr | idle | yearbook
+let tok = 0, timer = null, wd = null;
+let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
+let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null;
+const bad = {}, counts = {}, lastLikes = {};
 
-    <div id="media-overlay">
-        <img id="bg-media" src="" alt="Background">
-        <div class="collage-container" id="collage-container">
-            <img id="display-img-1" class="media-element" style="display:none;">
-            <div id="likes-1" class="like-counter">❤️ 0</div>
-            
-            <img id="display-img-2" class="media-element" style="display:none;">
-            <div id="likes-2" class="like-counter">❤️ 0</div>
-            
-            <video id="display-video" class="media-element" style="display:none;" playsinline></video>
-        </div>
-        
-        <!-- Audio Toggle Button -->
-        <div id="audio-toggle" onclick="toggleAudio()">🔇 TAP FOR SOUND</div>
-    </div>
+/* ---- helpers ---- */
+function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function find(id) { for (let i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
+function markBad(m, min) { bad[m.url] = Date.now() + min * 60000; }
+function isBad(m) { return (bad[m.url] || 0) > Date.now(); }
+function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
+function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
+function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
+function showQR(on) { qrcard.className = on ? "on" : ""; }
 
-    <div id="yearbook-overlay">
-        <h2 class="yearbook-title">THE PARTY ALBUM</h2>
-        <div class="yearbook-grid" id="yearbook-grid"></div>
-    </div>
+/* ---- QR codes (crisp SVG, falls back to an image service if the library is blocked) ---- */
+function qrSvg(text, fg, bg) {
+  const q = qrcode(0, "M"); q.addData(text); q.make();
+  const n = q.getModuleCount(), m = 3, s = n + m * 2;
+  let d = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += "M" + (c + m) + " " + (r + m) + "h1v1h-1z";
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + s + ' ' + s + '" shape-rendering="crispEdges"><rect width="' + s + '" height="' + s + '" fill="' + bg + '"/><path d="' + d + '" fill="' + fg + '"/></svg>';
+}
+function fallbackImg(u) { return '<img alt="" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(u) + '">'; }
+function fillQR() {
+  let su = "", sr = "";
+  try { su = qrSvg(UPLOAD_URL, "#061207", "#F4FF1A"); sr = qrSvg(REACT_URL, "#061207", "#37FF76"); } catch (e) { console.warn(e); }
+  $$(".qU").forEach(function (e) { e.innerHTML = su || fallbackImg(UPLOAD_URL); });
+  $$(".qR").forEach(function (e) { e.innerHTML = sr || fallbackImg(REACT_URL); });
+}
+fillQR();
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+/* small Cloudinary thumbnails so the yearbook grid never decodes full-size photos */
+function thumb(m) {
+  const u = m.url || "";
+  if (u.indexOf("res.cloudinary.com") < 0) return "";
+  const re = /\/upload\/(?:[^\/]+\/)?(?=v\d+\/)/;
+  if (!re.test(u)) return "";
+  const t = "c_fill,w_480,h_480,q_auto";
+  if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
+  return u.replace(re, "/upload/" + t + "/");
+}
 
-        const firebaseConfig = { apiKey: "YOUR_API_KEY", authDomain: "YOUR_PROJECT_ID.firebaseapp.com", projectId: "YOUR_PROJECT_ID", storageBucket: "YOUR_PROJECT_ID.appspot.com", messagingSenderId: "YOUR_SENDER_ID", appId: "YOUR_APP_ID" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+/* ---- bar ---- */
+function setHearts(id, bumpIt) {
+  const m = find(id);
+  hnEl.textContent = ((m && m.likes) || 0) + (counts[id] || 0);
+  if (bumpIt) { hnEl.className = ""; void hnEl.offsetWidth; hnEl.className = "bump"; }
+}
+function setBar(m, isFresh) {
+  nmEl.textContent = m.name || "Somebody";
+  nmEl.className = "nm"; void nmEl.offsetWidth; nmEl.className = "nm slam";
+  newb.style.display = isFresh ? "block" : "none";
+  setHearts(m.id, false);
+}
+function setBarIdle() { nmEl.textContent = "Nobody yet"; nmEl.className = "nm"; hnEl.textContent = "0"; newb.style.display = "none"; }
+function publish(m) {
+  try {
+    setDoc(doc(db, "state", "now"), { id: m.id, name: m.name || "", type: m.type, thumb: thumb(m), t: serverTimestamp() }).catch(function (e) { console.warn(e); });
+  } catch (e) { console.warn(e); }
+}
 
-        let mediaList = [];
-        let currentIndex = 0;
-        let isPlaying = false;
-        let slideTimer = null;
-        let lastLikes = {}; 
-        
-        // Audio State
-        let isMuted = true; 
+/* ---- media loop ---- */
+const T = [
+  { n: "zoom", ms: 620 }, { n: "whipl", ms: 600 }, { n: "whipr", ms: 600 }, { n: "drop", ms: 750 },
+  { n: "spin", ms: 720 }, { n: "pop", ms: 560 }, { n: "cut", ms: 450, flash: true }
+];
+function pickT(isFresh) {
+  if (lite) return { n: "fade", ms: 500 };
+  if (isFresh) return { n: "spin", ms: 720, flash: true };
+  let i; do { i = Math.floor(Math.random() * T.length); } while (i === lastT);
+  lastT = i; return T[i];
+}
+function holdFor(isFresh) {
+  const n = items.length;
+  let b = n <= 6 ? 9000 : n <= 15 ? 7500 : n <= 30 ? 6500 : 5500;   // fewer shots = linger, big pile = move faster
+  b += Math.random() * 2000 - 1000;
+  if (isFresh) b += 2000;
+  return Math.round(b);
+}
+function drop(w) {
+  if (!w) return;
+  const v = w.firstChild;
+  if (v) {
+    v.onended = v.onerror = v.onloadeddata = v.onload = v.ontimeupdate = null;
+    if (v.tagName === "VIDEO") { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} }
+  }
+  if (w.parentNode) w.parentNode.removeChild(w);
+}
+function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); cur = null; curItem = null; }
 
-        const transitions = ['anim-swing', 'anim-flip', 'anim-pop'];
+function pick() {
+  while (fresh.length) {
+    const m = find(fresh.shift());
+    if (m && !isBad(m)) return { m: m, fresh: true };
+  }
+  const n = items.length;
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < n; i++) {
+      pos = (pos + 1) % n;
+      const m = items[pos];
+      if (isBad(m)) continue;
+      if (pass === 0 && n > 1 && m.id === lastId) continue;
+      return { m: m, fresh: false };
+    }
+  }
+  return null;
+}
 
-        const idleScreen = document.getElementById('idle-screen');
-        const mediaOverlay = document.getElementById('media-overlay');
-        const yearbookOverlay = document.getElementById('yearbook-overlay');
-        const collageContainer = document.getElementById('collage-container');
-        const yearbookGrid = document.getElementById('yearbook-grid');
-        const audioToggle = document.getElementById('audio-toggle');
-        
-        const img1 = document.getElementById('display-img-1');
-        const img2 = document.getElementById('display-img-2');
-        const vid = document.getElementById('display-video');
-        const bgEl = document.getElementById('bg-media');
-        const likes1 = document.getElementById('likes-1');
-        const likes2 = document.getElementById('likes-2');
+function show(m, isFresh) {
+  const my = ++tok;
+  clearTimeout(timer); clearTimeout(wd);
+  mode = "loop";
+  const isV = m.type === "video";
+  const w = document.createElement("div"); w.className = "w";
+  const el = document.createElement(isV ? "video" : "img"); el.className = "mi";
+  w.appendChild(el);
+  let ready = false;
+  const go = function () {
+    if (ready) return;
+    if (my !== tok) { drop(w); return; }
+    ready = true; clearTimeout(wd);
+    try { reveal(w, m, isFresh, my); } catch (e) { console.error(e); timer = setTimeout(next, 5000); }
+  };
+  el.onerror = function () {
+    if (my !== tok) { drop(w); return; }
+    if (!ready) drop(w);
+    markBad(m, 3); next();
+  };
+  if (isV) {
+    el.muted = true; el.playsInline = true; el.preload = "auto";
+    el.setAttribute("muted", ""); el.setAttribute("playsinline", "");
+    el.onloadeddata = go;
+  } else {
+    el.onload = go;
+  }
+  wd = setTimeout(function () { if (!ready && my === tok) { drop(w); markBad(m, 3); next(); } }, 12000);
+  el.src = m.url;
+  stage.appendChild(w);
+}
 
-        // AUDIO TOGGLE LOGIC
-        window.toggleAudio = function() {
-            isMuted = !isMuted;
-            vid.muted = isMuted;
-            if(isMuted) {
-                audioToggle.innerHTML = "🔇 TAP FOR SOUND";
-                audioToggle.style.borderColor = "#e2ff00";
-                audioToggle.style.color = "#e2ff00";
-            } else {
-                audioToggle.innerHTML = "🔊 SOUND ON";
-                audioToggle.style.borderColor = "#ff4444";
-                audioToggle.style.color = "#ff4444";
-            }
-        }
+function reveal(w, m, isFresh, my) {
+  const old = cur;
+  cur = w; curItem = m; lastId = m.id; revealAt = Date.now();
+  if (qrcard.className === "on") showQR(false);
+  const t = pickT(isFresh);
+  w.className = "w top in-" + t.n;
+  if (t.flash) fire();
+  if (old) { old.className = "w old"; setTimeout(function () { drop(old); }, t.ms + 150); }
+  Array.prototype.slice.call(stage.children).forEach(function (c) { if (c !== w && c !== old) drop(c); });
+  setBar(m, isFresh);
+  publish(m);
+  const el = w.firstChild;
+  if (m.type === "video") {
+    lastTU = Date.now();
+    el.ontimeupdate = function () { lastTU = Date.now(); };
+    el.muted = !soundOn;
+    const p = el.play();
+    if (p && p.catch) p.catch(function () {
+      if (my !== tok) return;
+      if (!el.muted) {
+        soundOn = false; el.muted = true; toast("Sound off");
+        const p2 = el.play();
+        if (p2 && p2.catch) p2.catch(function () { markBad(m, 3); next(); });
+      } else { markBad(m, 3); next(); }
+    });
+    armVideo(el, my);
+  } else {
+    const ms = holdFor(isFresh);
+    planned = ms;
+    if (!lite) {
+      el.style.transformOrigin = (25 + Math.random() * 50) + "% " + (25 + Math.random() * 50) + "%";
+      el.style.animationDuration = ((ms + t.ms) / 1000) + "s";
+      el.className = "mi kb";
+    }
+    timer = setTimeout(next, ms);
+  }
+}
 
-        const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
-        
-        onSnapshot(q, (snapshot) => {
-            mediaList = [];
-            snapshot.forEach((doc) => { 
-                const data = doc.data();
-                mediaList.push(data); 
-                const docId = doc.id;
-                const currentLikes = data.likes || 0;
-                if (lastLikes[docId] !== undefined && currentLikes > lastLikes[docId]) { spawnReaction(); }
-                lastLikes[docId] = currentLikes;
-            });
+function armVideo(v, my) {
+  const d = (isFinite(v.duration) && v.duration > 0) ? v.duration * 1000 : 8000;
+  const loops = d >= MIN_VIDEO_MS ? 1 : Math.min(6, Math.ceil(MIN_VIDEO_MS / d));   // 3s clip plays 3x
+  let plays = 0;
+  planned = Math.min(d * loops, MAX_VIDEO_MS) + 3000;
+  v.onended = function () {
+    if (my !== tok) return;
+    plays++;
+    if (plays < loops) {
+      try { v.currentTime = 0; } catch (e) {}
+      const p = v.play(); if (p && p.catch) p.catch(function () {});
+    } else next();
+  };
+  wd = setTimeout(function () { if (my === tok) next(); }, planned);
+}
 
-            if (!isPlaying && mediaList.length > 0) { isPlaying = true; currentIndex = 0; showMedia(); }
-            if (mediaList.length === 0 && isPlaying) { isPlaying = false; showIdle(); }
-        });
+/* ---- flow control ---- */
+function next() {
+  try { nextInner(); } catch (e) { console.error(e); clearTimeout(timer); timer = setTimeout(next, 4000); }
+}
+function nextInner() {
+  clearTimeout(timer); clearTimeout(wd);
+  if (mode === "yearbook") return;
+  if (!items.length) { goIdle(false); return; }
+  if (performance.now() > RELOAD_MS) { location.reload(); return; }
+  if (mode === "loop" && Date.now() - lastQR > QR_EVERY_MS) { qrInterlude(); return; }
+  const p = pick();
+  if (!p) { goIdle(true); return; }
+  show(p.m, p.fresh);
+}
+function qrInterlude() {
+  mode = "qr"; tok++; lastQR = Date.now();
+  stopMedia(); showQR(true);
+  timer = setTimeout(function () {
+    showQR(false);
+    timer = setTimeout(function () { lastQR = Date.now(); mode = "loop"; next(); }, 500);
+  }, QR_HOLD_MS);
+}
+function goIdle(retry) {
+  mode = "idle"; tok++; lastQR = Date.now();
+  stopMedia(); showQR(true); setBarIdle();
+  if (retry) timer = setTimeout(next, 5000);
+}
 
-        function spawnReaction() {
-            if (document.querySelectorAll('.reaction-emoji').length > 5) return;
-            const emojis = ['❤️', '🔥', '💃', '🕺', '😍', '🎉'];
-            const el = document.createElement('div');
-            el.className = 'reaction-emoji';
-            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
-            el.style.left = Math.random() * 80 + 10 + 'vw';
-            mediaOverlay.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
+/* ---- reactions + comments ---- */
+function burst(k, n) {
+  const cnt = Math.min(n, lite ? 2 : 5);
+  for (let i = 0; i < cnt; i++) setTimeout(function () { floater(k); }, i * 140);
+}
+function floater(k) {
+  if (fxN >= (lite ? 4 : 14) || mode === "yearbook") return;
+  fxN++;
+  const e = document.createElement("div"); e.className = "fl";
+  e.innerHTML = ICON[k] || ICON.heart;
+  const sz = 7 + Math.random() * 5;
+  e.style.width = sz + "vh"; e.style.height = sz + "vh"; e.style.fontSize = sz + "vh";
+  e.style.left = (Math.random() < .5 ? 2 + Math.random() * 9 : 87 + Math.random() * 9) + "vw";
+  e.style.setProperty("--sx", ((Math.random() * 8) - 4).toFixed(1) + "vw");
+  e.style.animationDuration = (2.8 + Math.random() * 1.4) + "s";
+  fx.appendChild(e);
+  setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); fxN--; }, 4500);
+}
 
-        function hideAll() {
-            img1.style.display = 'none'; img1.className = 'media-element';
-            img2.style.display = 'none'; img2.className = 'media-element';
-            vid.style.display = 'none'; vid.className = 'media-element'; vid.pause();
-            likes1.style.display = 'none'; likes2.style.display = 'none';
-            collageContainer.classList.remove('split');
-            audioToggle.classList.remove('active'); // Hide audio button by default
-        }
+const cq = []; let cShowing = false;
+function pushComment(c) {
+  if (!commentsOn) return;
+  if (cq.length >= 6) cq.shift();
+  cq.push(c);
+  if (!cShowing) nextComment();
+}
+function nextComment() {
+  const c = cq.shift();
+  if (!c) { cShowing = false; cmt.hidden = true; hint.hidden = false; return; }
+  cShowing = true; hint.hidden = true; cmt.hidden = false;
+  cn.textContent = c.name; ct.textContent = c.text;
+  cmt.className = "cmt"; void cmt.offsetWidth; cmt.className = "cmt pop";
+  setTimeout(nextComment, 4800);
+}
 
-        function showIdle() {
-            clearTimeout(slideTimer);
-            hideAll();
-            mediaOverlay.classList.remove('active');
-            yearbookOverlay.classList.remove('active');
-            idleScreen.style.opacity = '1';
-        }
+/* ---- yearbook (press Y at the end of the night) ---- */
+function clearYB() {
+  $$("#yb video").forEach(function (v) { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} });
+  yb.innerHTML = "";
+}
+function mediaEl(m) {
+  const v = m.type === "video";
+  const e = document.createElement(v ? "video" : "img"); e.className = "mi";
+  if (v) { e.muted = true; e.loop = true; e.autoplay = true; e.playsInline = true; e.setAttribute("playsinline", ""); }
+  e.src = m.url; return e;
+}
+function coverPage(sub) {
+  const pg = h("div", "pg cover"), box = h("div");
+  box.appendChild(h("div", "k", "Tonight, in review"));
+  box.appendChild(h("div", "t", "Yearbook"));
+  if (sub) box.appendChild(h("div", "n", sub));
+  pg.appendChild(box); return pg;
+}
+function awardPage(a) {
+  const pg = h("div", "pg"), snap = h("div", "snap"), cap = h("div", "cap");
+  snap.appendChild(mediaEl(a.m));
+  snap.appendChild(h("em", "", a.m.name ? "by " + a.m.name : ""));
+  cap.appendChild(h("div", "k", a.kicker));
+  cap.appendChild(h("div", "t", a.title));
+  cap.appendChild(h("div", "n", a.who || a.m.name || ""));
+  if (a.stat) cap.appendChild(h("div", "s", a.stat));
+  pg.appendChild(snap); pg.appendChild(cap); return pg;
+}
+function sigPage(list) {
+  const pg = h("div", "pg sig");
+  pg.appendChild(h("div", "t2", "Signatures"));
+  const POS = [[6, 24, -4], [36, 18, 3], [64, 26, -2], [10, 50, 2], [40, 46, -5], [66, 56, 4], [8, 76, -3], [38, 74, 2], [64, 80, -4]];
+  const COL = ["#F4FF1A", "#37FF76", "#E9FFEA"];
+  list.forEach(function (c, i) {
+    const p = POS[i % POS.length], n = h("div", "note"), s = h("span", "", c.text);
+    s.style.color = COL[i % 3];
+    n.style.left = p[0] + "vw"; n.style.top = p[1] + "vh"; n.style.transform = "rotate(" + p[2] + "deg)";
+    n.style.animationDelay = (i * 220) + "ms";
+    n.appendChild(s); n.appendChild(h("em", "", "- " + c.name));
+    pg.appendChild(n);
+  });
+  return pg;
+}
+function classPage() {
+  const pg = h("div", "pg cls"), grid = h("div", "grid");
+  pg.appendChild(h("div", "t2", "Class of tonight"));
+  const picks = items.map(thumb).filter(function (u) { return u; });
+  picks.sort(function () { return Math.random() - .5; });
+  picks.slice(0, 18).forEach(function (u, i) {
+    const c = h("div", "cell"), im = new Image();
+    c.style.animationDelay = (i * 90) + "ms";
+    c.style.setProperty("--r", ((Math.random() * 6) - 3).toFixed(1) + "deg");
+    im.alt = ""; im.src = u; c.appendChild(im); grid.appendChild(c);
+  });
+  pg.appendChild(grid);
+  pg.appendChild(h("div", "foot", "Thanks for coming. See you next time."));
+  return pg;
+}
 
-        function showYearbook() {
-            hideAll();
-            mediaOverlay.classList.remove('active');
-            idleScreen.style.opacity = '0';
-            yearbookOverlay.classList.add('active');
-            yearbookGrid.innerHTML = '';
-            mediaList.slice(-12).forEach(item => {
-                if(item.type === 'image') { yearbookGrid.innerHTML += `<img src="${item.url}" class="yearbook-item">`; }
-            });
-            slideTimer = setTimeout(() => { yearbookOverlay.classList.remove('active'); currentIndex = 0; showMedia(); }, 10000);
-        }
+async function yearbook() {
+  if (mode === "yearbook") return;
+  mode = "yearbook"; tok++; clearTimeout(timer); clearTimeout(wd);
+  stopMedia(); showQR(false); fx.innerHTML = ""; fxN = 0;
+  yb.className = "on"; clearYB(); yb.appendChild(coverPage(""));
+  let R = [], C = [];
+  try { const a = await getDocs(collection(db, "reactions")); R = a.docs.map(function (d) { return d.data(); }); } catch (e) { console.warn(e); }
+  try { const b = await getDocs(collection(db, "comments")); C = b.docs.map(function (d) { return d.data(); }); } catch (e) { console.warn(e); }
+  if (mode !== "yearbook") return;
 
-        function showMedia() {
-            if (!isPlaying || mediaList.length === 0) { showIdle(); return; }
-            if (currentIndex >= mediaList.length) { showYearbook(); return; }
+  const S = {}; let rt = 0;
+  items.forEach(function (m) { S[m.id] = { m: m, heart: m.likes || 0, star: 0, bolt: 0, lol: 0, wow: 0, cm: 0 }; });
+  R.forEach(function (r) {
+    if (!r.c) return;
+    Object.keys(r.c).forEach(function (k) {
+      const n = +r.c[k] || 0; rt += n;
+      const s = S[r.mediaId]; if (s && s[k] !== undefined) s[k] += n;
+    });
+  });
+  C.forEach(function (c) { const s = S[c.mediaId]; if (s) s.cm++; });
 
-            clearTimeout(slideTimer);
-            hideAll();
-            idleScreen.style.opacity = '0';
-            mediaOverlay.classList.add('active');
+  const used = {}, A = [];
+  function best(key) {
+    let b = null;
+    Object.keys(S).forEach(function (id) { const s = S[id]; if (!used[id] && s[key] > 0 && (!b || s[key] > b[key])) b = s; });
+    return b;
+  }
+  function add(key, title, kicker, unit) {
+    const b = best(key); if (!b) return;
+    used[b.m.id] = 1;
+    A.push({ m: b.m, title: title, kicker: kicker, stat: b[key] + " " + (b[key] === 1 ? unit.replace(/s$/, "") : unit) });
+  }
+  add("heart", "Most loved", "The fan favorite", "hearts");
+  add("lol", "Funniest", "Somebody lost it", "laughs");
+  add("wow", "Most shocking", "Jaws on the floor", "wows");
+  add("star", "Star of the show", "Main character energy", "stars");
+  add("bolt", "Most electric", "Pure energy", "bolts");
+  add("cm", "Most talked about", "Everybody had opinions", "comments");
+  if (items.length) {
+    const f = items[0], l = items[items.length - 1];
+    if (!used[f.id]) { used[f.id] = 1; A.push({ m: f, title: "First one in", kicker: "Early bird", stat: "" }); }
+    if (!used[l.id]) { used[l.id] = 1; A.push({ m: l, title: "Last call", kicker: "Night owl", stat: "" }); }
+  }
+  const by = {};
+  items.forEach(function (m) { const k = (m.name || "").trim().toLowerCase(); if (!k) return; (by[k] = by[k] || []).push(m); });
+  let top = null;
+  Object.keys(by).forEach(function (k) { if (by[k].length > 1 && (!top || by[k].length > top.length)) top = by[k]; });
+  if (top) { const lm = top[top.length - 1]; A.push({ m: lm, title: "Life of the party", kicker: "Camera never stopped", who: lm.name, stat: top.length + " shots" }); }
 
-            const randomAnim = transitions[Math.floor(Math.random() * transitions.length)];
-            const current = mediaList[currentIndex];
-            
-            if (current.type === 'video') {
-                bgEl.src = current.url;
-                vid.style.display = 'block';
-                vid.src = current.url;
-                vid.muted = isMuted; // Apply current mute state
-                vid.classList.add(randomAnim);
-                
-                // Show the audio toggle button if this is a video
-                audioToggle.classList.add('active');
-                
-                vid.play().catch(e => { 
-                    // If autoplay blocked because of sound, default back to mute
-                    if(!isMuted) { toggleAudio(); vid.play(); }
-                    else { currentIndex++; showMedia(); }
-                });
-                
-                vid.onended = () => {
-                    vid.classList.add('anim-fade-out');
-                    setTimeout(() => { currentIndex++; showMedia(); }, 500);
-                };
-                return;
-            }
+  const sig = C.filter(function (c) { return c.text; })
+    .sort(function (a, b) { return ((b.t && b.t.seconds) || 0) - ((a.t && a.t.seconds) || 0); })
+    .slice(0, 9)
+    .map(function (c) { return { name: String(c.name || "A guest").slice(0, 24), text: String(c.text).slice(0, 70) }; });
 
-            // If it's a photo, skip to the next logic
-            let nextPhoto = null;
-            if (currentIndex + 1 < mediaList.length && mediaList[currentIndex + 1].type === 'image') { nextPhoto = mediaList[currentIndex + 1]; }
+  const pages = [{ ms: 4200, node: function () { return coverPage(items.length + " shots / " + rt + " reactions / " + sig.length + " signatures"); } }];
+  A.forEach(function (a) { pages.push({ ms: 7000, node: function () { return awardPage(a); } }); });
+  if (sig.length) pages.push({ ms: 9000, node: function () { return sigPage(sig); } });
+  pages.push({ ms: 0, node: classPage });
 
-            if (nextPhoto) {
-                collageContainer.classList.add('split');
-                bgEl.src = current.url;
-                
-                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
-                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
+  let i = 0;
+  function step() {
+    if (mode !== "yearbook") return;
+    const p = pages[i++];
+    clearYB(); yb.appendChild(p.node());
+    if (p.ms) timer = setTimeout(step, p.ms);
+  }
+  step();
+}
 
-                img2.src = nextPhoto.url; img2.style.display = 'block'; img2.classList.add(randomAnim);
-                likes2.innerText = `❤️ ${nextPhoto.likes || 0}`; likes2.style.display = 'block';
+/* ---- live listeners ---- */
+onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
+  const list = []; let curChanged = false;
+  snap.docs.forEach(function (d) {
+    const x = d.data(); x.id = d.id;
+    if (!x.url || (x.type !== "image" && x.type !== "video")) return;
+    list.push(x);
+    const lk = x.likes || 0;
+    if (lastLikes[d.id] !== undefined && lk > lastLikes[d.id]) {
+      burst("heart", Math.min(lk - lastLikes[d.id], 5));
+      if (curItem && curItem.id === d.id) curChanged = true;
+    }
+    lastLikes[d.id] = lk;
+  });
+  items = list;
+  if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added") fresh.push(c.doc.id); });
+  const first = !seen; seen = true;
+  if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
+  if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
+  if (mode === "boot" || mode === "idle") next();
+}, function (e) { console.warn(e); });
 
-                slideTimer = setTimeout(() => {
-                    img1.classList.add('anim-fade-out'); img2.classList.add('anim-fade-out');
-                    setTimeout(() => { currentIndex += 2; showMedia(); }, 500);
-                }, 15000); 
-            } else {
-                bgEl.src = current.url;
-                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
-                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
+let rInit = false;
+onSnapshot(query(collection(db, "reactions"), orderBy("t", "desc"), limit(20)), function (s) {
+  if (!rInit) { rInit = true; return; }
+  s.docChanges().forEach(function (c) {
+    if (c.type !== "added") return;
+    const d = c.doc.data(); if (!d.c) return;
+    const id = d.mediaId || (curItem && curItem.id) || "";
+    let tot = 0;
+    Object.keys(d.c).forEach(function (k) {
+      if (!ICON[k]) return;
+      const n = Math.min(Math.max(+d.c[k] || 0, 0), 60);
+      tot += n; burst(k, n);
+    });
+    if (id) { counts[id] = (counts[id] || 0) + tot; if (curItem && curItem.id === id && mode === "loop") setHearts(id, true); }
+  });
+}, function (e) { console.warn(e); });
 
-                slideTimer = setTimeout(() => {
-                    img1.classList.add('anim-fade-out');
-                    setTimeout(() => { currentIndex += 1; showMedia(); }, 500);
-                }, 10000);
-            }
-        }
-    </script>
-</body>
-</html>
-        const db = getFirestore(app);
+let cInit = false;
+onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(10)), function (s) {
+  if (!cInit) { cInit = true; return; }
+  s.docChanges().forEach(function (c) {
+    if (c.type !== "added") return;
+    const d = c.doc.data(); if (!d.text) return;
+    pushComment({ name: String(d.name || "A guest").slice(0, 24), text: String(d.text).slice(0, 70) });
+  });
+}, function (e) { console.warn(e); });
 
-        let mediaList = [];
-        let currentIndex = 0;
-        let isPlaying = false;
-        let slideTimer = null;
-        let lastLikes = {}; 
-        
-        // Audio State
-        let isMuted = true; 
+/* ---- host keys, health checks ---- */
+function toggleSound() {
+  soundOn = !soundOn;
+  if (cur && cur.firstChild && cur.firstChild.tagName === "VIDEO") cur.firstChild.muted = !soundOn;
+  toast(soundOn ? "Sound on" : "Sound off");
+}
+document.addEventListener("keydown", function (e) {
+  const k = (e.key || "").toLowerCase();
+  if (k === "y") { if (mode === "yearbook") location.href = location.href.split("?")[0]; else yearbook(); }
+  else if (k === "c") { commentsOn = !commentsOn; if (!commentsOn) cq.length = 0; toast(commentsOn ? "Comments on" : "Comments off"); }
+  else if (k === "q") { if (mode !== "yearbook") { clearTimeout(timer); clearTimeout(wd); qrInterlude(); } }
+  else if (k === "l") { setLite(!lite); toast(lite ? "Lite mode" : "Full effects"); }
+  else if (k === "s") toggleSound();
+});
 
-        const transitions = ['anim-swing', 'anim-flip', 'anim-pop'];
+if (/[?&]lite\b/.test(location.search)) setLite(true);
 
-        const idleScreen = document.getElementById('idle-screen');
-        const mediaOverlay = document.getElementById('media-overlay');
-        const yearbookOverlay = document.getElementById('yearbook-overlay');
-        const collageContainer = document.getElementById('collage-container');
-        const yearbookGrid = document.getElementById('yearbook-grid');
-        const audioToggle = document.getElementById('audio-toggle');
-        
-        const img1 = document.getElementById('display-img-1');
-        const img2 = document.getElementById('display-img-2');
-        const vid = document.getElementById('display-video');
-        const bgEl = document.getElementById('bg-media');
-        const likes1 = document.getElementById('likes-1');
-        const likes2 = document.getElementById('likes-2');
+/* weak browser? drop to simple effects automatically */
+let fN = 0, fT = 0, fBad = 0;
+function fpsReset() { fN = 0; fT = 0; }
+function fpsTick(t) {
+  if (!fT) fT = t;
+  fN++;
+  if (t - fT >= 4000) {
+    if (!document.hidden && t - fT < 6500) {
+      const fps = fN * 1000 / (t - fT);
+      fBad = fps < 22 ? fBad + 1 : 0;
+      if (fBad >= 2 && !lite) { setLite(true); toast("Lite mode"); }
+    }
+    fN = 0; fT = t;
+  }
+  requestAnimationFrame(fpsTick);
+}
+requestAnimationFrame(fpsTick);
 
-        // AUDIO TOGGLE LOGIC
-        window.toggleAudio = function() {
-            isMuted = !isMuted;
-            vid.muted = isMuted;
-            if(isMuted) {
-                audioToggle.innerHTML = "🔇 TAP FOR SOUND";
-                audioToggle.style.borderColor = "#e2ff00";
-                audioToggle.style.color = "#e2ff00";
-            } else {
-                audioToggle.innerHTML = "🔊 SOUND ON";
-                audioToggle.style.borderColor = "#ff4444";
-                audioToggle.style.color = "#ff4444";
-            }
-        }
+/* a frozen video never freezes the show */
+setInterval(function () {
+  if (mode === "loop" && curItem && curItem.type === "video" && !document.hidden && Date.now() - lastTU > 12000) { markBad(curItem, 3); next(); }
+}, 4000);
 
-        const q = query(collection(db, "media_queue"), orderBy("timestamp", "asc"));
-        
-        onSnapshot(q, (snapshot) => {
-            mediaList = [];
-            snapshot.forEach((doc) => { 
-                const data = doc.data();
-                mediaList.push(data); 
-                const docId = doc.id;
-                const currentLikes = data.likes || 0;
-                if (lastLikes[docId] !== undefined && currentLikes > lastLikes[docId]) { spawnReaction(); }
-                lastLikes[docId] = currentLikes;
-            });
-
-            if (!isPlaying && mediaList.length > 0) { isPlaying = true; currentIndex = 0; showMedia(); }
-            if (mediaList.length === 0 && isPlaying) { isPlaying = false; showIdle(); }
-        });
-
-        function spawnReaction() {
-            if (document.querySelectorAll('.reaction-emoji').length > 5) return;
-            const emojis = ['❤️', '🔥', '💃', '🕺', '😍', '🎉'];
-            const el = document.createElement('div');
-            el.className = 'reaction-emoji';
-            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
-            el.style.left = Math.random() * 80 + 10 + 'vw';
-            mediaOverlay.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-
-        function hideAll() {
-            img1.style.display = 'none'; img1.className = 'media-element';
-            img2.style.display = 'none'; img2.className = 'media-element';
-            vid.style.display = 'none'; vid.className = 'media-element'; vid.pause();
-            likes1.style.display = 'none'; likes2.style.display = 'none';
-            collageContainer.classList.remove('split');
-            audioToggle.classList.remove('active'); // Hide audio button by default
-        }
-
-        function showIdle() {
-            clearTimeout(slideTimer);
-            hideAll();
-            mediaOverlay.classList.remove('active');
-            yearbookOverlay.classList.remove('active');
-            idleScreen.style.opacity = '1';
-        }
-
-        function showYearbook() {
-            hideAll();
-            mediaOverlay.classList.remove('active');
-            idleScreen.style.opacity = '0';
-            yearbookOverlay.classList.add('active');
-            yearbookGrid.innerHTML = '';
-            mediaList.slice(-12).forEach(item => {
-                if(item.type === 'image') { yearbookGrid.innerHTML += `<img src="${item.url}" class="yearbook-item">`; }
-            });
-            slideTimer = setTimeout(() => { yearbookOverlay.classList.remove('active'); currentIndex = 0; showMedia(); }, 10000);
-        }
-
-        function showMedia() {
-            if (!isPlaying || mediaList.length === 0) { showIdle(); return; }
-            if (currentIndex >= mediaList.length) { showYearbook(); return; }
-
-            clearTimeout(slideTimer);
-            hideAll();
-            idleScreen.style.opacity = '0';
-            mediaOverlay.classList.add('active');
-
-            const randomAnim = transitions[Math.floor(Math.random() * transitions.length)];
-            const current = mediaList[currentIndex];
-            
-            if (current.type === 'video') {
-                bgEl.src = current.url;
-                vid.style.display = 'block';
-                vid.src = current.url;
-                vid.muted = isMuted; // Apply current mute state
-                vid.classList.add(randomAnim);
-                
-                // Show the audio toggle button if this is a video
-                audioToggle.classList.add('active');
-                
-                vid.play().catch(e => { 
-                    // If autoplay blocked because of sound, default back to mute
-                    if(!isMuted) { toggleAudio(); vid.play(); }
-                    else { currentIndex++; showMedia(); }
-                });
-                
-                vid.onended = () => {
-                    vid.classList.add('anim-fade-out');
-                    setTimeout(() => { currentIndex++; showMedia(); }, 500);
-                };
-                return;
-            }
-
-            // If it's a photo, skip to the next logic
-            let nextPhoto = null;
-            if (currentIndex + 1 < mediaList.length && mediaList[currentIndex + 1].type === 'image') { nextPhoto = mediaList[currentIndex + 1]; }
-
-            if (nextPhoto) {
-                collageContainer.classList.add('split');
-                bgEl.src = current.url;
-                
-                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
-                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
-
-                img2.src = nextPhoto.url; img2.style.display = 'block'; img2.classList.add(randomAnim);
-                likes2.innerText = `❤️ ${nextPhoto.likes || 0}`; likes2.style.display = 'block';
-
-                slideTimer = setTimeout(() => {
-                    img1.classList.add('anim-fade-out'); img2.classList.add('anim-fade-out');
-                    setTimeout(() => { currentIndex += 2; showMedia(); }, 500);
-                }, 15000); 
-            } else {
-                bgEl.src = current.url;
-                img1.src = current.url; img1.style.display = 'block'; img1.classList.add(randomAnim);
-                likes1.innerText = `❤️ ${current.likes || 0}`; likes1.style.display = 'block';
-
-                slideTimer = setTimeout(() => {
-                    img1.classList.add('anim-fade-out');
-                    setTimeout(() => { currentIndex += 1; showMedia(); }, 500);
-                }, 10000);
-            }
-        }
-    </script>
+async function wake() { try { if (navigator.wakeLock) await navigator.wakeLock.request("screen"); } catch (e) {} }
+wake();
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) return;
+  fpsReset(); wake();
+  if (mode === "loop" && cur && cur.firstChild && cur.firstChild.tagName === "VIDEO") {
+    const p = cur.firstChild.play(); if (p && p.catch) p.catch(function () {});
+    lastTU = Date.now();
+  }
+  if (mode === "loop" && Date.now() - revealAt > planned + 1500) next();
+});
+</script>
 </body>
 </html>
