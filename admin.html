@@ -6,7 +6,7 @@
 <title>DJ Control Room</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Familjen+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Familjen+Grotesk:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
 :root{--deep:#020A05;--base:#04140A;--line:#1F6B3A;--acid:#F4FF1A;--lime:#37FF76;--bone:#E9FFEA;--dim:#7FB391;--alarm:#FF4058;
   --display:"Big Shoulders Display",Impact,sans-serif;--body:"Familjen Grotesk",sans-serif}
@@ -49,11 +49,32 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
 .del{width:100%}
 .dl{display:block;margin-top:8px;padding:7px;border:2px solid var(--lime);color:var(--lime);text-decoration:none;font-weight:700;font-size:12px;letter-spacing:.1em;text-align:center}
 .dl:hover{background:var(--lime);color:#061207}
+.stats{flex-wrap:wrap}
+.stat{margin:0 4px 8px;padding:10px 14px;min-width:96px}
+.brand{font-family:"Permanent Marker","Comic Sans MS",cursive;text-align:center;color:var(--dim);font-size:15px;margin:-8px 0 22px}
+.brand b{color:#FFC21A;font-weight:400}
+#clearRx{display:block;width:100%;max-width:420px;margin:0 auto 12px;padding:12px;background:transparent;border:2px solid #FFC21A;color:#FFC21A;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:26px;border-radius:0;cursor:pointer}
+#clearRx:hover{background:#FFC21A;color:#1b1300}
+.rxs{display:flex;flex-wrap:wrap;justify-content:center;margin:0 0 6px}
+.rxp{margin:2px;padding:2px 6px;border:1px solid #FFC21A;color:#FFE45C;font-size:12px;font-weight:700}
+.rxz{font-size:11px;color:var(--dim);letter-spacing:.08em}
+.logb{display:block;width:100%;margin-bottom:6px;padding:6px;background:transparent;border:2px solid #FFC21A;color:#FFC21A;font-family:var(--body);font-weight:700;font-size:12px;letter-spacing:.1em;cursor:pointer;border-radius:0}
+.card.open{grid-column:1/-1}
+.rxlog{padding:10px;border-top:2px solid #FFC21A;background:rgba(20,13,0,.7)}
+.rxh{font-family:var(--display);font-weight:900;text-transform:uppercase;color:#FFC21A;font-size:22px;margin-bottom:6px}
+.rxrow{display:flex;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.rxrow .t{flex:1;min-width:0;font-size:15px;word-break:break-word}
+.rxrow .t b{color:var(--acid);margin-right:8px}
+.rxrow button{margin-left:8px;background:var(--alarm);color:#fff;border:0;border-radius:0;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer}
+.rxrow button.alt{background:transparent;border:2px solid var(--alarm);color:var(--alarm)}
+.go2{display:block;width:100%;margin-top:10px;padding:10px;background:transparent;border:2px solid var(--alarm);color:var(--alarm);font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:20px;border-radius:0;cursor:pointer}
+.go2:hover{background:var(--alarm);color:#fff}
 </style>
 </head>
 <body>
 <button id="signOut" type="button" hidden>Sign out</button>
 <h1>Control room</h1>
+<p class="brand">-A Sunny <b>neverpartlycloudy</b> production</p>
 
 <div class="inject" id="login">
   <h3>Sign in</h3>
@@ -75,9 +96,11 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
   <div class="stats">
     <div class="stat">PHOTOS <span id="photoCount">0</span></div>
     <div class="stat">VIDEOS <span id="videoCount">0</span></div>
+    <div class="stat">REACTIONS <span id="rxCount">0</span></div>
   </div>
 
   <button id="download-all" type="button" onclick="downloadAll()">📥 DOWNLOAD ALL MEDIA</button>
+  <button id="clearRx" type="button">Wipe reactions only</button>
   <button id="clearAll" type="button">Wipe everything</button>
 
   <div class="sigs">
@@ -217,43 +240,102 @@ $("clearAll").addEventListener("click", async () => {
   } catch (e) { alert(e.message); }
 });
 
+/* ---- wipe reactions only ---- */
+$("clearRx").addEventListener("click", async () => {
+  if (!confirm("WIPE ALL REACTIONS? Photos and videos stay.")) return;
+  try {
+    const sn = await getDocs(collection(db, "reactions"));
+    await Promise.all(sn.docs.map((d) => deleteDoc(d.ref)));
+  } catch (e) { alert(e.message); }
+});
+
 /* ---- live lists (start once after sign in) ---- */
-function startApp() {
-  onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "desc")), (snap) => {
-    const grid = $("grid");
-    grid.innerHTML = "";
-    let photos = 0, videos = 0;
-    if (snap.empty) { grid.appendChild(h("p", "empty", "Queue is empty.")); }
-    snap.forEach((d) => {
-      const data = d.data();
-      const isV = data.type === "video";
-      if (isV) videos++; else photos++;
-      const card = h("div", "card");
-      const t = thumb(data);
-      let media;
-      if (t || !isV) { media = document.createElement("img"); media.alt = ""; media.loading = "lazy"; media.src = t || data.url; }
-      else { media = document.createElement("video"); media.muted = true; media.preload = "metadata"; media.playsInline = true; media.src = data.url + "#t=0.5"; }
-      card.appendChild(media);
-      if (isV) card.appendChild(h("div", "badge", "VIDEO"));
-      const info = h("div", "info");
-      info.appendChild(h("p", "", data.name || "Unnamed"));
-      info.appendChild(h("p", "l", "LIKES " + (data.likes || 0)));
-      const del = h("button", "del", "DELETE");
-      del.addEventListener("click", async () => {
-        if (!confirm("Delete this immediately?")) return;
-        try { await deleteDoc(d.ref); } catch (e) { alert(e.message); }
-      });
-      info.appendChild(del);
-      const dl = h("a", "dl", "DOWNLOAD");
-      dl.href = dlUrl(data, d.id.slice(0, 5));
-      dl.setAttribute("download", "");
-      info.appendChild(dl);
-      card.appendChild(info);
-      grid.appendChild(card);
+/* ---- reactions: moderation + per-media logs ---- */
+const RXI = { heart: "❤️", bolt: "⚡", star: "☀️", lol: "😂", wow: "😮", cool: "😎", sad: "😭", down: "👎" };
+let mediaDocs = [], rxDocs = [], openId = null;
+function rxName(d) { return String(d.name || d.who || d.user || d.by || "Guest").trim().slice(0, 24) || "Guest"; }
+function rxWhen(d) { try { return d.t && d.t.toDate ? d.t.toDate().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "now"; } catch (e) { return ""; } }
+function tsec(r) { const t = r.data().t; return t && t.seconds ? t.seconds : 0; }
+function rxFor(id) { return rxDocs.filter((r) => r.data().mediaId === id); }
+function rxSum(list) {
+  const c = {}; let n = 0;
+  list.forEach((r) => { const m = r.data().c || {}; Object.keys(RXI).forEach((k) => { const v = +m[k] || 0; if (v) { c[k] = (c[k] || 0) + v; n += v; } }); });
+  return { c: c, n: n };
+}
+async function delRx(refs, msg) {
+  if (!refs.length || !confirm(msg)) return;
+  try { await Promise.all(refs.map((r) => deleteDoc(r.ref || r))); } catch (e) { alert(e.message); }
+}
+function logPanel(d, list) {
+  const p = h("div", "rxlog");
+  p.appendChild(h("div", "rxh", "Reaction log - " + (d.data().name || "Unnamed")));
+  if (!list.length) p.appendChild(h("p", "empty", "No reactions yet."));
+  list.slice().sort((a, b) => tsec(b) - tsec(a)).forEach((r) => {
+    const x = r.data(), row = h("div", "rxrow"), t = h("div", "t");
+    const kinds = Object.keys(RXI).filter((k) => +(x.c || {})[k]).map((k) => RXI[k] + (+x.c[k] > 1 ? "x" + x.c[k] : "")).join(" ");
+    t.appendChild(h("b", "", rxName(x)));
+    t.appendChild(document.createTextNode(kinds + "  " + rxWhen(x)));
+    const by = h("button", "alt", "ALL BY NAME");
+    by.addEventListener("click", () => delRx(rxDocs.filter((q) => rxName(q.data()) === rxName(x)), "Delete EVERY reaction from " + rxName(x) + "?"));
+    const del = h("button", "", "DEL");
+    del.addEventListener("click", () => delRx([r], "Delete this reaction?"));
+    row.appendChild(t); row.appendChild(by); row.appendChild(del);
+    p.appendChild(row);
+  });
+  if (list.length) {
+    const clr = h("button", "go2", "Clear all reactions on this media");
+    clr.addEventListener("click", () => delRx(list, "Clear all " + list.length + " reactions on this media?"));
+    p.appendChild(clr);
+  }
+  return p;
+}
+function renderGrid() {
+  const grid = $("grid");
+  grid.innerHTML = "";
+  let photos = 0, videos = 0;
+  if (!mediaDocs.length) { grid.appendChild(h("p", "empty", "Queue is empty.")); }
+  mediaDocs.forEach((d) => {
+    const data = d.data();
+    const isV = data.type === "video";
+    if (isV) videos++; else photos++;
+    const card = h("div", "card");
+    const t = thumb(data);
+    let media;
+    if (t || !isV) { media = document.createElement("img"); media.alt = ""; media.loading = "lazy"; media.src = t || data.url; }
+    else { media = document.createElement("video"); media.muted = true; media.preload = "metadata"; media.playsInline = true; media.src = data.url + "#t=0.5"; }
+    card.appendChild(media);
+    if (isV) card.appendChild(h("div", "badge", "VIDEO"));
+    const info = h("div", "info");
+    info.appendChild(h("p", "", data.name || "Unnamed"));
+    info.appendChild(h("p", "l", "LIKES " + (data.likes || 0)));
+    const list = rxFor(d.id), sum = rxSum(list), rs = h("div", "rxs");
+    Object.keys(sum.c).forEach((k) => rs.appendChild(h("span", "rxp", RXI[k] + " " + sum.c[k])));
+    if (!sum.n) rs.appendChild(h("span", "rxz", "NO REACTIONS"));
+    info.appendChild(rs);
+    const lb = h("button", "logb", (openId === d.id ? "HIDE LOG" : "LOG") + " (" + list.length + ")");
+    lb.addEventListener("click", () => { openId = openId === d.id ? null : d.id; renderGrid(); });
+    info.appendChild(lb);
+    const del = h("button", "del", "DELETE");
+    del.addEventListener("click", async () => {
+      if (!confirm("Delete this immediately?")) return;
+      try { await deleteDoc(d.ref); } catch (e) { alert(e.message); }
     });
-    $("photoCount").textContent = photos;
-    $("videoCount").textContent = videos;
-  }, (e) => console.warn(e));
+    info.appendChild(del);
+    const dl = h("a", "dl", "DOWNLOAD");
+    dl.href = dlUrl(data, d.id.slice(0, 5));
+    dl.setAttribute("download", "");
+    info.appendChild(dl);
+    card.appendChild(info);
+    if (openId === d.id) { card.classList.add("open"); card.appendChild(logPanel(d, list)); }
+    grid.appendChild(card);
+  });
+  $("photoCount").textContent = photos;
+  $("videoCount").textContent = videos;
+}
+
+function startApp() {
+  onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "desc")), (snap) => { mediaDocs = snap.docs; renderGrid(); }, (e) => console.warn(e));
+  onSnapshot(collection(db, "reactions"), (snap) => { rxDocs = snap.docs; $("rxCount").textContent = rxSum(rxDocs).n; renderGrid(); }, (e) => console.warn(e));
 
   onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(40)), (snap) => {
     const list = $("sigList");
