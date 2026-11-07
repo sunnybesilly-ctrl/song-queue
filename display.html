@@ -153,7 +153,6 @@ body{font-family:var(--body);color:var(--bone)}
 @media (orientation:portrait){
   :root{--bar:calc(var(--dv)*26)}
 
-  /* bottom bar: name + hearts and QR codes on row 1, comment / hint on row 2 */
   #bar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr)}
   .who{grid-column:1;grid-row:1;flex:none;min-width:0;padding:calc(var(--dv)*1.2) 4vw;border-right:0}
   .lab{font-size:3vw;letter-spacing:.16em}
@@ -170,7 +169,6 @@ body{font-family:var(--body);color:var(--bone)}
   .cmt b{font-size:3.6vw}
   .cmt span{font-size:4.5vw;line-height:1.1;max-height:none;overflow-wrap:anywhere}
 
-  /* QR / idle screen: stacked */
   #qrcard{flex-direction:column;justify-content:center;align-items:stretch;padding:0 7vw}
   .qt .a{font-size:min(30vw,calc(var(--dv)*12.5))}
   .qt .qs{margin-top:calc(var(--dv)*2.2);padding-left:3vw;font-size:4.2vw;max-width:none}
@@ -181,11 +179,9 @@ body{font-family:var(--body);color:var(--bone)}
   .qb .tile{width:min(38vw,calc(var(--dv)*17));height:min(38vw,calc(var(--dv)*17))}
   .qb .ql{font-size:4.8vw;margin-top:calc(var(--dv)*1.2)}
 
-  /* toast */
   #toast{top:calc(var(--dv)*1.5);right:3vw;font-size:6vw;padding:.4vh 3vw;max-width:94vw}
   #vbadge{font-size:4.6vw;padding:.4vh 2.4vw}
 
-  /* yearbook */
   .pg{flex-direction:column;justify-content:center;align-items:stretch;padding:calc(var(--dv)*3) 6vw}
   .pg.cover{align-items:flex-start}
   .cover .k,.cap .k{font-size:3.4vw;letter-spacing:.22em}
@@ -252,6 +248,7 @@ body{font-family:var(--body);color:var(--bone)}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+// ⚠️ REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ⚠️
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
   authDomain: "dj-photo-wall.firebaseapp.com",
@@ -266,11 +263,11 @@ const db = getFirestore(initializeApp(firebaseConfig));
 const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
 const UPLOAD_URL = BASE + "upload.html";
 const REACT_URL = BASE + "react.html";
-const QR_EVERY_MS = 90000;   // full-screen QR interlude cadence
-const QR_HOLD_MS = 7000;     // how long the interlude stays up
-const MIN_VIDEO_MS = 8000;   // short clips loop until at least this long
+const QR_EVERY_MS = 90000;   
+const QR_HOLD_MS = 7000;     
+const MIN_VIDEO_MS = 8000;   
 const MAX_VIDEO_MS = 30000;
-const RELOAD_MS = 50 * 60000; // self-refresh to keep a weak browser healthy
+const RELOAD_MS = 50 * 60000; 
 
 const ICON = {
   heart: '<svg viewBox="0 0 24 24"><path fill="#FF4058" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
@@ -289,11 +286,12 @@ $("#hi").innerHTML = ICON.heart;
 
 /* ---- state ---- */
 let items = [], pos = -1, fresh = [], seen = false;
-let mode = "boot";            // boot | loop | qr | idle | yearbook
+let mode = "boot";            
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
 let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null, needTap = null;
 const bad = {}, counts = {}, lastLikes = {}, warmed = {};
+
 /* ---- helpers ---- */
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function find(id) { for (let i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
@@ -304,7 +302,7 @@ function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTime
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) { qrcard.className = on ? "on" : ""; }
 
-/* ---- QR codes (crisp SVG, falls back to an image service if the library is blocked) ---- */
+/* ---- QR codes ---- */
 function qrSvg(text, fg, bg) {
   const q = qrcode(0, "M"); q.addData(text); q.make();
   const n = q.getModuleCount(), m = 3, s = n + m * 2;
@@ -321,7 +319,6 @@ function fillQR() {
 }
 fillQR();
 
-/* small Cloudinary thumbnails so the yearbook grid never decodes full-size photos */
 function thumb(m) {
   const u = m.url || "";
   if (u.indexOf("res.cloudinary.com") < 0) return "";
@@ -331,7 +328,6 @@ function thumb(m) {
   if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
   return u.replace(re, "/upload/" + t + "/");
 }
-/* ---- Cloudinary: always play a browser-friendly version (H.264 MP4 video, JPEG/PNG photos) ---- */
 function kindOf(x) {
   const u = String(x.url || "");
   if (u.indexOf("res.cloudinary.com") >= 0) {
@@ -351,6 +347,7 @@ function cld(u) {
   return { pre: mt[1], res: mt[2], tail: tail };
 }
 function swapExt(t, ext) { return /\.[^.\/]+$/.test(t) ? t.replace(/\.[^.\/]+$/, ext) : t + ext; }
+
 function playUrl(m) {
   if (m.still) return m.url;
   const p = cld(m.url);
@@ -398,7 +395,6 @@ function showWhy(m) {
   if (m.still && m.why) { b.textContent = m.why; b.style.display = "block"; needTap = m.why.indexOf("TAP") === 0 ? m.vid : null; }
   else { b.style.display = "none"; needTap = null; }
 }
-/* start Cloudinary converting every video as soon as it shows up, so it is ready before its turn */
 const warming = {};
 function warmVideos() {
   items.forEach(function (m) {
@@ -416,7 +412,6 @@ function warmVideos() {
     })();
   });
 }
-/* iPhone Low Power Mode blocks autoplay: one tap anywhere starts the video */
 document.addEventListener("pointerdown", function () {
   const v = needTap;
   if (!v || mode !== "loop") return;
@@ -424,7 +419,7 @@ document.addEventListener("pointerdown", function () {
   warmed[playUrl(v)] = 1;
   show(v, false, true);
 }, true);
-/* ---- bar ---- */
+
 function setHearts(id, bumpIt) {
   const m = find(id);
   hnEl.textContent = ((m && m.likes) || 0) + (counts[id] || 0);
@@ -455,18 +450,10 @@ function pickT(isFresh) {
   lastT = i; return T[i];
 }
 function holdFor(isFresh) {
-  const n = items.length; // n = total items
-  
-  // Change these numbers to adjust speed (1000 = 1 second)
-  let b = n <= 6 ? 4000      // 4 seconds for small queues
-        : n <= 15 ? 3500     // 3.5 seconds for medium queues
-        : n <= 30 ? 3000     // 3 seconds for large queues
-        : 2500;              // 2.5 seconds for massive queues
-        
-  b += Math.random() * 1000 - 500; // Random +/- 0.5 sec so it doesn't feel robotic
-  
-  if (isFresh) b += 1500;          // Extra 1.5 seconds if it was JUST uploaded
-  
+  const n = items.length;
+  let b = n <= 6 ? 4000 : n <= 15 ? 3500 : n <= 30 ? 3000 : 2500;
+  b += Math.random() * 1000 - 500;
+  if (isFresh) b += 1500;
   return Math.round(b);
 }
 function drop(w) {
@@ -510,7 +497,6 @@ function videoFail(m, isFresh, why) {
   const s = stillOf(m);
   if (s) { s.why = why; s.vid = m; show(s, isFresh); } else next();
 }
-}
 
 function show(m, isFresh, gesture) {
   const my = ++tok;
@@ -542,7 +528,7 @@ function show(m, isFresh, gesture) {
     el.muted = true; el.defaultMuted = true; el.playsInline = true; el.preload = "auto";
     el.setAttribute("muted", ""); el.setAttribute("playsinline", ""); el.setAttribute("webkit-playsinline", "");
     el.onloadeddata = go; el.oncanplay = go;
-    el.onloadedmetadata = function () { setTimeout(go, 1200); };   // iPhone often stops at metadata until play() is called
+    el.onloadedmetadata = function () { setTimeout(go, 1200); };   
   } else {
     el.onload = go;
   }
@@ -575,28 +561,23 @@ function reveal(w, m, isFresh, my) {
   setBar(m, isFresh);
   showWhy(m);
   publish(m);
+  
   const el = w.firstChild;
   if (m.type === "video") {
     lastTU = Date.now();
     el.ontimeupdate = function () { lastTU = Date.now(); };
     
-    // NEVER MUTE. If the browser blocks it, we ask for a tap.
-    el.muted = false; 
+    // FORCE MUTE so it autoplays without requiring manual interaction on the projector
+    el.muted = true; 
     const p = el.play();
     
     if (p && p.catch) p.catch(function (err) {
       if (my !== tok) return;
-      
-      // The browser blocked autoplay with sound.
-      // Do NOT skip the video. Just prompt the user to tap the screen once.
-      needTap = m;
-      toast("Tap screen for sound");
-      showWhy({ still: true, why: "TAP SCREEN TO PLAY VIDEO", vid: m });
+      // If the browser STILL blocks it (rare), just skip the video
+      videoFail(m, isFresh, playWhy(err)); 
     });
     armVideo(el, my);
-  }
-  
-  else {
+  } else {
     const ms = holdFor(isFresh);
     planned = ms;
     if (!lite) {
@@ -610,7 +591,7 @@ function reveal(w, m, isFresh, my) {
 
 function armVideo(v, my) {
   const d = (isFinite(v.duration) && v.duration > 0) ? v.duration * 1000 : 8000;
-  const loops = d >= MIN_VIDEO_MS ? 1 : Math.min(6, Math.ceil(MIN_VIDEO_MS / d));   // 3s clip plays 3x
+  const loops = d >= MIN_VIDEO_MS ? 1 : Math.min(6, Math.ceil(MIN_VIDEO_MS / d));   
   let plays = 0;
   planned = Math.min(d * loops, MAX_VIDEO_MS) + 3000;
   v.onended = function () {
@@ -688,7 +669,7 @@ function nextComment() {
   setTimeout(nextComment, 4800);
 }
 
-/* ---- yearbook (press Y at the end of the night) ---- */
+/* ---- yearbook ---- */
 function clearYB() {
   $$("#yb video").forEach(function (v) { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} });
   yb.innerHTML = "";
