@@ -413,6 +413,15 @@ function warmVideos() {
   });
 }
 document.addEventListener("pointerdown", function () {
+  // If someone taps the phone screen, turn sound on for future videos!
+  if (!soundOn) {
+    soundOn = true;
+    toast("Sound on");
+    if (cur && cur.firstChild && cur.firstChild.tagName === "VIDEO") {
+      cur.firstChild.muted = false;
+    }
+  }
+  
   const v = needTap;
   if (!v || mode !== "loop") return;
   needTap = null;
