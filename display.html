@@ -12,10 +12,12 @@
   --base:#04140A;--deep:#020A05;--bog:#0B2615;--line:#1F6B3A;
   --acid:#F4FF1A;--lime:#37FF76;--bone:#E9FFEA;--dim:#7FB391;--alarm:#FF4058;
   --bar:16vh;
+  --dv:1vh;
   --display:"Big Shoulders Display",Impact,sans-serif;
   --body:"Familjen Grotesk",sans-serif;
   --ink:"Permanent Marker","Comic Sans MS",cursive;
 }
+@supports (height:1dvh){:root{--dv:1dvh}}
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--deep);cursor:none}
@@ -145,79 +147,64 @@ body{font-family:var(--body);color:var(--bone)}
 .lite .mi.kb,.lite .new,.lite #qrcard.on .qb .tile,.lite #qrcard.on .a{animation:none}
 .lite .cell,.lite .note{animation:none;opacity:1}
 
-        /* --- MOBILE OVERRIDE (Phones Only) --- */
-        @media (max-width: 768px) {
-            /* 1. Stack the Idle Screen vertically */
-            .main-content {
-                flex-direction: column !important;
-                justify-content: center !important;
-                padding: 20px !important;
-                text-align: center;
-            }
-            .title-container {
-                align-items: center;
-                margin-bottom: 20px;
-            }
-            .title-container span {
-                font-size: 24vw !important; /* Keeps it huge but prevents overflow */
-                letter-spacing: 0px;
-            }
-            
-            /* 2. Adjust the instructions and QR code */
-            .instructions {
-                border-left: none !important;
-                border-top: 6px solid #7dff4a !important;
-                padding-left: 0 !important;
-                padding-top: 20px;
-                text-align: center;
-                max-width: 90vw;
-            }
-            .instructions p {
-                font-size: 1.1rem !important;
-            }
-            .instructions h2 {
-                font-size: 2.5rem !important;
-            }
-            .qr-container img {
-                width: 45vw !important;
-                height: 45vw !important;
-            }
+/* ===== PORTRAIT / PHONE: re-flowed so nothing is cut off ===== */
+@media (orientation:portrait){
+  :root{--bar:calc(var(--dv)*26)}
 
-            /* 3. Make the scrolling marquee readable */
-            .marquee {
-                font-size: 6vw !important;
-                padding: 8px 0;
-            }
+  /* bottom bar: name + hearts and QR codes on row 1, comment / hint on row 2 */
+  #bar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr)}
+  .who{grid-column:1;grid-row:1;flex:none;min-width:0;padding:calc(var(--dv)*1.2) 4vw;border-right:0}
+  .lab{font-size:3vw;letter-spacing:.16em}
+  .nm{font-size:6.6vw;line-height:.95;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-overflow:clip}
+  .hr{margin-top:calc(var(--dv)*.5);font-size:5vw}
+  .hr svg{width:5.4vw;height:5.4vw;margin-right:2vw}
+  .new{font-size:3.2vw;padding:.2vh 1.6vw;right:2vw;top:calc(var(--dv)*1)}
+  .qrs{grid-column:2;grid-row:1;align-self:start;padding:calc(var(--dv)*1.2) 3vw 0 0}
+  .q{margin-left:2vw;width:18vw}
+  .q .tile{width:16vw;height:16vw;margin:0 auto}
+  .q i{font-size:2.3vw;letter-spacing:.06em;line-height:1.15;white-space:normal}
+  .say{grid-column:1/-1;grid-row:2;padding:0 4vw;border-top:2px solid var(--line)}
+  .hint{font-size:5.2vw;line-height:1.02}
+  .cmt b{font-size:3.6vw}
+  .cmt span{font-size:4.5vw;line-height:1.1;max-height:none;overflow-wrap:anywhere}
 
-            /* 4. Stack the Photo Collage vertically on phones */
-            .collage-container {
-                flex-direction: column !important;
-                gap: 10px !important;
-                height: 80vh;
-            }
-            .collage-container.split .media-element {
-                width: 95% !important;
-                height: 48% !important; /* Each photo gets half the screen */
-                border-width: 2px;
-            }
-            
-            /* 5. Fix the floating UI elements (Likes and Audio Toggle) */
-            .media-element {
-                max-height: 75vh !important;
-            }
-            .like-counter {
-                font-size: 1.2rem !important;
-                bottom: 70px !important;
-                right: 10px !important;
-                padding: 5px 10px !important;
-            }
-            #audio-toggle {
-                font-size: 1rem !important;
-                bottom: 70px !important;
-                left: 10px !important;
-                padding: 8px 15px !important;
-            }
-        }</style>
+  /* QR / idle screen: stacked */
+  #qrcard{flex-direction:column;justify-content:center;align-items:stretch;padding:0 7vw}
+  .qt .a{font-size:min(30vw,calc(var(--dv)*12.5))}
+  .qt .qs{margin-top:calc(var(--dv)*2.2);padding-left:3vw;font-size:4.2vw;max-width:none}
+  .qq{margin-top:calc(var(--dv)*3);justify-content:center}
+  .qb{margin-left:0;text-align:center}
+  .qb+.qb{margin-left:6vw}
+  .qb.b2{margin-top:0}
+  .qb .tile{width:min(38vw,calc(var(--dv)*17));height:min(38vw,calc(var(--dv)*17))}
+  .qb .ql{font-size:4.8vw;margin-top:calc(var(--dv)*1.2)}
+
+  /* toast */
+  #toast{top:calc(var(--dv)*1.5);right:3vw;font-size:6vw;padding:.4vh 3vw;max-width:94vw}
+
+  /* yearbook */
+  .pg{flex-direction:column;justify-content:center;align-items:stretch;padding:calc(var(--dv)*3) 6vw}
+  .pg.cover{align-items:flex-start}
+  .cover .k,.cap .k{font-size:3.4vw;letter-spacing:.22em}
+  .cover .t{font-size:min(21vw,calc(var(--dv)*15));-webkit-text-stroke-width:2px;margin:calc(var(--dv)*2) 0 calc(var(--dv)*2.5) -1vw}
+  .cover .n{font-size:5.4vw}
+  .snap{flex:0 0 auto;width:100%;height:calc(var(--dv)*42);padding:3vw 3vw 12vw}
+  .snap em{left:3.6vw;bottom:3vw;font-size:5.4vw}
+  .cap{flex:0 0 auto;margin:calc(var(--dv)*3) 0 0}
+  .cap .t{font-size:min(15vw,calc(var(--dv)*8));margin:calc(var(--dv)*1) 0 calc(var(--dv)*1.2)}
+  .cap .n{font-size:7vw}
+  .cap .s{font-size:4.4vw}
+  .t2{font-size:min(14vw,calc(var(--dv)*8));padding-top:0;grid-column:1/-1}
+  .pg.sig{display:grid;grid-template-columns:1fr 1fr;column-gap:4vw;row-gap:calc(var(--dv)*2);align-content:center;align-items:start}
+  .note{position:relative!important;left:auto!important;top:auto!important;width:auto}
+  .note span{font-size:4.2vw;overflow-wrap:anywhere}
+  .note em{font-size:3.2vw}
+  .pg.cls{display:flex}
+  .grid{flex:0 0 auto}
+  .cell{width:19vw;height:19vw;margin:0 1.2vw calc(var(--dv)*1.2)}
+  .foot{left:6vw;right:6vw;bottom:calc(var(--dv)*3);font-size:5.4vw}
+}
+</style>
 </head>
 <body>
 <div id="stage"></div>
@@ -291,6 +278,7 @@ const ICON = {
 
 const $ = function (s) { return document.querySelector(s); };
 const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+const PORT = window.matchMedia("(orientation: portrait)");
 const stage = $("#stage"), flashEl = $("#flash"), qrcard = $("#qrcard"), fx = $("#fx"), yb = $("#yb"), toastEl = $("#toast");
 const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint"), cmt = $("#cmt"), cn = $("#cn"), ct = $("#ct");
 $("#hi").innerHTML = ICON.heart;
@@ -536,11 +524,12 @@ function burst(k, n) {
 function floater(k) {
   if (fxN >= (lite ? 4 : 14) || mode === "yearbook") return;
   fxN++;
+  const port = PORT.matches, u = port ? "vw" : "vh";
   const e = document.createElement("div"); e.className = "fl";
   e.innerHTML = ICON[k] || ICON.heart;
-  const sz = 7 + Math.random() * 5;
-  e.style.width = sz + "vh"; e.style.height = sz + "vh"; e.style.fontSize = sz + "vh";
-  e.style.left = (Math.random() < .5 ? 2 + Math.random() * 9 : 87 + Math.random() * 9) + "vw";
+  const sz = port ? 11 + Math.random() * 7 : 7 + Math.random() * 5;
+  e.style.width = sz + u; e.style.height = sz + u; e.style.fontSize = (port ? sz * 0.8 : sz) + u;
+  e.style.left = port ? (4 + Math.random() * 66) + "vw" : (Math.random() < .5 ? 2 + Math.random() * 9 : 87 + Math.random() * 9) + "vw";
   e.style.setProperty("--sx", ((Math.random() * 8) - 4).toFixed(1) + "vw");
   e.style.animationDuration = (2.8 + Math.random() * 1.4) + "s";
   fx.appendChild(e);
