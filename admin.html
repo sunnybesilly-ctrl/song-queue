@@ -27,6 +27,9 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
 .stats{display:flex;justify-content:center;margin-bottom:18px}
 .stat{margin:0 8px;padding:10px 20px;border:2px solid var(--line);text-align:center;min-width:110px;font-weight:700;font-size:13px;letter-spacing:.14em;color:var(--dim)}
 .stat span{display:block;font-family:var(--display);font-weight:900;font-size:40px;line-height:1;color:var(--acid)}
+#download-all{display:block;width:100%;max-width:420px;margin:0 auto 12px;padding:12px;background:var(--lime);border:2px solid var(--lime);color:#061207;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:26px;border-radius:0;cursor:pointer}
+#download-all:hover{background:var(--acid);border-color:var(--acid)}
+#download-all:disabled{background:var(--line);border-color:var(--line);color:var(--dim);cursor:default}
 #clearAll{display:block;width:100%;max-width:420px;margin:0 auto;padding:12px;background:transparent;border:2px solid var(--alarm);color:var(--alarm);font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:26px;border-radius:0;cursor:pointer}
 #clearAll:hover{background:var(--alarm);color:#fff}
 .sigs{max-width:640px;margin:30px auto 0}
@@ -44,6 +47,8 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
 .info p{margin:0 0 6px;font-size:12px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .info p.l{color:var(--acid)}
 .del{width:100%}
+.dl{display:block;margin-top:8px;padding:7px;border:2px solid var(--lime);color:var(--lime);text-decoration:none;font-weight:700;font-size:12px;letter-spacing:.1em;text-align:center}
+.dl:hover{background:var(--lime);color:#061207}
 </style>
 </head>
 <body>
@@ -72,6 +77,7 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
     <div class="stat">VIDEOS <span id="videoCount">0</span></div>
   </div>
 
+  <button id="download-all" type="button" onclick="downloadAll()">📥 DOWNLOAD ALL MEDIA</button>
   <button id="clearAll" type="button">Wipe everything</button>
 
   <div class="sigs">
@@ -152,6 +158,13 @@ function finalUrl(r) {
   const u = r.secure_url.replace("/upload/", "/upload/c_limit,w_2048,h_2048,q_auto/");
   return /^(jpe?g|png|webp|gif|svg)$/i.test(r.format || "") ? u : u.replace(/\.[^.\/]+$/, ".jpg");
 }
+function dlUrl(m, tag) {
+  const u = m.url || "";
+  if (u.indexOf("res.cloudinary.com") < 0 || u.indexOf("/upload/") < 0) return u;
+  let n = String(m.name || "party").replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "").slice(0, 40) || "party";
+  if (tag != null) n += "_" + tag;
+  return u.replace("/upload/", "/upload/fl_attachment:" + n + "/");
+}
 async function warmVideo(url) {
   const end = Date.now() + 90000;
   while (Date.now() < end) {
@@ -231,6 +244,10 @@ function startApp() {
         try { await deleteDoc(d.ref); } catch (e) { alert(e.message); }
       });
       info.appendChild(del);
+      const dl = h("a", "dl", "DOWNLOAD");
+      dl.href = dlUrl(data, d.id.slice(0, 5));
+      dl.setAttribute("download", "");
+      info.appendChild(dl);
       card.appendChild(info);
       grid.appendChild(card);
     });
@@ -254,6 +271,38 @@ function startApp() {
     });
   }, (e) => console.warn(e));
 }
+
+/* ---- download everything ---- */
+window.downloadAll = async function () {
+  const btn = $("download-all");
+  try {
+    const snapshot = await getDocs(collection(db, "media_queue"));
+    if (snapshot.empty) { alert("No media to download."); return; }
+    if (!confirm("Download all " + snapshot.size + " items?")) return;
+    btn.disabled = true;
+    let delay = 0, i = 0;
+    const total = snapshot.size;
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const n = ++i;
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = dlUrl(data, n);
+        a.download = "";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (n === total) btn.disabled = false;
+      }, delay);
+      delay += 1000;
+    });
+  } catch (error) {
+    console.error(error);
+    alert("Failed.");
+    btn.disabled = false;
+  }
+};
 </script>
 </body>
 </html>
