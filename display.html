@@ -534,6 +534,7 @@ function show(m, isFresh, gesture) {
     const c = el.error ? el.error.code : 0;
     fail("VIDEO ERROR " + c + (c === 4 ? " (FORMAT NOT SUPPORTED)" : ""));
   };
+  
   if (isV) {
     el.muted = true; el.defaultMuted = true; el.playsInline = true; el.preload = "auto";
     el.setAttribute("muted", ""); el.setAttribute("playsinline", ""); el.setAttribute("webkit-playsinline", "");
@@ -542,22 +543,16 @@ function show(m, isFresh, gesture) {
   } else {
     el.onload = go;
   }
-  wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 45000 : 15000);
-  const start = function () {
-    if (my !== tok) { drop(w); return; }
-    el.src = src;
-    stage.appendChild(w);
-    if (gesture && isV) { try { const pp = el.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {} }
-  };
-  if (isV && !warmed[src]) {
-    probe(src).then(function (st) {
-      if (my !== tok) { drop(w); return; }
-      if (st === 423) { fail("VIDEO CONVERTING ON CLOUDINARY..."); return; }
-      if (typeof st === "number") { fail("VIDEO HTTP ERROR " + st); return; }
-      warmed[src] = 1; start();
-    });
-  } else start();
+  
+  // Wait up to 30 seconds for the TV to load the video
+  wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 30000 : 15000);
+  
+  // Direct load (bypassing the blocking background check)
+  el.src = src;
+  stage.appendChild(w);
+  if (gesture && isV) { try { const pp = el.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {} }
 }
+
 
 function reveal(w, m, isFresh, my) {
   const old = cur;
