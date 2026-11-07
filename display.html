@@ -356,23 +356,24 @@ function playUrl(m) {
   if (m.still) return m.url;
   const p = cld(m.url);
   if (!p) return m.url;
+  
   if (m.type === "video") {
     if (m.url.indexOf("vc_h264") >= 0 && /\.mp4$/i.test(m.url)) return m.url;
-    // Dropped to 960px wide and q_60 for maximum compatibility on weak browsers
+    // Dropped to 960 width and q_60 so the TV/Projector doesn't crash
     return p.pre + "video/upload/vc_h264,c_limit,w_960,q_60/" + swapExt(p.tail, ".mp4");
   }
+  
   if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url)) return m.url;
+  
   const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
   return p.pre + "image/upload/c_limit,w_2048,h_2048,q_auto/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
 }
-  if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url)) return m.url;
-  const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
-  return p.pre + "image/upload/c_limit,w_2048,h_2048,q_auto/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
-}
+
 function stillUrl(m) {
   const p = cld(m.url);
   return p ? p.pre + "video/upload/so_0,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".jpg") : "";
 }
+
 function stillOf(m) {
   const u = stillUrl(m);
   return u ? { id: m.id, name: m.name, likes: m.likes, type: "image", url: u, still: true } : null;
