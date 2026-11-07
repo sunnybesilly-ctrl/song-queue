@@ -13,6 +13,7 @@
   --acid:#F4FF1A;--lime:#37FF76;--bone:#E9FFEA;--dim:#7FB391;--alarm:#FF4058;
   --bar:16vh;
   --dv:1vh;
+  --chip:7.4vh;
   --display:"Big Shoulders Display",Impact,sans-serif;
   --body:"Familjen Grotesk",sans-serif;
   --ink:"Permanent Marker","Comic Sans MS",cursive;
@@ -145,14 +146,53 @@ body{font-family:var(--body);color:var(--bone)}
 
 #vbadge{position:absolute;left:2vw;bottom:calc(var(--bar) + 1.2vh);z-index:6;max-width:96vw;padding:.4vh 1.4vh;background:var(--alarm);color:#fff;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.8vh;line-height:1.05;display:none}
 
+/* branding */
+#brand{position:absolute;left:1.4vw;top:1.2vh;z-index:25;display:flex;align-items:center;font-family:var(--ink);font-size:2.3vh;line-height:1;color:var(--bone);opacity:.82;text-shadow:0 0 .8vh #000,0 0 .3vh #000;pointer-events:none;max-width:92vw}
+#brand svg{width:3vh;height:3vh;margin-right:.8vh;flex:none}
+
+/* sunny reactions: rail on the media edge + who-reacted bubbles */
+#rx{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:6;pointer-events:none;overflow:hidden}
+.rbox{position:absolute;display:flex;flex-direction:row-reverse;align-items:flex-start}
+.rail{display:flex;flex-direction:column;align-items:center;width:var(--chip)}
+.feed{display:flex;flex-direction:column;align-items:flex-end;margin-right:calc(var(--chip)*.35);padding-top:calc(var(--chip)*.2)}
+.rc{position:relative;isolation:isolate;width:var(--chip);height:var(--chip);margin:calc(var(--chip)*.09) 0;display:flex;align-items:center;justify-content:center;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#3b2a00,#140d00);box-shadow:0 0 0 calc(var(--chip)*.06) #FFC21A,0 0 calc(var(--chip)*.5) rgba(255,194,26,.7);animation:rcIn .5s cubic-bezier(.2,1.5,.4,1) both}
+.rc.off{display:none}
+.rc::before{content:"";position:absolute;left:-20%;top:-20%;right:-20%;bottom:-20%;z-index:-1;border-radius:50%;background:repeating-conic-gradient(#FFC21A 0 6deg,transparent 6deg 22.5deg);-webkit-mask:radial-gradient(circle,transparent 52%,#000 54%);mask:radial-gradient(circle,transparent 52%,#000 54%);animation:spin 16s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rcIn{0%{opacity:0;transform:scale(.3) rotate(-30deg)}100%{opacity:1;transform:none}}
+.ic{width:62%;height:62%}
+.ic svg{display:block;width:100%;height:100%}
+.rn{position:absolute;right:-12%;bottom:-10%;min-width:calc(var(--chip)*.5);height:calc(var(--chip)*.5);padding:0 calc(var(--chip)*.1);display:flex;align-items:center;justify-content:center;border-radius:calc(var(--chip)*.25);background:#FFC21A;color:#1b1300;border:calc(var(--chip)*.04) solid #140d00;font-family:var(--display);font-weight:900;font-size:calc(var(--chip)*.36);line-height:1}
+.rn.bump{animation:bump .35s ease-out}
+.bub{display:flex;align-items:center;margin-top:calc(var(--chip)*.1);padding:calc(var(--chip)*.06) calc(var(--chip)*.22) calc(var(--chip)*.06) calc(var(--chip)*.06);border-radius:calc(var(--chip)*.4);background:rgba(20,13,0,.88);border:3px solid #FFC21A;color:#FFF3A0;font-weight:700;font-size:calc(var(--chip)*.32);line-height:1;animation:bubIn .35s cubic-bezier(.2,1.3,.4,1) both,bubOut .4s ease-in 2.6s forwards}
+@keyframes bubIn{0%{opacity:0;transform:translateX(30%) scale(.7)}100%{opacity:1;transform:none}}
+@keyframes bubOut{to{opacity:0;transform:translateY(-30%)}}
+.av{width:calc(var(--chip)*.62);height:calc(var(--chip)*.62);flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;margin-right:calc(var(--chip)*.14);font-family:var(--display);font-weight:900;font-size:calc(var(--chip)*.34);color:#1b1300}
+.bn{max-width:calc(var(--chip)*2.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bi{display:block;margin-left:calc(var(--chip)*.14)}
+.bi svg{display:block;width:calc(var(--chip)*.46);height:calc(var(--chip)*.46)}
+.bx{margin-left:calc(var(--chip)*.1);color:#FFC21A;font-family:var(--display);font-weight:900}
+.srail{position:absolute;right:calc(var(--chip)*-.5);top:5%}
+.wr{display:flex;align-items:center;margin-top:1.6vh}
+.wr .av{margin-right:0;margin-left:calc(var(--chip)*-.14);border:3px solid #140d00}
+.wr .av:first-child{margin-left:0}
+.wr span{margin-left:1.2vh;font-weight:700;color:var(--dim);font-size:2.6vh}
+.lite .rc::before{animation:none}
+
 /* lite mode (auto on slow browsers, L key) */
 .lite .mi.kb,.lite .new,.lite #qrcard.on .qb .tile,.lite #qrcard.on .a{animation:none}
 .lite .cell,.lite .note{animation:none;opacity:1}
 
 /* ===== PORTRAIT / PHONE: re-flowed so nothing is cut off ===== */
 @media (orientation:portrait){
-  :root{--bar:calc(var(--dv)*26)}
+  :root{--bar:calc(var(--dv)*26);--chip:11.5vw}
+  #brand{left:3vw;top:calc(var(--dv)*.8);font-size:3.2vw}
+  #brand svg{width:4vw;height:4vw;margin-right:1.2vw}
+  .wr{margin-top:calc(var(--dv)*1)}
+  .wr span{font-size:4vw}
 
+  /* bottom bar: name + hearts and QR codes on row 1, comment / hint on row 2 */
   #bar{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr)}
   .who{grid-column:1;grid-row:1;flex:none;min-width:0;padding:calc(var(--dv)*1.2) 4vw;border-right:0}
   .lab{font-size:3vw;letter-spacing:.16em}
@@ -169,6 +209,7 @@ body{font-family:var(--body);color:var(--bone)}
   .cmt b{font-size:3.6vw}
   .cmt span{font-size:4.5vw;line-height:1.1;max-height:none;overflow-wrap:anywhere}
 
+  /* QR / idle screen: stacked */
   #qrcard{flex-direction:column;justify-content:center;align-items:stretch;padding:0 7vw}
   .qt .a{font-size:min(30vw,calc(var(--dv)*12.5))}
   .qt .qs{margin-top:calc(var(--dv)*2.2);padding-left:3vw;font-size:4.2vw;max-width:none}
@@ -179,9 +220,11 @@ body{font-family:var(--body);color:var(--bone)}
   .qb .tile{width:min(38vw,calc(var(--dv)*17));height:min(38vw,calc(var(--dv)*17))}
   .qb .ql{font-size:4.8vw;margin-top:calc(var(--dv)*1.2)}
 
+  /* toast */
   #toast{top:calc(var(--dv)*1.5);right:3vw;font-size:6vw;padding:.4vh 3vw;max-width:94vw}
   #vbadge{font-size:4.6vw;padding:.4vh 2.4vw}
 
+  /* yearbook */
   .pg{flex-direction:column;justify-content:center;align-items:stretch;padding:calc(var(--dv)*3) 6vw}
   .pg.cover{align-items:flex-start}
   .cover .k,.cap .k{font-size:3.4vw;letter-spacing:.22em}
@@ -208,6 +251,7 @@ body{font-family:var(--body);color:var(--bone)}
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
+<div id="rx"></div>
 
 <div id="qrcard">
   <div class="qt">
@@ -240,6 +284,7 @@ body{font-family:var(--body);color:var(--bone)}
 </div>
 
 <div id="yb"></div>
+<div id="brand"><svg viewBox="0 0 24 24"><g stroke="#FFC21A" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></g><circle cx="12" cy="12" r="5" fill="#FFC21A"/></svg>-A Sunny neverpartlycloudy production</div>
 <div id="vbadge"></div>
 <div id="toast"></div>
 
@@ -248,7 +293,6 @@ body{font-family:var(--body);color:var(--bone)}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-// ⚠️ REPLACE THIS WITH YOUR REAL FIREBASE CONFIG ⚠️
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
   authDomain: "dj-photo-wall.firebaseapp.com",
@@ -263,34 +307,39 @@ const db = getFirestore(initializeApp(firebaseConfig));
 const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
 const UPLOAD_URL = BASE + "upload.html";
 const REACT_URL = BASE + "react.html";
-const QR_EVERY_MS = 90000;   
-const QR_HOLD_MS = 7000;     
-const MIN_VIDEO_MS = 8000;   
+const QR_EVERY_MS = 90000;   // full-screen QR interlude cadence
+const QR_HOLD_MS = 7000;     // how long the interlude stays up
+const MIN_VIDEO_MS = 8000;   // short clips loop until at least this long
 const MAX_VIDEO_MS = 30000;
-const RELOAD_MS = 50 * 60000; 
+const RELOAD_MS = 50 * 60000; // self-refresh to keep a weak browser healthy
 
+function face(inner) { return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#FFD43B" stroke="#7a4a00" stroke-width="1.3"/>' + inner + '</svg>'; }
 const ICON = {
   heart: '<svg viewBox="0 0 24 24"><path fill="#FF4058" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
-  star: '<svg viewBox="0 0 24 24"><polygon fill="#F4FF1A" points="12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 2,9.3 9.1,8.6"/></svg>',
-  bolt: '<svg viewBox="0 0 24 24"><polygon fill="#37FF76" points="13,2 4,14 11,14 10,22 20,9 13,9"/></svg>',
-  lol: '<b class="tx" style="color:#F4FF1A">LOL</b>',
-  wow: '<b class="tx" style="color:#37FF76">WOW</b>'
+  bolt: '<svg viewBox="0 0 24 24"><polygon fill="#FFE600" stroke="#7a4a00" stroke-width="1" stroke-linejoin="round" points="13,2 4,14 11,14 10,22 20,9 13,9"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><g stroke="#FF8A1F" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></g><circle cx="12" cy="12" r="5" fill="#FFC21A" stroke="#7a4a00" stroke-width="1.2"/></svg>',
+  lol: face('<path d="M6.3 10.2c.9-1.9 2.7-1.9 3.6 0M14.1 10.2c.9-1.9 2.7-1.9 3.6 0" fill="none" stroke="#3a2200" stroke-width="1.4" stroke-linecap="round"/><path d="M6.6 13.4h10.8c0 3.7-2.4 6-5.4 6s-5.4-2.3-5.4-6z" fill="#3a2200"/><path d="M9.2 17.6c1.6-1.2 4-1.2 5.6 0-.8 1.2-2 1.7-2.8 1.7s-2-.5-2.8-1.7z" fill="#ff6b6b"/>'),
+  wow: face('<ellipse cx="8.3" cy="9.6" rx="1.5" ry="2" fill="#3a2200"/><ellipse cx="15.7" cy="9.6" rx="1.5" ry="2" fill="#3a2200"/><path d="M6.4 6.6c.9-.8 2.4-.9 3.4-.3M14.2 6.3c1-.6 2.5-.5 3.4.3" fill="none" stroke="#3a2200" stroke-width="1.1" stroke-linecap="round"/><ellipse cx="12" cy="16.6" rx="2.6" ry="3.3" fill="#3a2200"/>'),
+  cool: face('<path d="M3.4 8.6h17.2v2.4c0 2.1-1.4 3.4-3.3 3.4-1.9 0-3.2-1.4-3.5-3.1h-3.6c-.3 1.7-1.6 3.1-3.5 3.1-1.9 0-3.3-1.3-3.3-3.4z" fill="#1b1300"/><path d="M7.6 17.2c2.6 2.3 6.2 2.3 8.8 0" fill="none" stroke="#3a2200" stroke-width="1.5" stroke-linecap="round"/>'),
+  sad: face('<circle cx="8.4" cy="10" r="1.3" fill="#3a2200"/><circle cx="15.6" cy="10" r="1.3" fill="#3a2200"/><path d="M6.8 7.4l3-.9M17.2 7.4l-3-.9" fill="none" stroke="#3a2200" stroke-width="1.2" stroke-linecap="round"/><path d="M8.6 18c1.9-2.4 5-2.4 6.8 0" fill="none" stroke="#3a2200" stroke-width="1.5" stroke-linecap="round"/><path d="M7.3 12.6c-1 1.5-1.3 2.5-.5 3.1.8.6 1.8 0 1.6-1.1-.1-.8-.6-1.4-1.1-2z" fill="#5CE1FF"/>'),
+  down: '<svg viewBox="0 0 24 24"><path fill="#8FA3D6" stroke="#1b2540" stroke-width=".9" stroke-linejoin="round" d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>'
 };
 
 const $ = function (s) { return document.querySelector(s); };
 const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
 const PORT = window.matchMedia("(orientation: portrait)");
+const rxBox = $("#rx");
 const stage = $("#stage"), flashEl = $("#flash"), qrcard = $("#qrcard"), fx = $("#fx"), yb = $("#yb"), toastEl = $("#toast");
 const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint"), cmt = $("#cmt"), cn = $("#cn"), ct = $("#ct");
 $("#hi").innerHTML = ICON.heart;
 
 /* ---- state ---- */
 let items = [], pos = -1, fresh = [], seen = false;
-let mode = "boot";            
+let mode = "boot";            // boot | loop | qr | idle | yearbook
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
 let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null, needTap = null;
-const bad = {}, counts = {}, lastLikes = {}, warmed = {};
+const bad = {}, lastLikes = {}, warmed = {};
 
 /* ---- helpers ---- */
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -302,7 +351,7 @@ function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTime
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) { qrcard.className = on ? "on" : ""; }
 
-/* ---- QR codes ---- */
+/* ---- QR codes (crisp SVG, falls back to an image service if the library is blocked) ---- */
 function qrSvg(text, fg, bg) {
   const q = qrcode(0, "M"); q.addData(text); q.make();
   const n = q.getModuleCount(), m = 3, s = n + m * 2;
@@ -319,6 +368,7 @@ function fillQR() {
 }
 fillQR();
 
+/* small Cloudinary thumbnails so the yearbook grid never decodes full-size photos */
 function thumb(m) {
   const u = m.url || "";
   if (u.indexOf("res.cloudinary.com") < 0) return "";
@@ -328,6 +378,7 @@ function thumb(m) {
   if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
   return u.replace(re, "/upload/" + t + "/");
 }
+/* ---- Cloudinary: always play a browser-friendly version (H.264 MP4 video, JPEG/PNG photos) ---- */
 function kindOf(x) {
   const u = String(x.url || "");
   if (u.indexOf("res.cloudinary.com") >= 0) {
@@ -347,31 +398,23 @@ function cld(u) {
   return { pre: mt[1], res: mt[2], tail: tail };
 }
 function swapExt(t, ext) { return /\.[^.\/]+$/.test(t) ? t.replace(/\.[^.\/]+$/, ext) : t + ext; }
-
 function playUrl(m) {
   if (m.still) return m.url;
   const p = cld(m.url);
   if (!p) return m.url;
-  
   if (m.type === "video") {
     if (m.url.indexOf("vc_h264") >= 0 && /\.mp4$/i.test(m.url)) return m.url;
     // Added a_auto to auto-rotate the video, and forced baseline/960px for TV compatibility
     return p.pre + "video/upload/a_auto,vc_h264:baseline,ac_aac,f_mp4,c_limit,w_960,q_60,fps_30/" + swapExt(p.tail, ".mp4");
   }
-  
   if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url)) return m.url;
-  
   const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
   return p.pre + "image/upload/c_limit,w_2048,h_2048,q_auto/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
 }
-
-
-
 function stillUrl(m) {
   const p = cld(m.url);
   return p ? p.pre + "video/upload/so_0,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".jpg") : "";
 }
-
 function stillOf(m) {
   const u = stillUrl(m);
   return u ? { id: m.id, name: m.name, likes: m.likes, type: "image", url: u, still: true } : null;
@@ -384,23 +427,7 @@ function showWhy(m) {
   if (m.still && m.why) { b.textContent = m.why; b.style.display = "block"; needTap = m.why.indexOf("TAP") === 0 ? m.vid : null; }
   else { b.style.display = "none"; needTap = null; }
 }
-const warming = {};
-function warmVideos() {
-  items.forEach(function (m) {
-    if (m.type !== "video") return;
-    const src = playUrl(m);
-    if (warmed[src] || warming[src]) return;
-    warming[src] = 1;
-    let tries = 0;
-    (function tick() {
-      probe(src).then(function (st) {
-        if (st === 423 && tries++ < 60) { setTimeout(tick, 3000); return; }
-        if (st !== 423 && typeof st !== "number") warmed[src] = 1;
-        delete warming[src];
-      });
-    })();
-  });
-}
+/* start Cloudinary converting every video as soon as it shows up, so it is ready before its turn */
 document.addEventListener("pointerdown", function () {
   // If someone taps the phone screen, turn sound on for future videos!
   if (!soundOn) {
@@ -410,17 +437,120 @@ document.addEventListener("pointerdown", function () {
       cur.firstChild.muted = false;
     }
   }
-  
+
   const v = needTap;
   if (!v || mode !== "loop") return;
   needTap = null;
   warmed[playUrl(v)] = 1;
   show(v, false, true);
 }, true);
-
+/* ---- bar ---- */
+/* ---- reactions: stored per media, replayed (with who reacted) every time that media is shown ---- */
+const AVC = ["#FFC21A", "#37FF76", "#FF8A1F", "#5CE1FF", "#FF6B8B", "#F4FF1A", "#B38CFF"];
+const RX = {}, rxT = [];
+let rxCtl = null;
+function who(d) { return String(d.name || d.who || d.user || d.by || "Guest").trim().slice(0, 16) || "Guest"; }
+function tms(d) { return d.t && d.t.seconds ? d.t.seconds * 1000 : 0; }
+function ini(n) { const p = n.split(/\s+/).filter(Boolean); return ((p[0] || "?").charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : "")).toUpperCase(); }
+function hue(n) { let x = 0; for (let i = 0; i < n.length; i++) x = (x * 31 + n.charCodeAt(i)) | 0; return AVC[Math.abs(x) % AVC.length]; }
+function addRx(d) {
+  const id = d.mediaId; if (!id || !d.c) return;
+  const a = RX[id] || (RX[id] = { n: 0, c: {}, ev: [] });
+  Object.keys(ICON).forEach(function (k) {
+    const n = Math.min(Math.max(+d.c[k] || 0, 0), 60);
+    if (!n) return;
+    a.c[k] = (a.c[k] || 0) + n; a.n += n;
+    a.ev.push({ w: who(d), k: k, n: n, t: tms(d) });
+  });
+}
+function rebuildRx(docs) {
+  Object.keys(RX).forEach(function (k) { delete RX[k]; });
+  docs.map(function (x) { return x.data(); }).sort(function (a, b) { return tms(a) - tms(b); }).forEach(addRx);
+}
+function chipsFor(a, rail, full) {
+  const out = {};
+  Object.keys(ICON).forEach(function (k) {
+    if (!(a.c[k] > 0)) return;
+    const c = h("div", "rc" + (full ? "" : " off")), s = h("div", "ic"), n = h("div", "rn", full ? String(a.c[k]) : "0");
+    s.innerHTML = ICON[k]; c.appendChild(s); c.appendChild(n); rail.appendChild(c);
+    out[k] = { el: c, n: n, v: full ? a.c[k] : 0 };
+  });
+  return out;
+}
+function chipSet(ch, v, bump) {
+  ch.v = v; ch.n.textContent = v > 99 ? "99+" : String(v);
+  ch.el.className = "rc";
+  if (bump) { ch.n.className = "rn"; void ch.n.offsetWidth; ch.n.className = "rn bump"; }
+}
+function bubble(feed, ev) {
+  const b = h("div", "bub"), av = h("div", "av", ini(ev.w)), nm = h("span", "bn", ev.w), ic = h("span", "bi");
+  av.style.background = hue(ev.w); ic.innerHTML = ICON[ev.k];
+  b.appendChild(av); b.appendChild(nm); b.appendChild(ic);
+  if (ev.n > 1) b.appendChild(h("b", "bx", "x" + ev.n));
+  feed.appendChild(b);
+  while (feed.children.length > 4) feed.removeChild(feed.firstChild);
+  setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 3300);
+}
+function mediaRect(el) {
+  const sw = stage.clientWidth, sh = stage.clientHeight;
+  const iw = el.naturalWidth || el.videoWidth || sw, ih = el.naturalHeight || el.videoHeight || sh;
+  const s = Math.min(sw / iw, sh / ih), w = iw * s, hh = ih * s;
+  return { sw: sw, sh: sh, l: (sw - w) / 2, t: (sh - hh) / 2, w: w, h: hh };
+}
+function placeRx(box, el, count) {
+  const r = mediaRect(el), cw = box.firstChild.offsetWidth || 60, hgt = count * cw * 1.18;
+  box.style.right = Math.max(0, r.sw - (r.l + r.w + cw * 0.5)) + "px";
+  box.style.top = Math.max(6, Math.min(r.t + r.h * 0.05, r.sh - hgt - 6)) + "px";
+}
+function clearRx() { rxT.forEach(clearTimeout); rxT.length = 0; rxBox.innerHTML = ""; rxCtl = null; }
+function showRx(el, m, instant) {
+  clearRx();
+  const a = RX[m.id]; if (!a || !a.n || !el) return;
+  const box = h("div", "rbox"), rail = h("div", "rail"), feed = h("div", "feed");
+  box.appendChild(rail); box.appendChild(feed);
+  const ch = chipsFor(a, rail, !!instant), tail = instant ? [] : a.ev.slice(-14);
+  if (!instant) {
+    const base = {};
+    Object.keys(a.c).forEach(function (k) { base[k] = a.c[k]; });
+    tail.forEach(function (e) { base[e.k] -= e.n; });
+    Object.keys(ch).forEach(function (k) { if (base[k] > 0) chipSet(ch[k], base[k], false); });
+  }
+  rxBox.appendChild(box);
+  placeRx(box, el, Object.keys(ch).length);
+  rxCtl = { feed: feed, ch: ch };
+  const win = Math.max(1500, Math.min(planned * 0.75, 5000));
+  const step = Math.max(160, Math.min(520, win / Math.max(tail.length, 1)));
+  tail.forEach(function (e, i) {
+    rxT.push(setTimeout(function () { liveRx(e, m.id, true); }, 350 + i * step));
+  });
+}
+function liveRx(e, id, replay) {
+  const c = rxCtl;
+  if (c && c.ch[e.k]) { chipSet(c.ch[e.k], c.ch[e.k].v + e.n, true); bubble(c.feed, e); return; }
+  if (replay) return;
+  if (!RX[id]) RX[id] = { n: 0, c: {}, ev: [] };
+  if (!RX[id].c[e.k]) { RX[id].c[e.k] = e.n; RX[id].n += e.n; }
+  if (cur) showRx(cur.firstChild, { id: id }, true);
+  if (rxCtl) bubble(rxCtl.feed, e);
+}
+function awardRail(snap, id) {
+  const a = RX[id]; if (!a || !a.n) return;
+  const rail = h("div", "rail srail"), ch = chipsFor(a, rail, false);
+  snap.appendChild(rail);
+  Object.keys(ch).forEach(function (k, i) { setTimeout(function () { chipSet(ch[k], a.c[k], true); }, 500 + i * 220); });
+}
+function whoRow(id) {
+  const a = RX[id]; if (!a || !a.ev.length) return null;
+  const seen = {}, names = [];
+  a.ev.forEach(function (e) { if (!seen[e.w]) { seen[e.w] = 1; names.push(e.w); } });
+  const row = h("div", "wr");
+  names.slice(0, 7).forEach(function (n) { const av = h("div", "av", ini(n)); av.style.background = hue(n); av.title = n; row.appendChild(av); });
+  row.appendChild(h("span", "", names.slice(0, 3).join(", ") + (names.length > 3 ? " +" + (names.length - 3) : "") + " reacted"));
+  return row;
+}
 function setHearts(id, bumpIt) {
   const m = find(id);
-  hnEl.textContent = ((m && m.likes) || 0) + (counts[id] || 0);
+  hnEl.textContent = ((m && m.likes) || 0) + ((RX[id] && RX[id].n) || 0);
   if (bumpIt) { hnEl.className = ""; void hnEl.offsetWidth; hnEl.className = "bump"; }
 }
 function setBar(m, isFresh) {
@@ -448,10 +578,18 @@ function pickT(isFresh) {
   lastT = i; return T[i];
 }
 function holdFor(isFresh) {
-  const n = items.length;
-  let b = n <= 6 ? 4000 : n <= 15 ? 3500 : n <= 30 ? 3000 : 2500;
-  b += Math.random() * 1000 - 500;
-  if (isFresh) b += 1500;
+  const n = items.length; // n = total items
+  
+  // Change these numbers to adjust speed (1000 = 1 second)
+  let b = n <= 6 ? 4000      // 4 seconds for small queues
+        : n <= 15 ? 3500     // 3.5 seconds for medium queues
+        : n <= 30 ? 3000     // 3 seconds for large queues
+        : 2500;              // 2.5 seconds for massive queues
+        
+  b += Math.random() * 1000 - 500; // Random +/- 0.5 sec so it doesn't feel robotic
+  
+  if (isFresh) b += 1500;          // Extra 1.5 seconds if it was JUST uploaded
+  
   return Math.round(b);
 }
 function drop(w) {
@@ -463,7 +601,7 @@ function drop(w) {
   }
   if (w.parentNode) w.parentNode.removeChild(w);
 }
-function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; }
+function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; clearRx(); }
 
 function usable(m) {
   if (!isBad(m)) return m;
@@ -522,19 +660,17 @@ function show(m, isFresh, gesture) {
     const c = el.error ? el.error.code : 0;
     fail("VIDEO ERROR " + c + (c === 4 ? " (FORMAT NOT SUPPORTED)" : ""));
   };
-  
   if (isV) {
     el.muted = true; el.defaultMuted = true; el.playsInline = true; el.preload = "auto";
     el.setAttribute("muted", ""); el.setAttribute("playsinline", ""); el.setAttribute("webkit-playsinline", "");
     el.onloadeddata = go; el.oncanplay = go;
-    el.onloadedmetadata = function () { setTimeout(go, 1200); };   
+    el.onloadedmetadata = function () { setTimeout(go, 1200); };   // iPhone often stops at metadata until play() is called
   } else {
     el.onload = go;
   }
-  
   // Wait up to 30 seconds for the TV to load the video
   wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 30000 : 15000);
-  
+
   // Direct load (bypassing the blocking background check)
   el.src = src;
   stage.appendChild(w);
@@ -553,25 +689,23 @@ function reveal(w, m, isFresh, my) {
   setBar(m, isFresh);
   showWhy(m);
   publish(m);
-  
   const el = w.firstChild;
   if (m.type === "video") {
     lastTU = Date.now();
     el.ontimeupdate = function () { lastTU = Date.now(); };
-    
     // Play muted first so it never freezes
-    el.muted = !soundOn; 
+    el.muted = !soundOn;
     const p = el.play();
-    
+
     if (p && p.catch) p.catch(function (err) {
       if (my !== tok) return;
       if (!el.muted) {
         // If sound was blocked, mute it and try again
-        soundOn = false; 
+        soundOn = false;
         el.muted = true;
         el.play().catch(function(e2) { if (my === tok) videoFail(m, isFresh, playWhy(e2)); });
       } else {
-        videoFail(m, isFresh, playWhy(err)); 
+        videoFail(m, isFresh, playWhy(err));
       }
     });
     armVideo(el, my);
@@ -585,11 +719,14 @@ function reveal(w, m, isFresh, my) {
     }
     timer = setTimeout(next, ms);
   }
+  clearRx();
+  const rxEl = w.firstChild;
+  rxT.push(setTimeout(function () { if (my === tok && cur === w) showRx(rxEl, m); }, Math.round(t.ms * 0.8)));
 }
 
 function armVideo(v, my) {
   const d = (isFinite(v.duration) && v.duration > 0) ? v.duration * 1000 : 8000;
-  const loops = d >= MIN_VIDEO_MS ? 1 : Math.min(6, Math.ceil(MIN_VIDEO_MS / d));   
+  const loops = d >= MIN_VIDEO_MS ? 1 : Math.min(6, Math.ceil(MIN_VIDEO_MS / d));   // 3s clip plays 3x
   let plays = 0;
   planned = Math.min(d * loops, MAX_VIDEO_MS) + 3000;
   v.onended = function () {
@@ -689,10 +826,12 @@ function awardPage(a) {
   const pg = h("div", "pg"), snap = h("div", "snap"), cap = h("div", "cap");
   snap.appendChild(mediaEl(a.m));
   snap.appendChild(h("em", "", a.m.name ? "by " + a.m.name : ""));
+  awardRail(snap, a.m.id);
   cap.appendChild(h("div", "k", a.kicker));
   cap.appendChild(h("div", "t", a.title));
   cap.appendChild(h("div", "n", a.who || a.m.name || ""));
   if (a.stat) cap.appendChild(h("div", "s", a.stat));
+  const wr = whoRow(a.m.id); if (wr) cap.appendChild(wr);
   pg.appendChild(snap); pg.appendChild(cap); return pg;
 }
 function sigPage(list) {
@@ -737,7 +876,7 @@ async function yearbook() {
   if (mode !== "yearbook") return;
 
   const S = {}; let rt = 0;
-  items.forEach(function (m) { S[m.id] = { m: m, heart: m.likes || 0, star: 0, bolt: 0, lol: 0, wow: 0, cm: 0 }; });
+  items.forEach(function (m) { S[m.id] = { m: m, heart: m.likes || 0, star: 0, bolt: 0, lol: 0, wow: 0, cool: 0, sad: 0, down: 0, cm: 0 }; });
   R.forEach(function (r) {
     if (!r.c) return;
     Object.keys(r.c).forEach(function (k) {
@@ -764,6 +903,8 @@ async function yearbook() {
   add("star", "Star of the show", "Main character energy", "stars");
   add("bolt", "Most electric", "Pure energy", "bolts");
   add("cm", "Most talked about", "Everybody had opinions", "comments");
+  add("cool", "Too cool", "Sunglasses required", "cools");
+  add("down", "Most shaded", "Shade level: extreme", "shades");
   if (items.length) {
     const f = items[0], l = items[items.length - 1];
     if (!used[f.id]) { used[f.id] = 1; A.push({ m: f, title: "First one in", kicker: "Early bird", stat: "" }); }
@@ -819,20 +960,21 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
 }, function (e) { console.warn(e); });
 
 let rInit = false;
-onSnapshot(query(collection(db, "reactions"), orderBy("t", "desc"), limit(20)), function (s) {
-  if (!rInit) { rInit = true; return; }
-  s.docChanges().forEach(function (c) {
+onSnapshot(collection(db, "reactions"), function (s) {
+  rebuildRx(s.docs);
+  if (rInit) s.docChanges().forEach(function (c) {
     if (c.type !== "added") return;
     const d = c.doc.data(); if (!d.c) return;
     const id = d.mediaId || (curItem && curItem.id) || "";
-    let tot = 0;
-    Object.keys(d.c).forEach(function (k) {
-      if (!ICON[k]) return;
+    Object.keys(ICON).forEach(function (k) {
       const n = Math.min(Math.max(+d.c[k] || 0, 0), 60);
-      tot += n; burst(k, n);
+      if (!n) return;
+      burst(k, n);
+      if (id && curItem && curItem.id === id && mode === "loop") liveRx({ w: who(d), k: k, n: n }, id);
     });
-    if (id) { counts[id] = (counts[id] || 0) + tot; if (curItem && curItem.id === id && mode === "loop") setHearts(id, true); }
   });
+  rInit = true;
+  if (curItem && mode === "loop") setHearts(curItem.id, false);
 }, function (e) { console.warn(e); });
 
 let cInit = false;
