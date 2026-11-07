@@ -532,7 +532,7 @@ function show(m, isFresh, gesture) {
   } else {
     el.onload = go;
   }
-  wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 20000 : 15000);
+  wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 45000 : 15000);
   const start = function () {
     if (my !== tok) { drop(w); return; }
     el.src = src;
