@@ -578,22 +578,29 @@ function reveal(w, m, isFresh, my) {
   setBar(m, isFresh);
   showWhy(m);
   publish(m);
-  const el = w.firstChild;
+    const el = w.firstChild;
   if (m.type === "video") {
     lastTU = Date.now();
     el.ontimeupdate = function () { lastTU = Date.now(); };
-    el.muted = !soundOn;
+    
+    el.muted = true; // ALWAYS start muted to guarantee autoplay bypasses iOS rules
     const p = el.play();
+    
     if (p && p.catch) p.catch(function (err) {
       if (my !== tok) return;
-      if (!el.muted) {
-        soundOn = false; el.muted = true; toast("Sound off");
+      
+      // If sound was on, try playing unmuted (might fail on iOS)
+      if (soundOn) {
+        el.muted = false;
         const p2 = el.play();
         if (p2 && p2.catch) p2.catch(function (e2) { if (my === tok) videoFail(m, isFresh, playWhy(e2)); });
-      } else { videoFail(m, isFresh, playWhy(err)); }
+      } else {
+        videoFail(m, isFresh, playWhy(err)); 
+      }
     });
     armVideo(el, my);
-  } else {
+  }
+  else {
     const ms = holdFor(isFresh);
     planned = ms;
     if (!lite) {
