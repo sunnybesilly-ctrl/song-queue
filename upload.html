@@ -207,7 +207,7 @@ body{
   <section class="done" id="done" hidden>
     <div class="stamp"><span>Sent.</span></div>
     <p class="rank" id="rank"></p>
-    <p class="lede">Watch the big screen. Your file is now in the album!</p>
+    <p class="lede">Your post is saved in the album. Screen playback may take longer.</p>
     <div class="go-wrap"><button class="go ghost again" id="again" type="button">Send another</button></div>
   </section>
 
@@ -300,7 +300,7 @@ function setPct(p) {
   for (let i = 0; i < SEGMENTS; i++) {
     segs[i].className = i < n ? (i >= SEGMENTS * 0.75 ? "hot" : "on") : "";
   }
-  goLabel.textContent = "File transfer: " + Math.round(p * 100) + "%";
+  goLabel.textContent = "Sending file: " + Math.round(p * 100) + "% transferred";
 }
 function setBusy(b) {
   busy = b;
@@ -484,10 +484,12 @@ async function warmVideo(url) {
   while (Date.now() < end) {
     try {
       const r = await fetch(url, { headers: { Range: "bytes=0-0" } });
-      if (r.ok || r.status !== 423) return;
-    } catch (_) { return; }
+      if (r.ok || r.status === 206) return true;
+      if (r.status !== 423 && r.status !== 404 && r.status !== 202) return false;
+    } catch (_) { return false; }
     await new Promise((res) => setTimeout(res, 2500));
   }
+  return false;
 }
 
 form.addEventListener("submit", async (e) => {
@@ -513,7 +515,8 @@ form.addEventListener("submit", async (e) => {
   try {
     try { localStorage.setItem(NAME_KEY, name); } catch (_) {}
 
-    goLabel.textContent = isImage ? "Preparing photo (time unknown)" : "Preparing video";
+    meter.hidden = true;
+    goLabel.textContent = isImage ? "Preparing photo…" : "Preparing video details…";
     statusEl.textContent = "Preparing file locally";
     const cropped = isImage ? await cropImage(file, cropRatio.value) : file;
     const prepared = isImage ? await squeezeImage(cropped) : file;
@@ -521,9 +524,11 @@ form.addEventListener("submit", async (e) => {
     const trimB = isVideo && videoDuration > 0 && Number(trimEnd.value) < videoDuration - 0.1 ? Number(trimEnd.value) : 0;
 
     setPct(0);
-    statusEl.textContent = "Sending file to Cloudinary. Percentage is for transfer only.";
+    meter.hidden = false;
+    statusEl.textContent = "Uploading file to Cloudinary. Percentage tracks transfer only.";
     const r = await cloudinaryUpload(prepared, setPct);
-    goLabel.textContent = "Transfer complete — processing";
+    meter.hidden = true;
+    goLabel.textContent = "File sent — waiting for Cloudinary";
     statusEl.textContent = "Cloudinary accepted the file. Processing time is unknown.";
     const vid = r.resource_type === "video";
     const url = finalUrl(r);
@@ -531,10 +536,12 @@ form.addEventListener("submit", async (e) => {
     if (vid) {
       goLabel.textContent = "Checking video availability";
       statusEl.textContent = "Waiting for Cloudinary video delivery. No reliable percentage available.";
-      await warmVideo(url);
+      const playable = await warmVideo(url);
+      if (!playable) statusEl.textContent = "Video playback could not be verified yet. Saving the post anyway.";
     }
 
-    goLabel.textContent = "Publishing to gallery";
+    meter.hidden = true;
+    goLabel.textContent = "Saving post…";
     statusEl.textContent = "Saving the post to Firestore (time unknown).";
     const ref = await addDoc(collection(db, "media_queue"), {
       name: name,
@@ -557,7 +564,7 @@ form.addEventListener("submit", async (e) => {
       const snap = await getCountFromServer(collection(db, "media_queue"));
       n = snap.data().count;
     } catch (_) {}
-    rank.textContent = n > 1 ? "You're #" + n + " in line." : (n === 1 ? "You're up next." : "You're in.");
+    rank.textContent = n > 1 ? "Saved in the album. #" + n + " by upload order." : "Saved in the album.";
 
     form.hidden = true;
     done.hidden = false;
