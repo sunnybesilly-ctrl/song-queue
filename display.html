@@ -431,7 +431,7 @@ function playUrl(m) {
     if (!(Number(m.trimStart) > 0 || Number(m.trimEnd) > 0)) return m.url;
     if (Number(m.trimStart) > 0) trans.push("so_" + Number(m.trimStart).toFixed(1));
     if (Number(m.trimEnd) > 0) trans.push("eo_" + Number(m.trimEnd).toFixed(1));
-    trans.push("vc_h264", "ac_aac", "f_mp4", "c_limit", "w_1280", "q_auto");
+    trans.push("vc_h264", "ac_aac", "f_mp4", "c_limit", "w_1920", "h_1080", "q_auto");
     return p.pre + "video/upload/" + trans.join(",") + "/" + swapExt(p.tail, ".mp4");
   }
   
