@@ -371,7 +371,10 @@ $("injectBtn").addEventListener("click", async () => {
     const vid = data.resource_type === "video";
     const url = finalUrl(data);
     if (vid) { status.textContent = "CONVERTING VIDEO..."; await warmVideo(url); }
+    const eventSnapshot=await getDocs(collection(db,"gallery_state")).catch(()=>null);
+    const activeEvent=eventSnapshot?.docs.find(d=>d.id==="current")?.data();
     await addDoc(collection(db, "media_queue"), {
+      eventId: activeEvent?.active ? activeEvent.eventId : null,
       name: name, url: url, publicId: data.public_id,
       type: vid ? "video" : "image", timestamp: serverTimestamp(), likes: 0
     });
