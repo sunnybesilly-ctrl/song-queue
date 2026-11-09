@@ -1,0 +1,11 @@
+[
+  {
+    "origin": [
+      "https://sunnybesilly-ctrl.github.io"
+    ],
+    "method": [
+      "GET"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

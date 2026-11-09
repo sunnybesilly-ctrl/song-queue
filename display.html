@@ -311,9 +311,10 @@ setTimeout(function() {
 }, 12000);
 </script>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { privateMediaUrl, releaseMedia } from "./gallery-media.js";
 
 // Existing Firebase project configuration retained.
 const firebaseConfig = {
@@ -369,8 +370,8 @@ const bad = {}, lastLikes = {}, warmed = {}, views = {};
 
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function find(id) { for (let i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
-function markBad(m, min) { bad[m.url] = Date.now() + min * 60000; }
-function isBad(m) { return (bad[m.url] || 0) > Date.now(); }
+function markBad(m, min) { bad[m.storagePath || m.url] = Date.now() + min * 60000; }
+function isBad(m) { return (bad[m.storagePath || m.url] || 0) > Date.now(); }
 function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
 function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
@@ -629,6 +630,7 @@ function drop(w) {
   if (!w) return;
   const v = w.firstChild;
   if (v) {
+    releaseMedia(w);
     v.onended = v.onerror = v.onloadeddata = v.onload = v.ontimeupdate = null;
     if (v.tagName === "VIDEO") { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} }
   }
@@ -688,7 +690,7 @@ function show(m, isFresh, gesture) {
     clearTimeout(wd);
     if (!ready) drop(w);
     if (isV) videoFail(m, isFresh, why);
-    else if (src !== m.url && !m.originalTried) {
+    else if (!m.storagePath && src !== m.url && !m.originalTried) {
       const original = Object.assign({}, m, { originalTried: true, still: true });
       show(original, isFresh);
     } else {
@@ -710,8 +712,13 @@ function show(m, isFresh, gesture) {
   }
   wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 90000 : 15000);
 
-  el.src = src;
   stage.appendChild(w);
+  if (m.storagePath) {
+    privateMediaUrl(app, m.storagePath).then(url => {
+      if (my !== tok || !w.isConnected) URL.revokeObjectURL(url);
+      else el.src = url;
+    }).catch(() => fail("PRIVATE MEDIA COULD NOT LOAD"));
+  } else el.src = src;
   if (gesture && isV) { try { const pp = el.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {} }
 }
 
@@ -730,7 +737,11 @@ function reveal(w, m, isFresh, my) {
   const el = w.firstChild;
   if (m.type === "video") {
     lastTU = Date.now();
-    el.ontimeupdate = function () { lastTU = Date.now(); };
+    el.ontimeupdate = function () {
+      lastTU = Date.now();
+      if (m.storagePath && m.trimEnd > 0 && el.currentTime >= m.trimEnd && el.onended) el.onended();
+    };
+    if (m.storagePath && m.trimStart > 0) el.currentTime = m.trimStart;
     
     el.muted = !soundOn;
     const p = el.play();
@@ -766,7 +777,9 @@ function reveal(w, m, isFresh, my) {
 }
 
 function armVideo(v, my, m) {
-  const d = (isFinite(v.duration) && v.duration > 0) ? v.duration * 1000 : 60000;
+  const start = m.storagePath ? (m.trimStart || 0) : 0;
+  const end = m.storagePath && m.trimEnd > 0 ? Math.min(m.trimEnd, v.duration) : v.duration;
+  const d = Number.isFinite(end) && end > start ? (end - start) * 1000 : 60000;
   // Short clips may loop to make them visible for a moment; longer videos
   // always play once from beginning to end. The ended event controls advance.
   const loops = d >= MIN_VIDEO_MS ? 1 : Math.min(6, Math.ceil(MIN_VIDEO_MS / d));
@@ -778,14 +791,14 @@ function armVideo(v, my, m) {
       plays++;
       if (override && override.active && m && override.mediaId === m.id) {
         if (override.repeat) {
-          try { v.currentTime = 0; } catch (e) {}
+          try { v.currentTime = start; } catch (e) {}
           const p = v.play(); if (p && p.catch) p.catch(function (e) { console.warn(e); });
           return;
         }
         overridePlayed = true; clearTimeout(wd); next(); return;
       }
       if (plays < loops) {
-        try { v.currentTime = 0; } catch (e) {}
+        try { v.currentTime = start; } catch (e) {}
         const p = v.play(); if (p && p.catch) p.catch(function () {});
       } else {
         clearTimeout(wd);
@@ -870,14 +883,21 @@ function nextComment() {
 }
 
 function clearYB() {
-  $$("#yb video").forEach(function (v) { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} });
+  releaseMedia(yb);
+  $("#yb video").forEach(function (v) { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} });
   yb.innerHTML = "";
 }
 function mediaEl(m) {
   const v = m.type === "video";
   const e = document.createElement(v ? "video" : "img"); e.className = "mi";
   if (v) { e.muted = true; e.loop = true; e.autoplay = true; e.playsInline = true; e.setAttribute("playsinline", ""); }
-  e.src = playUrl(m); return e;
+  if (m.storagePath) {
+    privateMediaUrl(app, m.storagePath).then(url => {
+      if (e.isConnected) e.src = url;
+      else URL.revokeObjectURL(url);
+    }).catch(console.warn);
+  } else e.src = playUrl(m);
+  return e;
 }
 function coverPage(sub) {
   const pg = h("div", "pg cover"), box = h("div");
@@ -919,13 +939,21 @@ function sigPage(list, pageNo, pageTotal) {
 function classPage() {
   const pg = h("div", "pg cls"), grid = h("div", "grid");
   pg.appendChild(h("div", "t2", "Class of tonight"));
-  const picks = items.map(thumb).filter(function (u) { return u; });
+  const picks = items.filter(m => thumb(m) || (m.storagePath && m.type === "image"));
   picks.sort(function () { return Math.random() - .5; });
-  picks.slice(0, 18).forEach(function (u, i) {
+  picks.slice(0, 18).forEach(function (m, i) {
     const c = h("div", "cell"), im = new Image();
     c.style.animationDelay = (i * 90) + "ms";
     c.style.setProperty("--r", ((Math.random() * 6) - 3).toFixed(1) + "deg");
-    im.alt = ""; im.src = u; c.appendChild(im); grid.appendChild(c);
+    im.alt = "";
+    if (m.storagePath) {
+      privateMediaUrl(app, m.storagePath).then(url => {
+        if (im.isConnected) im.src = url;
+        else URL.revokeObjectURL(url);
+      }).catch(console.warn);
+    } else im.src = thumb(m);
+    c.appendChild(im);
+    grid.appendChild(c);
   });
   pg.appendChild(grid);
   pg.appendChild(h("div", "foot", "Thanks for coming. See you next time."));
@@ -1044,7 +1072,7 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
   snap.docs.forEach(function (d) {
     const x = d.data(); x.id = d.id;
     x.type = kindOf(x);
-    if (!x.url || !x.type) return;
+    if ((!x.url && !x.storagePath) || !x.type) return;
     list.push(x);
     const lk = x.likes || 0;
     if (lastLikes[d.id] !== undefined && lk > lastLikes[d.id]) {
