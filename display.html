@@ -303,6 +303,9 @@ const firebaseConfig = {
   appId: "1:187308843014:web:a4dbf9c17011767890a387"
 };
 
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
 const UPLOAD_URL = BASE + "upload.html";
 const REACT_URL = BASE + "react.html";
