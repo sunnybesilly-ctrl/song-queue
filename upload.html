@@ -216,7 +216,7 @@ body{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp, getCountFromServer, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // Existing Cloudinary account configuration retained.
 const CLOUDINARY_CLOUD_NAME = "yl4yzjh5";
@@ -543,6 +543,8 @@ form.addEventListener("submit", async (e) => {
     meter.hidden = true;
     goLabel.textContent = "Posting to the live album…";
     statusEl.textContent = "Adding your memory to the live feed…";
+    const eventSnap = await getDoc(doc(db, "gallery_state", "current")).catch(() => null);
+    const eventId = eventSnap?.exists() && eventSnap.data().active ? eventSnap.data().eventId : null;
     const ref = await addDoc(collection(db, "media_queue"), {
       name: name,
       url: url,
@@ -555,6 +557,7 @@ form.addEventListener("submit", async (e) => {
       trimStart: trimA,
       trimEnd: trimB,
       uid: guestId(),
+      eventId: eventId,
       v: 2
     });
     try { localStorage.setItem(LAST_KEY, ref.id); } catch (_) {}
