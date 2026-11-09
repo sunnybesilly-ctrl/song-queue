@@ -357,6 +357,15 @@ function renderGrid() {
     const lb = h("button", "logb", (openId === d.id ? "HIDE LOG" : "LOG") + " (" + list.length + ")");
     lb.addEventListener("click", () => { openId = openId === d.id ? null : d.id; renderGrid(); });
     info.appendChild(lb);
+    const rotationPaused = data.rotationPaused === true;
+    const rotationBtn = h("button", "go2", rotationPaused ? "RESUME IN ROTATION" : "PAUSE FROM ROTATION");
+    rotationBtn.addEventListener("click", async () => {
+      rotationBtn.disabled = true;
+      try { await updateDoc(d.ref, {rotationPaused: !rotationPaused}); }
+      catch(e) { alert("Rotation update failed: " + e.message); rotationBtn.disabled = false; }
+    });
+    info.appendChild(h("p", "l", rotationPaused ? "HIDDEN FROM TV ROTATION · STILL IN ALBUM" : "IN TV ROTATION"));
+    info.appendChild(rotationBtn);
     if(isV) info.appendChild(videoControls(d,data));
     const del = h("button", "del", "DELETE");
     del.addEventListener("click", async () => {
