@@ -313,6 +313,7 @@ setTimeout(function() {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Existing Firebase project configuration retained.
 const firebaseConfig = {
@@ -326,6 +327,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const displayAuth=getAuth(app);
 window.__djDisplayStarted = true;
 
 const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
@@ -1024,6 +1026,7 @@ function applyScreenPause(paused) {
     } else if (mode !== "yearbook") next();
   }
 }
+function beginDisplayListeners(){
 onSnapshot(doc(db,"display_control","current"),function(snap){
   const v=snap.exists()?snap.data():null;
   const wantPause=!!(v&&v.paused);
@@ -1100,6 +1103,30 @@ onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(10)), f
     pushComment({ name: String(d.name || "A guest").slice(0, 24), text: String(d.text).slice(0, 70) });
   });
 }, function (e) { console.warn(e); });
+}
+const loginCover=document.createElement("div");
+loginCover.id="projectorLogin";
+loginCover.style.cssText="position:fixed;inset:0;z-index:2147483647;background:#06140b;color:#eeff12;display:flex;align-items:center;justify-content:center;font:18px system-ui;padding:20px";
+loginCover.innerHTML='<form id="projectorLoginForm" style="background:#0e2917;border:1px solid #417a4d;padding:24px;max-width:420px;width:100%;border-radius:16px"><h2 style="margin-top:0">Projector sign-in</h2><p style="color:#b5cfb8">Sign in once with your verified DJ admin account. This keeps the private gallery media off public Firestore reads.</p><input id="projectorEmail" type="email" autocomplete="username" placeholder="Admin email" required style="width:100%;padding:12px;margin-bottom:10px"><input id="projectorPassword" type="password" autocomplete="current-password" placeholder="Password" required style="width:100%;padding:12px;margin-bottom:10px"><button style="width:100%;padding:12px;background:#efff12;color:#06140b;border:0;border-radius:8px;font-weight:bold">Start display</button><p id="projectorError" style="color:#ff8792"></p></form>';
+document.body.appendChild(loginCover);
+document.getElementById("projectorLoginForm").onsubmit=async e=>{
+ e.preventDefault();
+ document.getElementById("projectorError").textContent="Signing in…";
+ try{await signInWithEmailAndPassword(displayAuth,document.getElementById("projectorEmail").value.trim(),document.getElementById("projectorPassword").value);}
+ catch(err){document.getElementById("projectorError").textContent=err.message;}
+};
+let displayStarted=false;
+onAuthStateChanged(displayAuth,async user=>{
+ if(!user){loginCover.style.display="flex";return}
+ try{await user.reload();await user.getIdToken(true);}catch(_){}
+ if(user.email!=="sunnybesilly@gmail.com"||!user.emailVerified){
+  loginCover.style.display="flex";
+  document.getElementById("projectorError").textContent="This projector requires the verified DJ admin account.";
+  return;
+ }
+ loginCover.style.display="none";
+ if(!displayStarted){displayStarted=true;beginDisplayListeners();}
+});
 </script>
 </body>
 </html>
