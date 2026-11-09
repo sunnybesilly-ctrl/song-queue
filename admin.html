@@ -96,7 +96,7 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
     <div id="injectStatus"></div>
   </div>
 
-  <div class="inject"><h3>Screen control</h3><p id="overrideStatus">Normal slideshow</p><button id="resumeDisplay" type="button">Resume slideshow</button><p>Video cards below include Play once, Repeat, and Trim. No admin label appears on the public screen.</p></div>
+  <div class="inject"><h3>Screen control</h3><p id="overrideStatus">Normal slideshow</p><button id="pauseDisplay" type="button">Pause screen</button> <button id="unpauseDisplay" type="button">Continue playback</button> <button id="resumeDisplay" type="button">Resume slideshow</button><p>Video cards below include Play once, Repeat, and Trim. No admin label appears on the public screen.</p></div>
   <div class="stats">
     <div class="stat">PHOTOS <span id="photoCount">0</span></div>
     <div class="stat">VIDEOS <span id="videoCount">0</span></div>
@@ -260,11 +260,19 @@ let mediaDocs = [], rxDocs = [], openId = null;
 let displayOverride = null;
 const overrideRef = doc(db, "display_control", "current");
 async function setOverride(id, repeat) {
-  try { await setDoc(overrideRef, { mediaId:id, repeat:!!repeat, active:true, changedAt:serverTimestamp(), by:auth.currentUser.uid }); }
+  try { await setDoc(overrideRef, { mediaId:id, repeat:!!repeat, active:true, paused:false, changedAt:serverTimestamp(), by:auth.currentUser.uid }); }
   catch(e) { alert("Screen control failed: "+e.message); }
 }
+$("pauseDisplay").addEventListener("click", async () => {
+  try { await setDoc(overrideRef, {paused:true, changedAt:serverTimestamp(), by:auth.currentUser.uid}, {merge:true}); }
+  catch(e) { alert("Pause failed: "+e.message); }
+});
+$("unpauseDisplay").addEventListener("click", async () => {
+  try { await setDoc(overrideRef, {paused:false, changedAt:serverTimestamp(), by:auth.currentUser.uid}, {merge:true}); }
+  catch(e) { alert("Continue failed: "+e.message); }
+});
 $("resumeDisplay").addEventListener("click", async () => {
-  try { await setDoc(overrideRef, {active:false,mediaId:"",repeat:false,changedAt:serverTimestamp(),by:auth.currentUser.uid}); }
+  try { await setDoc(overrideRef, {active:false,mediaId:"",repeat:false,paused:false,changedAt:serverTimestamp(),by:auth.currentUser.uid}); }
   catch(e) { alert("Resume failed: "+e.message); }
 });
 function videoControls(ref, data) {
@@ -371,7 +379,7 @@ function renderGrid() {
 function startApp() {
   onSnapshot(overrideRef,(snap)=>{
     displayOverride=snap.exists()?snap.data():null;
-    $("overrideStatus").textContent=displayOverride&&displayOverride.active?(displayOverride.repeat?"Repeating selected video":"Playing selected video once"):"Normal slideshow";
+    $("overrideStatus").textContent=displayOverride&&displayOverride.paused?"Screen paused":displayOverride&&displayOverride.active?(displayOverride.repeat?"Repeating selected video":"Playing selected video once"):"Normal slideshow";
   },e=>{$("overrideStatus").textContent="Control read error: "+e.message;});
   onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "desc")), (snap) => { mediaDocs = snap.docs; renderGrid(); }, (e) => console.warn(e));
   onSnapshot(collection(db, "reactions"), (snap) => { rxDocs = snap.docs; $("rxCount").textContent = rxSum(rxDocs).n; renderGrid(); }, (e) => console.warn(e));
