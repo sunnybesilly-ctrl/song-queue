@@ -162,6 +162,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
   <div id="loginStatus"></div>
 </div>
 
+<div class="inject" id="verify" hidden>
+  <h3>Verify your email</h3>
+  <p class="l">Firestore only trusts admin accounts with a verified email. Send the link, open it in your inbox, then tap continue.</p>
+  <button class="go" id="sendVerify" type="button">Send verification email</button>
+  <button class="go" id="verifyDone" type="button">I verified - continue</button>
+  <div id="verifyStatus"></div>
+</div>
+
 <div id="app" hidden>
   <div class="dashboard-intro"><div><span class="eyebrow">LIVE EVENT · MANAGEMENT</span><h2>Tonight’s dashboard</h2><p>Keep the memories moving. You’re in control.</p></div><span class="live-indicator"><span class="live-dot"></span> CONTROL CENTER</span></div>
   <div class="top-panels">
@@ -197,7 +205,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, addDoc, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
@@ -219,12 +227,25 @@ function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.c
 /* ---- sign in ---- */
 try { $("email").value = localStorage.getItem("admin_email") || ""; } catch (e) {}
 let started = false;
-onAuthStateChanged(auth, (user) => {
-  const ok = !!user;
-  $("login").hidden = ok;
+async function applyUser(user) {
+  if (user) { try { await user.reload(); await user.getIdToken(true); } catch (e) {} }
+  const ok = !!user && user.emailVerified === true;
+  $("login").hidden = !!user;
+  $("verify").hidden = !(user && !ok);
   $("app").hidden = !ok;
-  $("signOut").hidden = !ok;
+  $("signOut").hidden = !user;
   if (ok && !started) { started = true; startApp(); }
+}
+onAuthStateChanged(auth, (user) => { applyUser(user); });
+$("sendVerify").addEventListener("click", async () => {
+  const st = $("verifyStatus");
+  try { await sendEmailVerification(auth.currentUser); st.className = ""; st.textContent = "Sent. Check inbox and spam, open the link, then tap continue."; }
+  catch (e) { st.className = "err"; st.textContent = "Could not send: " + (e.code || e.message); }
+});
+$("verifyDone").addEventListener("click", async () => {
+  const st = $("verifyStatus");
+  await applyUser(auth.currentUser);
+  if (auth.currentUser && !auth.currentUser.emailVerified) { st.className = "err"; st.textContent = "Still not verified. Open the link in the email first."; }
 });
 async function doLogin() {
   const email = $("email").value.trim().toLowerCase();
@@ -441,7 +462,7 @@ function renderGrid() {
     rotationBtn.addEventListener("click", async () => {
       rotationBtn.disabled = true;
       try { await updateDoc(d.ref, {rotationPaused: !rotationPaused}); }
-      catch(e) { alert("Rotation update failed: " + e.message); rotationBtn.disabled = false; }
+      catch(e) { alert("Rotation update failed: " + e.message + "\n\nsigned in: " + (auth.currentUser ? auth.currentUser.email : "no") + "\nverified: " + (auth.currentUser ? auth.currentUser.emailVerified : "n/a")); rotationBtn.disabled = false; }
     });
     info.appendChild(h("p", "l", rotationPaused ? "HIDDEN FROM TV ROTATION · STILL IN ALBUM" : "IN TV ROTATION"));
     info.appendChild(rotationBtn);
