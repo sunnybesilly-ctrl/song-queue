@@ -1,120 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Album</title>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { background: #0a140c; color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
-        h1 { font-family: 'Anton', sans-serif; color: #e2ff00; text-align: center; font-size: 3rem; margin-bottom: 5px; text-shadow: 0 0 15px rgba(226,255,0,0.5); letter-spacing: 2px;}
-        p { text-align: center; color: #a3bca3; margin-bottom: 30px; font-size: 1.1rem; }
-        
-        #gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-        .media-card { background: #000; border: 2px solid #3a5a3e; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: border 0.3s; }
-        .media-card:hover { border-color: #e2ff00; }
-        .media-container { height: 300px; display: flex; align-items: center; justify-content: center; background: #000; }
-        .media-container img, .media-container video { width: 100%; height: 100%; object-fit: contain; }
-        
-        .card-info { padding: 15px; background: #0d1b11; display: flex; justify-content: space-between; align-items: center; }
-        .uploader-name { font-family: 'Anton', sans-serif; color: #e2ff00; font-size: 1.2rem; margin: 0; letter-spacing: 1px;}
-        
-        /* Like Button */
-        .like-btn { background: #1a2e1d; border: 2px solid #e2ff00; color: #e2ff00; padding: 8px 15px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; gap: 8px; }
-        .like-btn:active { transform: scale(0.9); background: #e2ff00; color: #000; }
-        
-        .download-btn { background: transparent; color: #a3bca3; border: none; text-decoration: underline; margin-top: 8px; cursor: pointer; font-size: 0.9rem; width: 100%; text-align: left; padding: 0; }
-        #loading { text-align: center; font-family: 'Anton', sans-serif; font-size: 2rem; color: #e2ff00; margin-top: 50px; }
-    </style>
-</head>
-<body>
-    <h1>PARTY ALBUM</h1>
-    <p>Download your memories and tap the heart to show love!</p>
-    
-    <div id="loading">LOADING MEDIA...</div>
-    <div id="gallery-grid"></div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // ⚠️ YOUR FIREBASE CONFIG
-       const firebaseConfig = {
-  apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
-  authDomain: "dj-photo-wall.firebaseapp.com",
-  projectId: "dj-photo-wall",
-  storageBucket: "dj-photo-wall.firebasestorage.app",
-  messagingSenderId: "187308843014",
-  appId: "1:187308843014:web:a4dbf9c17011767890a387"
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Party Album — Guest Access</title>
+<style>
+:root{color-scheme:dark;--lime:#efff17;--green:#42ff81;--muted:#a7c2ad}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 100% 0,#15391d,#030b06 65%);color:#f4fff6;font:16px system-ui,-apple-system,sans-serif;min-height:100vh}main{max-width:1080px;padding:26px 18px 80px;margin:auto}header{text-align:center;margin-bottom:32px}h1{font-size:clamp(60px,12vw,110px);font-weight:1000;letter-spacing:-.07em;line-height:.85;color:var(--lime);margin:22px 0;text-shadow:0 0 26px #b3ff0040}h2{font-size:25px}p{color:var(--muted)}.gate{max-width:440px;margin:35px auto;background:#0d2415;border:1px solid #416945;padding:30px 24px;box-shadow:0 14px 50px #0008;border-radius:22px;text-align:center}.gate p{line-height:1.6}input{width:100%;padding:18px;background:#010c04;border:2px solid #456f49;color:white;text-align:center;border-radius:12px;font-size:30px;letter-spacing:.22em;font-weight:800}button{border:0;cursor:pointer;background:var(--lime);color:#091309;padding:17px 22px;border-radius:12px;font-size:17px;font-weight:900;width:100%;margin-top:14px}button:disabled{opacity:.6;cursor:wait}#status{min-height:22px;color:#ff9ca8}#gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}.card{background:#0b1a10;border:1px solid #315639;border-radius:15px;overflow:hidden}.card img,.card video{display:block;width:100%;height:280px;object-fit:contain;background:black}.info{padding:15px}.who{font-weight:800;color:var(--lime);overflow-wrap:anywhere}.info a{color:var(--green);display:inline-block;margin-top:9px}.like{width:auto;padding:9px 16px;font-size:14px;background:#213724;color:var(--lime)}#toolbar{display:flex;justify-content:space-between;gap:15px;align-items:center;margin:25px 0}#toolbar button{width:auto;margin:0;padding:10px 14px;background:#233d28;color:white}#galleryStatus{text-align:center;margin:40px} [hidden]{display:none!important}
+</style></head><body><main>
+<header><h1>PARTY ALBUM</h1><p>Only tonight's guests get the memories.</p></header>
+<section id="gate" class="gate"><h2>YOUR INVITE CODE</h2><p>Ask the DJ for a fresh one-time code. Each code admits one guest and expires after five minutes if unused.</p><form id="codeForm"><input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" placeholder="00000000" aria-label="Eight digit access code" required><button id="unlock" type="submit">UNLOCK THE ALBUM</button></form><p id="status" role="status"></p></section>
+<section id="private" hidden><div id="toolbar"><span id="timeLeft"></span><button id="leave">Leave gallery</button></div><div id="galleryStatus">Loading tonight's memories…</div><div id="gallery"></div></section>
+</main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getFirestore,collection,doc,getDoc,getDocs,query,where,orderBy,updateDoc,increment} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getAuth,onAuthStateChanged,signInAnonymously,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+const app=initializeApp({apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-photo-wall.firebaseapp.com",projectId:"dj-photo-wall",storageBucket:"dj-photo-wall.firebasestorage.app",messagingSenderId:"187308843014",appId:"1:187308843014:web:a4dbf9c17011767890a387"}),db=getFirestore(app),auth=getAuth(app),fn=getFunctions(app,"us-central1");
+const $=s=>document.querySelector(s);
+let ready=false,loading=false;
+function message(s){$("#status").textContent=s;}
+async function showGallery(){
+ if(loading)return;loading=true;
+ try{
+  const state=await getDoc(doc(db,"gallery_state","current"));
+  if(!state.exists()||!state.data().active)throw Error("The gallery is closed.");
+  const me=await getDoc(doc(db,"gallery_access",auth.currentUser.uid));
+  const access=me.exists()?me.data():null;
+  if(!access||access.eventId!==state.data().eventId||!access.expiresAt||access.expiresAt.toMillis()<=Date.now())throw Error("Your gallery pass has expired. Request a new code.");
+  const q=query(collection(db,"media_queue"),where("eventId","==",state.data().eventId),orderBy("timestamp","desc"));
+  const snap=await getDocs(q);
+  $("#gate").hidden=true;$("#private").hidden=false;
+  $("#timeLeft").textContent="Guest access expires at "+new Date(access.expiresAt.toMillis()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+  const grid=$("#gallery");grid.replaceChildren();
+  for(const row of snap.docs){
+   const d=row.data(),card=document.createElement("article");card.className="card";
+   const media=document.createElement(d.type==="video"?"video":"img");media.src=d.url||"";if(d.type==="video"){media.controls=true;media.preload="metadata";media.playsInline=true}else media.alt="Party memory";
+   const info=document.createElement("div");info.className="info";
+   const who=document.createElement("div");who.className="who";who.textContent=d.name||"Guest";
+   const link=document.createElement("a");link.href=d.url||"#";link.target="_blank";link.rel="noopener";link.textContent="Open / save original";
+   const like=document.createElement("button");like.className="like";like.textContent="♥ "+(d.likes||0);like.onclick=async()=>{like.disabled=true;try{await updateDoc(doc(db,"media_queue",row.id),{likes:increment(1)});like.textContent="♥ "+((d.likes||0)+1)}catch(e){alert(e.message)}finally{like.disabled=false}};
+   info.append(who,link,document.createElement("br"),like);card.append(media,info);grid.append(card);
+  }
+  $("#galleryStatus").textContent=snap.empty?"No photos or videos have been uploaded for this event yet.":"";
+ }catch(e){$("#private").hidden=true;$("#gate").hidden=false;message(e.message||"Could not open gallery.");}finally{loading=false}
+}
+$("#codeForm").onsubmit=async e=>{
+ e.preventDefault();const code=$("#code").value.trim();if(!/^[0-9]{8}$/.test(code)){message("Enter all eight digits.");return}
+ $("#unlock").disabled=true;message("Checking your invitation…");
+ try{
+  if(!auth.currentUser)await signInAnonymously(auth);
+  await httpsCallable(fn,"redeemGalleryCode")({code});
+  $("#code").value="";message("");await showGallery();
+ }catch(err){message(err.message||"Code rejected.");}finally{$("#unlock").disabled=false}
 };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const grid = document.getElementById('gallery-grid');
-
-        async function loadGallery() {
-            try {
-                const q = query(collection(db, "media_queue"), orderBy("timestamp", "desc"));
-                const snapshot = await getDocs(q);
-                document.getElementById('loading').style.display = 'none';
-
-                if(snapshot.empty) {
-                    document.getElementById('loading').style.display = 'block';
-                    document.getElementById('loading').innerText = "NO MEDIA WAS SENT TONIGHT.";
-                    return;
-                }
-
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    const card = document.createElement('div');
-                    card.className = 'media-card';
-
-                    let mediaHtml = data.type === 'video' 
-                        ? `<video src="${data.url}" controls preload="metadata"></video>` 
-                        : `<img src="${data.url}">`;
-
-                    card.innerHTML = `
-                        <div class="media-container">${mediaHtml}</div>
-                        <div class="card-info">
-                            <div>
-                                <p class="uploader-name">${data.name}</p>
-                                <a href="${data.url}" download="${data.name}-party" class="download-btn">Download Original</a>
-                            </div>
-                            <button class="like-btn" id="btn-${docSnap.id}" onclick="likeMedia('${docSnap.id}')">
-                                ❤️ <span id="count-${docSnap.id}">${data.likes || 0}</span>
-                            </button>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            } catch (e) {
-                console.error(e);
-                document.getElementById('loading').innerText = "Error loading gallery.";
-            }
-        }
-
-        window.likeMedia = async function(docId) {
-            const btn = document.getElementById(`btn-${docId}`);
-            const countSpan = document.getElementById(`count-${docId}`);
-            
-            // Fun visual feedback on the phone
-            btn.style.backgroundColor = '#e2ff00';
-            btn.style.color = '#000';
-            setTimeout(() => {
-                btn.style.backgroundColor = '#1a2e1d';
-                btn.style.color = '#e2ff00';
-            }, 200);
-            
-            // Update Firebase
-            const docRef = doc(db, "media_queue", docId);
-            await updateDoc(docRef, { likes: increment(1) });
-            
-            // Update UI instantly
-            let current = parseInt(countSpan.innerText);
-            countSpan.innerText = current + 1;
-        }
-
-        loadGallery();
-    </script>
-</body>
-</html>
+$("#leave").onclick=async()=>{await signOut(auth);$("#private").hidden=true;$("#gate").hidden=false;message("Session ended. Ask for another code to return.")};
+onAuthStateChanged(auth,async u=>{if(!u)return;try{await showGallery()}catch(_){}}); 
+</script></body></html>
