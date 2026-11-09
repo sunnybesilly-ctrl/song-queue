@@ -131,6 +131,22 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 @media(max-width:760px){body{padding:16px}h1{font-size:54px;margin-top:40px}.top-panels{grid-template-columns:1fr}.dashboard-intro,.library-head{align-items:flex-start;flex-direction:column}.live-indicator{font-size:10px}.stats{gap:8px}.stat{padding:12px}.stat span{font-size:34px}#grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card img,.card video{height:130px}.info{padding:10px}.card.open{grid-column:1/-1}#download-all,#clearRx,#clearAll{width:100%;margin-right:0}}
 @media(max-width:420px){#grid{grid-template-columns:1fr}.card img,.card video{height:200px}.card.open{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){.card,.go{transition:none}}
+
+/* Mobile command deck: one full-width card per memory, readable controls */
+@media(max-width:760px){
+ #grid{grid-template-columns:minmax(0,1fr);gap:18px}
+ .card,.card.open{grid-column:1/-1;min-width:0}
+ .card img,.card video{height:clamp(210px,58vw,340px)}
+ .info{padding:17px}
+ .info p{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.4}
+ .info p.l{font-size:12px}
+ .go2{font-size:14px;line-height:1.25;min-height:46px;padding:12px;overflow-wrap:normal}
+ .del,.dl,.logb{min-height:44px}
+ .rxs{justify-content:flex-start}
+ .top-panels{gap:14px}
+ .inject{padding:20px}
+}
+@media(min-width:761px) and (max-width:1100px){#grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
