@@ -25,12 +25,12 @@ async function showGallery(){
   const me=await getDoc(doc(db,"gallery_access",auth.currentUser.uid));
   const access=me.exists()?me.data():null;
   if(!access||access.eventId!==state.data().eventId||!access.expiresAt||access.expiresAt.toMillis()<=Date.now())throw Error("Your gallery pass has expired. Request a new code.");
-  const q=query(collection(db,"media_queue"),where("eventId","==",state.data().eventId),orderBy("timestamp","desc"));
+  const q=query(collection(db,"media_queue"),where("eventId","==",state.data().eventId));
   const snap=await getDocs(q);
   $("#gate").hidden=true;$("#private").hidden=false;
   $("#timeLeft").textContent="Guest access expires at "+new Date(access.expiresAt.toMillis()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   const grid=$("#gallery");grid.replaceChildren();
-  for(const row of snap.docs){
+  for(const row of snap.docs.slice().sort((a,b)=>(b.data().timestamp?.seconds||0)-(a.data().timestamp?.seconds||0))){
    const d=row.data(),card=document.createElement("article");card.className="card";
    const media=document.createElement(d.type==="video"?"video":"img");media.src=d.url||"";if(d.type==="video"){media.controls=true;media.preload="metadata";media.playsInline=true}else media.alt="Party memory";
    const info=document.createElement("div");info.className="info";
