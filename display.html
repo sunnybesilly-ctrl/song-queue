@@ -743,7 +743,7 @@ function reveal(w, m, isFresh, my) {
         videoFail(m, isFresh, playWhy(err));
       }
     });
-    armVideo(el, my);
+    armVideo(el, my, m);
   } else {
     const ms = holdFor(isFresh);
     planned = ms;
@@ -763,7 +763,7 @@ function reveal(w, m, isFresh, my) {
   }
 }
 
-function armVideo(v, my) {
+function armVideo(v, my, m) {
   const d = (isFinite(v.duration) && v.duration > 0) ? v.duration * 1000 : 60000;
   // Short clips may loop to make them visible for a moment; longer videos
   // always play once from beginning to end. The ended event controls advance.
@@ -772,19 +772,25 @@ function armVideo(v, my) {
   planned = d * loops + 3000;
   v.onended = function () {
     if (my !== tok) return;
-    plays++;
-    if (override && override.active && override.mediaId === m.id) {
-      if (override.repeat) {
-        try { v.currentTime=0; } catch(e) {}
-        const p=v.play(); if(p&&p.catch)p.catch(e=>console.warn(e));
-        return;
+    try {
+      plays++;
+      if (override && override.active && m && override.mediaId === m.id) {
+        if (override.repeat) {
+          try { v.currentTime = 0; } catch (e) {}
+          const p = v.play(); if (p && p.catch) p.catch(function (e) { console.warn(e); });
+          return;
+        }
+        overridePlayed = true; clearTimeout(wd); next(); return;
       }
-      overridePlayed=true; clearTimeout(wd); next(); return;
-    }
-    if (plays < loops) {
-      try { v.currentTime = 0; } catch (e) {}
-      const p = v.play(); if (p && p.catch) p.catch(function () {});
-    } else {
+      if (plays < loops) {
+        try { v.currentTime = 0; } catch (e) {}
+        const p = v.play(); if (p && p.catch) p.catch(function () {});
+      } else {
+        clearTimeout(wd);
+        next();
+      }
+    } catch (err) {
+      console.error("Video ended handler:", err);
       clearTimeout(wd);
       next();
     }
@@ -1010,7 +1016,8 @@ function applyScreenPause(paused) {
     if (v) v.pause();
   } else {
     if (v && mode === "loop") {
-      const p = v.play(); if (p && p.catch) p.catch(e => console.warn("Resume video:", e));
+      if (v.ended) { next(); return; }
+      const p = v.play(); if (p && p.catch) p.catch(function (e) { console.warn("Resume video:", e); });
     } else if (mode === "loop" && curItem && curItem.type !== "video") {
       timer = setTimeout(next, pausedRemaining || 1000);
       slideDeadline = Date.now() + (pausedRemaining || 1000);
@@ -1024,10 +1031,10 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
   const key=v&&v.active?v.mediaId+"|"+!!v.repeat+"|"+(v.changedAt&&v.changedAt.seconds||0)+"|"+(v.changedAt&&v.changedAt.nanoseconds||0):"";
   if(key!==overrideKey){
     overrideKey=key; override=v; overridePlayed=false;
-    if(!wantPause && mode!=="yearbook"){ mode="idle"; next(); }
+    if(!wantPause && mode!=="yearbook"){ screenPaused=false; mode="idle"; next(); }
   }
   if(!wantPause) applyScreenPause(false);
-},e=>console.warn("Display control unavailable:",e));
+},function(e){console.warn("Display control unavailable:",e);});
 
 onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
   const list = []; let curChanged = false;
@@ -1052,7 +1059,7 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
   if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added") fresh.push(c.doc.id); });
   const first = !seen; seen = true;
   if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
-  if (curItem && mode === "loop" && list.some(m => m.id === curItem.id && m.rotationPaused)) {
+  if (curItem && mode === "loop" && list.some(function (m) { return m.id === curItem.id && m.rotationPaused; })) {
     if (!screenPaused) { stopMedia(); next(); }
   }
   if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
