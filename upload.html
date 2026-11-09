@@ -300,8 +300,7 @@ function setPct(p) {
   for (let i = 0; i < SEGMENTS; i++) {
     segs[i].className = i < n ? (i >= SEGMENTS * 0.75 ? "hot" : "on") : "";
   }
-  goLabel.textContent = "Uploading your memory — " + Math.round(p * 100) + "%"";
-}
+  goLabel.textContent = "Uploading your memory — " + Math.round(p * 100) + "%";
 function setBusy(b) {
   busy = b;
   go.disabled = b;
