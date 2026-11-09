@@ -183,6 +183,18 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 
   <div class="inject"><h3>Screen control</h3><p id="overrideStatus">Normal slideshow</p><button id="pauseDisplay" type="button">Pause screen</button> <button id="unpauseDisplay" type="button">Continue playback</button> <button id="resumeDisplay" type="button">Resume slideshow</button><p>Video cards below include Play once, Repeat, and Trim. No admin label appears on the public screen.</p></div>
   </div>
+  <section class="inject" id="galleryGateAdmin" style="margin:18px 0;border:1px solid #b9e718;border-radius:12px">
+ <h3>Private gallery access</h3>
+ <p class="l">Start a new event to invalidate old guest passes. Generate a fresh, one-time 8-digit code for each attendee. Each unused code lasts five minutes; redeemed guest access lasts six hours or until you end the event.</p>
+ <div id="galleryEventStatus" class="l">Checking event status…</div>
+ <div style="display:flex;flex-wrap:wrap;gap:8px">
+ <button class="go" id="startGalleryEvent" type="button" style="flex:1;min-width:130px">Start new event</button>
+ <button class="go" id="makeGalleryCode" type="button" style="flex:1;min-width:130px">Generate guest code</button>
+ <button class="go" id="closeGalleryEvent" type="button" style="flex:1;min-width:130px">Close gallery</button>
+ </div>
+ <div id="newGalleryCode" aria-live="polite" style="font-size:clamp(32px,8vw,58px);font-weight:900;letter-spacing:.13em;color:#efff17;text-align:center;padding:14px;overflow-wrap:anywhere"></div>
+ <p id="galleryCodeStatus" class="l" role="status"></p>
+</section>
   <div class="stats">
     <div class="stat">PHOTOS <span id="photoCount">0</span></div>
     <div class="stat">VIDEOS <span id="videoCount">0</span></div>
@@ -206,6 +218,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, addDoc, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
@@ -221,7 +234,44 @@ const UPLOAD_PRESET = "UPLOAD_PRESET";
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const galleryFn=getFunctions(app,"us-central1");
 const $ = (id) => document.getElementById(id);
+
+// Access codes are generated and consumed by verified Firebase Cloud Functions.
+const galleryCall=(name)=>httpsCallable(galleryFn,name);
+const galleryMsg=document.getElementById("galleryCodeStatus");
+const galleryStateText=document.getElementById("galleryEventStatus");
+let galleryOperation=false;
+async function syncGalleryState(){
+ try{
+  const snap=await getDocs(collection(db,"gallery_state"));
+  const v=snap.docs.find(x=>x.id==="current")?.data();
+  galleryStateText.textContent=v?.active?"Gallery OPEN — event "+v.eventId.slice(0,8):"Gallery CLOSED — start a new event before issuing codes.";
+ }catch(e){galleryStateText.textContent="Gallery status unavailable: "+e.message;}
+}
+async function gateAction(name,confirmText){
+ if(galleryOperation)return;
+ if(confirmText&&!confirm(confirmText))return;
+ galleryOperation=true;galleryMsg.textContent="Working…";
+ for(const id of ["startGalleryEvent","makeGalleryCode","closeGalleryEvent"])document.getElementById(id).disabled=true;
+ try{
+  const result=(await galleryCall(name)({})).data;
+  if(name==="createGalleryCode"){
+   document.getElementById("newGalleryCode").textContent=result.code;
+   galleryMsg.textContent="Single use • expires at "+new Date(result.expiresAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+". Give this code to ONE attendee.";
+  }else{
+   document.getElementById("newGalleryCode").textContent="";
+   galleryMsg.textContent=name==="startGalleryEvent"?"New event opened. All previous guest codes and passes are invalid.":"Gallery closed. Guest access revoked.";
+  }
+  await syncGalleryState();
+ }catch(e){galleryMsg.textContent="Action failed: "+(e.message||e.code||e);}
+ finally{galleryOperation=false;for(const id of ["startGalleryEvent","makeGalleryCode","closeGalleryEvent"])document.getElementById(id).disabled=false;}
+}
+document.getElementById("startGalleryEvent").onclick=()=>gateAction("startGalleryEvent","Start a NEW event? Previous guest passes will stop working.");
+document.getElementById("makeGalleryCode").onclick=()=>gateAction("createGalleryCode");
+document.getElementById("closeGalleryEvent").onclick=()=>gateAction("closeGalleryEvent","Close guest gallery access now?");
+onAuthStateChanged(auth,u=>{if(u&&u.emailVerified)syncGalleryState();});
+
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
 /* ---- sign in ---- */
