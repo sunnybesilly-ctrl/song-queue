@@ -358,6 +358,7 @@ $("#hi").innerHTML = ICON.heart;
 
 let items = [], pos = -1, fresh = [], seen = false;
 let override = null, overrideKey = "", overridePlayed = false;
+let screenPaused = false, pausedRemaining = 0, slideDeadline = 0;
 let mode = "boot";            
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
@@ -751,6 +752,7 @@ function reveal(w, m, isFresh, my) {
       el.style.animationDuration = ((ms + t.ms) / 1000) + "s";
       el.className = "mi kb";
     }
+    slideDeadline = Date.now() + ms;
     timer = setTimeout(next, ms);
   }
   views[m.id] = (views[m.id] || 0) + 1;
@@ -793,6 +795,7 @@ function next() {
   try { nextInner(); } catch (e) { console.error(e); clearTimeout(timer); timer = setTimeout(next, 4000); }
 }
 function nextInner() {
+  if (screenPaused) return;
   clearTimeout(timer); clearTimeout(wd);
   if (mode === "yearbook") return;
   if (override && override.active && (!overridePlayed || override.repeat)) {
@@ -997,13 +1000,33 @@ async function yearbook() {
   step();
 }
 
+function applyScreenPause(paused) {
+  if (paused === screenPaused) return;
+  screenPaused = paused;
+  const v = cur && cur.firstChild && cur.firstChild.tagName === "VIDEO" ? cur.firstChild : null;
+  if (paused) {
+    pausedRemaining = Math.max(0, slideDeadline - Date.now());
+    clearTimeout(timer); clearTimeout(wd);
+    if (v) v.pause();
+  } else {
+    if (v && mode === "loop") {
+      const p = v.play(); if (p && p.catch) p.catch(e => console.warn("Resume video:", e));
+    } else if (mode === "loop" && curItem && curItem.type !== "video") {
+      timer = setTimeout(next, pausedRemaining || 1000);
+      slideDeadline = Date.now() + (pausedRemaining || 1000);
+    } else if (mode !== "yearbook") next();
+  }
+}
 onSnapshot(doc(db,"display_control","current"),function(snap){
   const v=snap.exists()?snap.data():null;
+  const wantPause=!!(v&&v.paused);
+  if(wantPause) applyScreenPause(true);
   const key=v&&v.active?v.mediaId+"|"+!!v.repeat+"|"+(v.changedAt&&v.changedAt.seconds||0)+"|"+(v.changedAt&&v.changedAt.nanoseconds||0):"";
   if(key!==overrideKey){
     overrideKey=key; override=v; overridePlayed=false;
-    if(mode!=="yearbook"){ mode="idle"; next(); }
+    if(!wantPause && mode!=="yearbook"){ mode="idle"; next(); }
   }
+  if(!wantPause) applyScreenPause(false);
 },e=>console.warn("Display control unavailable:",e));
 
 onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
