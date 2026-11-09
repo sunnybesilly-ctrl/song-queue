@@ -216,9 +216,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, addDoc, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, getDoc, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+import { postGalleryMedia, previewWhenVisible, privateMediaUrl, releaseMedia } from "./gallery-media.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
@@ -228,8 +229,6 @@ const firebaseConfig = {
   messagingSenderId: "187308843014",
   appId: "1:187308843014:web:a4dbf9c17011767890a387"
 };
-const CLOUD_NAME = "yl4yzjh5";
-const UPLOAD_PRESET = "UPLOAD_PRESET";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -244,8 +243,8 @@ const galleryStateText=document.getElementById("galleryEventStatus");
 let galleryOperation=false;
 async function syncGalleryState(){
  try{
-  const snap=await getDocs(collection(db,"gallery_state"));
-  const v=snap.docs.find(x=>x.id==="current")?.data();
+  const snap=await getDoc(doc(db,"gallery_state","current"));
+  const v=snap.data();
   galleryStateText.textContent=v?.active?"Gallery OPEN — event "+v.eventId.slice(0,8):"Gallery CLOSED — start a new event before issuing codes.";
  }catch(e){galleryStateText.textContent="Gallery status unavailable: "+e.message;}
 }
@@ -279,9 +278,10 @@ try { $("email").value = localStorage.getItem("admin_email") || ""; } catch (e) 
 let started = false;
 async function applyUser(user) {
   if (user) { try { await user.reload(); await user.getIdToken(true); } catch (e) {} }
-  const ok = !!user && user.emailVerified === true;
-  $("login").hidden = !!user;
-  $("verify").hidden = !(user && !ok);
+  const isDj = user?.email === "sunnybesilly@gmail.com";
+  const ok = isDj && user.emailVerified === true;
+  $("login").hidden = isDj;
+  $("verify").hidden = !(isDj && !ok);
   $("app").hidden = !ok;
   $("signOut").hidden = !user;
   if (ok && !started) { started = true; startApp(); }
@@ -328,13 +328,6 @@ function thumb(m) {
   if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
   return u.replace(re, "/upload/" + t + "/");
 }
-function finalUrl(r) {
-  if (r.resource_type === "video") {
-    return r.secure_url.replace("/upload/", "/upload/vc_h264,c_limit,w_1920,q_auto/").replace(/\.[^.\/]+$/, ".mp4");
-  }
-  const u = r.secure_url.replace("/upload/", "/upload/c_limit,w_2048,h_2048,q_auto/");
-  return /^(jpe?g|png|webp|gif|svg)$/i.test(r.format || "") ? u : u.replace(/\.[^.\/]+$/, ".jpg");
-}
 function dlUrl(m, tag) {
   const u = m.url || "";
   if (u.indexOf("res.cloudinary.com") < 0 || u.indexOf("/upload/") < 0) return u;
@@ -342,18 +335,7 @@ function dlUrl(m, tag) {
   if (tag != null) n += "_" + tag;
   return u.replace("/upload/", "/upload/fl_attachment:" + n + "/");
 }
-async function warmVideo(url) {
-  const end = Date.now() + 90000;
-  while (Date.now() < end) {
-    try {
-      const r = await fetch(url, { headers: { Range: "bytes=0-0" } });
-      if (r.ok || r.status !== 423) return;
-    } catch (_) { return; }
-    await new Promise((res) => setTimeout(res, 2500));
-  }
-}
-
-/* ---- inject media (same MP4 / JPEG conversion as the guest page) ---- */
+/* ---- inject media ---- */
 $("injectBtn").addEventListener("click", async () => {
   const name = $("adminName").value.trim() || "DJ Drop";
   const file = $("adminFile").files[0];
@@ -361,22 +343,8 @@ $("injectBtn").addEventListener("click", async () => {
   if (!file) { alert("Select a file first!"); return; }
   btn.disabled = true; status.textContent = "INJECTING...";
   try {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("upload_preset", UPLOAD_PRESET);
-    fd.append("tags", "party_media");
-    const res = await fetch("https://api.cloudinary.com/v1_1/" + CLOUD_NAME + "/auto/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const vid = data.resource_type === "video";
-    const url = finalUrl(data);
-    if (vid) { status.textContent = "CONVERTING VIDEO..."; await warmVideo(url); }
-    const eventSnapshot=await getDocs(collection(db,"gallery_state")).catch(()=>null);
-    const activeEvent=eventSnapshot?.docs.find(d=>d.id==="current")?.data();
-    await addDoc(collection(db, "media_queue"), {
-      eventId: activeEvent?.active ? activeEvent.eventId : null,
-      name: name, url: url, publicId: data.public_id,
-      type: vid ? "video" : "image", timestamp: serverTimestamp(), likes: 0
+    await postGalleryMedia(app, file, { name: name.slice(0, 24) }, progress => {
+      status.textContent = "UPLOADING… " + Math.round(progress * 100) + "%";
     });
     status.textContent = "SUCCESS! IT'S ON THE SCREEN.";
     $("adminFile").value = "";
@@ -484,9 +452,16 @@ function logPanel(d, list) {
   }
   return p;
 }
+let libraryPreviews;
 function renderGrid() {
   const grid = $("grid");
+  libraryPreviews?.disconnect();
+  releaseMedia(grid);
   grid.innerHTML = "";
+  libraryPreviews = previewWhenVisible(app, grid, (error, media) => {
+    media.title = "Preview unavailable";
+    console.warn(error);
+  });
   let photos = 0, videos = 0;
   if (!mediaDocs.length) { grid.appendChild(h("p", "empty", "Queue is empty.")); }
   mediaDocs.forEach((d) => {
@@ -496,7 +471,13 @@ function renderGrid() {
     const card = h("div", "card");
     const t = thumb(data);
     let media;
-    if (t || !isV) { media = document.createElement("img"); media.alt = ""; media.loading = "lazy"; media.src = t || data.url; }
+    if (data.storagePath) {
+      media = document.createElement(isV ? "video" : "img");
+      if (isV) { media.muted = true; media.playsInline = true; }
+      else media.alt = "";
+      media.dataset.storagePath = data.storagePath;
+      libraryPreviews.observe(media);
+    } else if (t || !isV) { media = document.createElement("img"); media.alt = ""; media.loading = "lazy"; media.src = t || data.url; }
     else { media = document.createElement("video"); media.muted = true; media.preload = "metadata"; media.playsInline = true; media.src = data.url + "#t=0.5"; }
     card.appendChild(media);
     if (isV) card.appendChild(h("div", "badge", "VIDEO"));
@@ -527,7 +508,12 @@ function renderGrid() {
     });
     info.appendChild(del);
     const dl = h("a", "dl", "DOWNLOAD");
-    dl.href = dlUrl(data, d.id.slice(0, 5));
+    dl.href = data.storagePath ? "#" : dlUrl(data, d.id.slice(0, 5));
+    if (data.storagePath) dl.addEventListener("click", async event => {
+      event.preventDefault();
+      try { await downloadPrivate(data); }
+      catch (error) { alert(error.message); }
+    });
     dl.setAttribute("download", "");
     info.appendChild(dl);
     card.appendChild(info);
@@ -563,6 +549,15 @@ function startApp() {
   }, (e) => console.warn(e));
 }
 
+async function downloadPrivate(data) {
+  const url = await privateMediaUrl(app, data.storagePath);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = (data.name || "party-media").replace(/[^a-z0-9 _-]/gi, "_");
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 /* ---- download everything ---- */
 window.downloadAll = async function () {
   const btn = $("download-all");
@@ -571,23 +566,18 @@ window.downloadAll = async function () {
     if (snapshot.empty) { alert("No media to download."); return; }
     if (!confirm("Download all " + snapshot.size + " items?")) return;
     btn.disabled = true;
-    let delay = 0, i = 0;
-    const total = snapshot.size;
-    snapshot.forEach((docSnap) => {
+    for (const [index, docSnap] of snapshot.docs.entries()) {
       const data = docSnap.data();
-      const n = ++i;
-      setTimeout(() => {
-        const a = document.createElement("a");
-        a.href = dlUrl(data, n);
-        a.download = "";
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        if (n === total) btn.disabled = false;
-      }, delay);
-      delay += 1000;
-    });
+      if (data.storagePath) await downloadPrivate(data);
+      else {
+        const link = document.createElement("a");
+        link.href = dlUrl(data, index + 1);
+        link.download = "";
+        link.click();
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    btn.disabled = false;
   } catch (error) {
     console.error(error);
     alert("Failed.");

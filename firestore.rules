@@ -1,39 +1,88 @@
 rules_version = '2';
 service cloud.firestore {
- match /databases/{database}/documents {
-  function admin() {
-   return request.auth != null &&
-     request.auth.token.email == 'sunnybesilly@gmail.com' &&
-     request.auth.token.email_verified == true;
+  match /databases/{database}/documents {
+    function admin() {
+      return request.auth != null && request.auth.token.email == 'sunnybesilly@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function admitted(eventId) {
+      let current = get(/databases/$(database)/documents/gallery_state/current).data;
+      let pass = get(/databases/$(database)/documents/gallery_access/$(request.auth.uid)).data;
+      return current.active == true && eventId == current.eventId
+        && pass.eventId == eventId && pass.expiresAt > request.time;
+    }
+    function validTrim(value) {
+      return value is number && value >= 0 && value <= 86400;
+    }
+    function validMediaEdit() {
+      let d = request.resource.data;
+      return d.diff(resource.data).affectedKeys().hasOnly(['rotationPaused', 'trimStart', 'trimEnd'])
+        && d.get('rotationPaused', false) is bool && validTrim(d.get('trimStart', 0))
+        && validTrim(d.get('trimEnd', 0));
+    }
+    match /media_queue/{id} {
+      // Only the backend publishes new media. Guests query the current event and v == 3.
+      allow read: if admin() || (request.auth != null && resource.data.v == 3
+        && admitted(resource.data.eventId));
+      allow update: if admin() && validMediaEdit();
+      allow delete: if admin();
+    }
+    function boundedText(value, max) {
+      return value is string && value.size() <= max;
+    }
+    function validComment(d) {
+      return d.keys().hasOnly(['mediaId', 'name', 'text', 't'])
+        && boundedText(d.mediaId, 128) && boundedText(d.name, 24)
+        && boundedText(d.text, 70) && d.t == request.time;
+    }
+    function validReaction(d) {
+      return d.keys().hasOnly(['mediaId', 'name', 'uid', 'c', 't'])
+        && boundedText(d.mediaId, 128) && boundedText(d.name, 24)
+        && boundedText(d.uid, 128) && validReactionCounts(d.c)
+        && d.t == request.time;
+    }
+    function validReactionCount(value) {
+      return value is int && value >= 0 && value <= 60;
+    }
+    function validReactionCounts(c) {
+      return c is map && c.size() > 0
+        && c.keys().hasOnly(['heart', 'bolt', 'star', 'lol', 'wow', 'cool', 'sad', 'down'])
+        && validReactionCount(c.get('heart', 0)) && validReactionCount(c.get('bolt', 0))
+        && validReactionCount(c.get('star', 0)) && validReactionCount(c.get('lol', 0))
+        && validReactionCount(c.get('wow', 0)) && validReactionCount(c.get('cool', 0))
+        && validReactionCount(c.get('sad', 0)) && validReactionCount(c.get('down', 0));
+    }
+    // The public projector reaction and signature forms are write-only.
+    match /reactions/{id} {
+      allow read, delete: if admin();
+      allow create: if validReaction(request.resource.data);
+    }
+    match /comments/{id} {
+      allow read, delete: if admin();
+      allow create: if validComment(request.resource.data);
+    }
+    match /state/now {
+      allow get: if true;
+      allow create, update: if admin()
+        && request.resource.data.keys().hasOnly(['id', 'name', 'type', 'thumb', 't'])
+        && boundedText(request.resource.data.id, 128) && boundedText(request.resource.data.name, 128)
+        && boundedText(request.resource.data.type, 10) && boundedText(request.resource.data.thumb, 2048)
+        && request.resource.data.t == request.time;
+    }
+    match /display_control/{id} {
+      allow read: if admin();
+      allow create, update: if admin()
+        && request.resource.data.keys().hasOnly(['mediaId', 'repeat', 'active', 'paused', 'changedAt', 'by'])
+        && boundedText(request.resource.data.get('mediaId', ''), 128)
+        && request.resource.data.get('repeat', false) is bool
+        && request.resource.data.get('active', false) is bool
+        && request.resource.data.get('paused', false) is bool
+        && request.resource.data.changedAt == request.time && request.resource.data.by == request.auth.uid;
+    }
+    match /gallery_state/current { allow get: if request.auth != null; }
+    match /gallery_access/{id} {
+      allow get: if request.auth != null && request.auth.uid == id;
+    }
+    // Codes, attempts and like receipts are backend-only.
   }
-  function admitted() {
-   return request.auth != null &&
-     exists(/databases/$(database)/documents/gallery_access/$(request.auth.uid)) &&
-     get(/databases/$(database)/documents/gallery_access/$(request.auth.uid)).data.eventId ==
-        get(/databases/$(database)/documents/gallery_state/current).data.eventId &&
-     get(/databases/$(database)/documents/gallery_access/$(request.auth.uid)).data.expiresAt > request.time &&
-     get(/databases/$(database)/documents/gallery_state/current).data.active == true;
-  }
-  match /media_queue/{id} {
-   allow read: if admin() || admitted();
-   allow create: if true;
-   allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
-   allow delete: if admin();
-  }
-  match /reactions/{id} {
-   allow read: if admin() || admitted();
-   allow create: if true;
-   allow delete: if admin();
-  }
-  match /comments/{id} {
-   allow read: if admin() || admitted();
-   allow create: if true;
-   allow delete: if admin();
-  }
-  match /state/{id} { allow read, write: if true; }
-  match /display_control/{id} { allow read: if admin(); allow write: if admin(); }
-  match /gallery_state/{id} { allow read: if true; allow write: if false; }
-  match /gallery_access/{id} { allow read: if admin() || (request.auth != null && request.auth.uid == id); allow write: if false; }
-  match /gallery_codes/{id} { allow read, write: if false; }
- }
 }

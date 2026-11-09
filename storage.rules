@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'sunnybesilly@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    function state() {
+      return firestore.get(/databases/(default)/documents/gallery_state/current).data;
+    }
+    function hasPass(eventId) {
+      let pass = firestore.get(/databases/(default)/documents/gallery_access/$(request.auth.uid)).data;
+      let current = state();
+      return current.active == true && current.eventId == eventId
+        && pass.eventId == eventId && pass.expiresAt > request.time;
+    }
+    // The backend copies these uploads into a separate, token-free object.
+    match /gallery-incoming/{eventId}/{uid}/{id} {
+      allow create: if request.auth != null && request.auth.uid == uid
+        && id.matches('[a-f0-9-]{36}')
+        && state().active == true && state().eventId == eventId
+        && request.resource.size > 0 && request.resource.size <= 75 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|gif|webp|avif)|video/(mp4|quicktime|webm|ogg)')
+        && request.resource.metadata.keys().size() == 0;
+    }
+    match /gallery-media/{eventId}/{uid}/{id} {
+      allow get: if !('firebaseStorageDownloadTokens' in resource.metadata)
+        && (isAdmin() || (request.auth != null && hasPass(eventId)));
+    }
+  }
+}
