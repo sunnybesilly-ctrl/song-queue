@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function admin() {
+   return request.auth != null &&
+     request.auth.token.email == 'sunnybesilly@gmail.com' &&
+     request.auth.token.email_verified == true;
+  }
+  function admitted() {
+   return request.auth != null &&
+     exists(/databases/$(database)/documents/gallery_access/$(request.auth.uid)) &&
+     get(/databases/$(database)/documents/gallery_access/$(request.auth.uid)).data.eventId ==
+        get(/databases/$(database)/documents/gallery_state/current).data.eventId &&
+     get(/databases/$(database)/documents/gallery_access/$(request.auth.uid)).data.expiresAt > request.time &&
+     get(/databases/$(database)/documents/gallery_state/current).data.active == true;
+  }
+  match /media_queue/{id} {
+   allow read: if admin() || admitted();
+   allow create: if true;
+   allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+   allow delete: if admin();
+  }
+  match /reactions/{id} {
+   allow read: if admin() || admitted();
+   allow create: if true;
+   allow delete: if admin();
+  }
+  match /comments/{id} {
+   allow read: if admin() || admitted();
+   allow create: if true;
+   allow delete: if admin();
+  }
+  match /state/{id} { allow read, write: if true; }
+  match /display_control/{id} { allow read: if admin(); allow write: if admin(); }
+  match /gallery_state/{id} { allow read: if admin() || request.auth != null; allow write: if false; }
+  match /gallery_access/{id} { allow read: if admin() || (request.auth != null && request.auth.uid == id); allow write: if false; }
+  match /gallery_codes/{id} { allow read, write: if false; }
+ }
+}
