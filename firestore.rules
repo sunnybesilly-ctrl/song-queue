@@ -32,7 +32,7 @@ service cloud.firestore {
   }
   match /state/{id} { allow read, write: if true; }
   match /display_control/{id} { allow read: if admin(); allow write: if admin(); }
-  match /gallery_state/{id} { allow read: if admin() || request.auth != null; allow write: if false; }
+  match /gallery_state/{id} { allow read: if true; allow write: if false; }
   match /gallery_access/{id} { allow read: if admin() || (request.auth != null && request.auth.uid == id); allow write: if false; }
   match /gallery_codes/{id} { allow read, write: if false; }
  }
