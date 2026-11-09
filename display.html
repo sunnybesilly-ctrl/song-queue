@@ -1042,3 +1042,6 @@ onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(10)), f
     pushComment({ name: String(d.name || "A guest").slice(0, 24), text: String(d.text).slice(0, 70) });
   });
 }, function (e) { console.warn(e); });
+</script>
+</body>
+</html>
