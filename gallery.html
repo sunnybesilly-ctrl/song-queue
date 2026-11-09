@@ -15,7 +15,7 @@ import {getAuth,onAuthStateChanged,signInAnonymously,signOut} from "https://www.
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 const app=initializeApp({apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-photo-wall.firebaseapp.com",projectId:"dj-photo-wall",storageBucket:"dj-photo-wall.firebasestorage.app",messagingSenderId:"187308843014",appId:"1:187308843014:web:a4dbf9c17011767890a387"}),db=getFirestore(app),auth=getAuth(app),fn=getFunctions(app,"us-central1");
 const $=s=>document.querySelector(s);
-let ready=false,loading=false;
+let ready=false,loading=false,redeeming=false;
 function message(s){$("#status").textContent=s;}
 async function showGallery(){
  if(loading)return;loading=true;
@@ -44,13 +44,13 @@ async function showGallery(){
 }
 $("#codeForm").onsubmit=async e=>{
  e.preventDefault();const code=$("#code").value.trim();if(!/^[0-9]{8}$/.test(code)){message("Enter all eight digits.");return}
- $("#unlock").disabled=true;message("Checking your invitation…");
+ redeeming=true;$("#unlock").disabled=true;message("Checking your invitation…");
  try{
   if(!auth.currentUser)await signInAnonymously(auth);
   await httpsCallable(fn,"redeemGalleryCode")({code});
   $("#code").value="";message("");await showGallery();
- }catch(err){message(err.message||"Code rejected.");}finally{$("#unlock").disabled=false}
+ }catch(err){message(err.message||"Code rejected.");}finally{redeeming=false;$("#unlock").disabled=false}
 };
 $("#leave").onclick=async()=>{await signOut(auth);$("#private").hidden=true;$("#gate").hidden=false;message("Session ended. Ask for another code to return.")};
-onAuthStateChanged(auth,async u=>{if(!u)return;try{await showGallery()}catch(_){}}); 
+onAuthStateChanged(auth,async u=>{if(!u||redeeming)return;try{await showGallery()}catch(_){}}); 
 </script></body></html>
