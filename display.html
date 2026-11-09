@@ -289,9 +289,30 @@ body{font-family:var(--body);color:var(--bone)}
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+window.__djDisplayStarted = false;
+window.__djMediaReceived = false;
+window.addEventListener("error", function(e) {
+  if (!window.__djDisplayStarted) {
+    const n = document.getElementById("nm");
+    if (n) n.textContent = "DISPLAY SCRIPT ERROR";
+    const h = document.getElementById("hint");
+    if (h) h.textContent = "Display startup failed. Check Console for the error.";
+  }
+});
+setTimeout(function() {
+  if (!window.__djDisplayStarted) {
+    document.getElementById("nm").textContent = "DISPLAY NOT CONNECTED";
+    document.getElementById("hint").textContent = "Display JavaScript did not start. Check network access to Firebase scripts.";
+  } else if (!window.__djMediaReceived) {
+    document.getElementById("nm").textContent = "WAITING FOR FIREBASE";
+    document.getElementById("hint").textContent = "No media response yet. Check Firebase connectivity.";
+  }
+}, 12000);
+</script>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Existing Firebase project configuration retained.
 const firebaseConfig = {
@@ -305,6 +326,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+window.__djDisplayStarted = true;
 
 const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
 const UPLOAD_URL = BASE + "upload.html";
@@ -572,7 +594,10 @@ function setBar(m, isFresh) {
   newb.style.display = isFresh ? "block" : "none";
   setHearts(m.id, false);
 }
-function setBarIdle() { nmEl.textContent = "Nobody yet"; nmEl.className = "nm"; hnEl.textContent = "0"; newb.style.display = "none"; }
+function setBarIdle() {
+  nmEl.textContent = !window.__djMediaReceived ? "CONNECTING..." : items.length ? "MEDIA FAILED TO LOAD" : "NO MEDIA FOUND";
+  nmEl.className = "nm"; hnEl.textContent = "0"; newb.style.display = "none";
+}
 function publish(m) {
   try {
     setDoc(doc(db, "state", "now"), { id: m.id, name: m.name || "", type: m.type, thumb: thumb(m), t: serverTimestamp() }).catch(function (e) { console.warn(e); });
@@ -658,7 +683,14 @@ function show(m, isFresh, gesture) {
     if (my !== tok) { drop(w); return; }
     clearTimeout(wd);
     if (!ready) drop(w);
-    if (isV) videoFail(m, isFresh, why); else { markBad(m, 3); next(); }
+    if (isV) videoFail(m, isFresh, why);
+    else if (src !== m.url && !m.originalTried) {
+      const original = Object.assign({}, m, { originalTried: true, still: true });
+      show(original, isFresh);
+    } else {
+      console.warn("Image failed:", m.url, why);
+      markBad(m, 3); next();
+    }
   };
   el.onerror = function () {
     const c = el.error ? el.error.code : 0;
@@ -963,13 +995,23 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
     }
     lastLikes[d.id] = lk;
   });
+  window.__djMediaReceived = true;
   items = list;
+  if (!list.length) {
+    nmEl.textContent = snap.size ? "MEDIA RECORDS INVALID" : "NO MEDIA IN FIRESTORE";
+    hint.textContent = snap.size ? "Found " + snap.size + " records, but none has a playable URL/type." : "Firebase connected, but media_queue returned no records.";
+  }
   if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added") fresh.push(c.doc.id); });
   const first = !seen; seen = true;
   if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
   if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
   if (mode === "boot" || mode === "idle") next();
-}, function (e) { console.warn(e); });
+}, function (e) {
+  console.error("Media queue listener failed:", e);
+  window.__djMediaReceived = true;
+  nmEl.textContent = "FIREBASE READ ERROR";
+  hint.textContent = "Media queue: " + (e.code || e.message || "Unknown error");
+});
 
 let rInit = false;
 onSnapshot(collection(db, "reactions"), function (s) {
