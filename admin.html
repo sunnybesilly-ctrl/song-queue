@@ -96,6 +96,7 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
     <div id="injectStatus"></div>
   </div>
 
+  <div class="inject"><h3>Screen control</h3><p id="overrideStatus">Normal slideshow</p><button id="resumeDisplay" type="button">Resume slideshow</button><p>Video cards below include Play once, Repeat, and Trim. No admin label appears on the public screen.</p></div>
   <div class="stats">
     <div class="stat">PHOTOS <span id="photoCount">0</span></div>
     <div class="stat">VIDEOS <span id="videoCount">0</span></div>
@@ -116,7 +117,7 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, addDoc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, addDoc, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -256,6 +257,36 @@ $("clearRx").addEventListener("click", async () => {
 /* ---- reactions: moderation + per-media logs ---- */
 const RXI = { heart: "❤️", bolt: "⚡", star: "☀️", lol: "😂", wow: "😮", cool: "😎", sad: "😭", down: "👎" };
 let mediaDocs = [], rxDocs = [], openId = null;
+let displayOverride = null;
+const overrideRef = doc(db, "display_control", "current");
+async function setOverride(id, repeat) {
+  try { await setDoc(overrideRef, { mediaId:id, repeat:!!repeat, active:true, changedAt:serverTimestamp(), by:auth.currentUser.uid }); }
+  catch(e) { alert("Screen control failed: "+e.message); }
+}
+$("resumeDisplay").addEventListener("click", async () => {
+  try { await setDoc(overrideRef, {active:false,mediaId:"",repeat:false,changedAt:serverTimestamp(),by:auth.currentUser.uid}); }
+  catch(e) { alert("Resume failed: "+e.message); }
+});
+function videoControls(ref, data) {
+  const wrap = h("div","videoctl");
+  const once = h("button","go2","PLAY ONCE");
+  once.addEventListener("click",()=>setOverride(ref.id,false));
+  const repeat = h("button","go2","REPEAT UNTIL STOPPED");
+  repeat.addEventListener("click",()=>setOverride(ref.id,true));
+  wrap.appendChild(once); wrap.appendChild(repeat);
+  const start = h("input"); start.type="number"; start.min="0"; start.step="0.1"; start.value=String(Math.max(0,Number(data.trimStart)||0)); start.title="Start seconds";
+  const end = h("input"); end.type="number"; end.min="0"; end.step="0.1"; end.value=String(Math.max(0,Number(data.trimEnd)||0)); end.title="End seconds; zero means original ending";
+  const save = h("button","go2","SAVE TRIM");
+  save.addEventListener("click",async()=>{
+    const s=Number(start.value),e=Number(end.value);
+    if(!Number.isFinite(s)||!Number.isFinite(e)||s<0||e<0||(e>0&&e<=s)){alert("Invalid times. End must exceed start or be zero.");return;}
+    try {await updateDoc(ref.ref,{trimStart:s,trimEnd:e});}
+    catch(err){alert("Trim not saved: "+err.message);}
+  });
+  wrap.appendChild(h("p","l","Start / end in seconds (end 0 = full video)"));
+  wrap.appendChild(start); wrap.appendChild(end); wrap.appendChild(save);
+  return wrap;
+}
 function rxName(d) { return String(d.name || d.who || d.user || d.by || "Guest").trim().slice(0, 24) || "Guest"; }
 function rxWhen(d) { try { return d.t && d.t.toDate ? d.t.toDate().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "now"; } catch (e) { return ""; } }
 function tsec(r) { const t = r.data().t; return t && t.seconds ? t.seconds : 0; }
@@ -318,6 +349,7 @@ function renderGrid() {
     const lb = h("button", "logb", (openId === d.id ? "HIDE LOG" : "LOG") + " (" + list.length + ")");
     lb.addEventListener("click", () => { openId = openId === d.id ? null : d.id; renderGrid(); });
     info.appendChild(lb);
+    if(isV) info.appendChild(videoControls(d,data));
     const del = h("button", "del", "DELETE");
     del.addEventListener("click", async () => {
       if (!confirm("Delete this immediately?")) return;
@@ -337,6 +369,10 @@ function renderGrid() {
 }
 
 function startApp() {
+  onSnapshot(overrideRef,(snap)=>{
+    displayOverride=snap.exists()?snap.data():null;
+    $("overrideStatus").textContent=displayOverride&&displayOverride.active?(displayOverride.repeat?"Repeating selected video":"Playing selected video once"):"Normal slideshow";
+  },e=>{$("overrideStatus").textContent="Control read error: "+e.message;});
   onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "desc")), (snap) => { mediaDocs = snap.docs; renderGrid(); }, (e) => console.warn(e));
   onSnapshot(collection(db, "reactions"), (snap) => { rxDocs = snap.docs; $("rxCount").textContent = rxSum(rxDocs).n; renderGrid(); }, (e) => console.warn(e));
 
