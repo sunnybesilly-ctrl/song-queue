@@ -642,7 +642,7 @@ function usable(m) {
 function pick() {
   while (fresh.length) {
     const m = find(fresh.shift());
-    const r = m && usable(m);
+    const r = m && !m.rotationPaused && usable(m);
     if (r) return { m: r, fresh: true };
   }
   const n = items.length;
@@ -650,7 +650,7 @@ function pick() {
     for (let i = 0; i < n; i++) {
       pos = (pos + 1) % n;
       const m = items[pos];
-      const r = usable(m);
+      const r = m.rotationPaused ? null : usable(m);
       if (!r) continue;
       if (pass === 0 && n > 1 && m.id === lastId) continue;
       return { m: r, fresh: false };
@@ -800,7 +800,7 @@ function nextInner() {
   if (mode === "yearbook") return;
   if (override && override.active && (!overridePlayed || override.repeat)) {
     const forced=find(override.mediaId);
-    if(forced && forced.type==="video") {
+    if(forced && !forced.rotationPaused && forced.type==="video") {
       if(curItem && curItem.id===forced.id && mode==="loop") return;
       show(forced,false); return;
     }
@@ -1052,6 +1052,9 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
   if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added") fresh.push(c.doc.id); });
   const first = !seen; seen = true;
   if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
+  if (curItem && mode === "loop" && list.some(m => m.id === curItem.id && m.rotationPaused)) {
+    if (!screenPaused) { stopMedia(); next(); }
+  }
   if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
   if (mode === "boot" || mode === "idle") next();
 }, function (e) {
