@@ -357,6 +357,7 @@ const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint"), cm
 $("#hi").innerHTML = ICON.heart;
 
 let items = [], pos = -1, fresh = [], seen = false;
+let override = null, overrideKey = "", overridePlayed = false;
 let mode = "boot";            
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
@@ -770,6 +771,14 @@ function armVideo(v, my) {
   v.onended = function () {
     if (my !== tok) return;
     plays++;
+    if (override && override.active && override.mediaId === m.id) {
+      if (override.repeat) {
+        try { v.currentTime=0; } catch(e) {}
+        const p=v.play(); if(p&&p.catch)p.catch(e=>console.warn(e));
+        return;
+      }
+      overridePlayed=true; clearTimeout(wd); next(); return;
+    }
     if (plays < loops) {
       try { v.currentTime = 0; } catch (e) {}
       const p = v.play(); if (p && p.catch) p.catch(function () {});
@@ -786,6 +795,13 @@ function next() {
 function nextInner() {
   clearTimeout(timer); clearTimeout(wd);
   if (mode === "yearbook") return;
+  if (override && override.active && (!overridePlayed || override.repeat)) {
+    const forced=find(override.mediaId);
+    if(forced && forced.type==="video") {
+      if(curItem && curItem.id===forced.id && mode==="loop") return;
+      show(forced,false); return;
+    }
+  }
   if (!items.length) { goIdle(false); return; }
   if (performance.now() > RELOAD_MS) { location.reload(); return; }
   if (mode === "loop" && Date.now() - lastQR > QR_EVERY_MS) { qrInterlude(); return; }
@@ -980,6 +996,15 @@ async function yearbook() {
   }
   step();
 }
+
+onSnapshot(doc(db,"display_control","current"),function(snap){
+  const v=snap.exists()?snap.data():null;
+  const key=v&&v.active?v.mediaId+"|"+!!v.repeat+"|"+(v.changedAt&&v.changedAt.seconds||0)+"|"+(v.changedAt&&v.changedAt.nanoseconds||0):"";
+  if(key!==overrideKey){
+    overrideKey=key; override=v; overridePlayed=false;
+    if(mode!=="yearbook"){ mode="idle"; next(); }
+  }
+},e=>console.warn("Display control unavailable:",e));
 
 onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
   const list = []; let curChanged = false;
