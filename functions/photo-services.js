@@ -177,25 +177,39 @@ async function newDriveId(headers) {
 }
 
 async function uploadMaster(headers, id, asset, bytes) {
-  const boundary = "photo-wall-" + crypto.randomUUID();
-  const info = JSON.stringify({
+  const info = {
     id, parents: [archiveFolder()],
     name: asset.resource_type + "-" + asset.asset_id + "-v" + asset.version + "." + asset.format,
     mimeType: "application/octet-stream",
     appProperties: { cloudinaryAssetId: asset.asset_id, cloudinaryVersion: String(asset.version) },
-  });
-  const body = Buffer.concat([
-    Buffer.from("--" + boundary + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + info +
-      "\r\n--" + boundary + "\r\nContent-Type: application/octet-stream\r\n\r\n"),
-    bytes,
-    Buffer.from("\r\n--" + boundary + "--\r\n"),
-  ]);
-  const response = await request("Drive upload",
-    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+  };
+  const session = await request("Drive upload session",
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable", {
       method: "POST",
-      headers: { ...headers, "Content-Type": "multipart/related; boundary=" + boundary },
-      body,
+      headers: {
+        ...headers,
+        "Content-Type": "application/json; charset=UTF-8",
+        "X-Upload-Content-Type": info.mimeType,
+        "X-Upload-Content-Length": String(bytes.length),
+      },
+      body: JSON.stringify(info),
     }, [409]);
+  await session.body?.cancel();
+  if (session.status === 409) return;
+  const location = session.headers.get("location");
+  if (!location || new URL(location).origin !== "https://www.googleapis.com") {
+    throw new Error("Drive did not provide a valid resumable upload session");
+  }
+  const response = await request("Drive upload", location, {
+    method: "PUT",
+    headers: {
+      ...headers,
+      "Content-Type": info.mimeType,
+      "Content-Length": String(bytes.length),
+      "Content-Range": "bytes 0-" + (bytes.length - 1) + "/" + bytes.length,
+    },
+    body: bytes,
+  }, [409]);
   await response.body?.cancel();
 }
 
