@@ -140,6 +140,13 @@ textarea.chat-input-ta::placeholder { color: rgba(255,255,255,0.22); font-weight
 .confirm-found-badge.found { background: rgba(0,200,80,0.15); border: 0.5px solid #00c850; color: #00c850; }
 .confirm-found-badge.not-found { background: rgba(204,17,17,0.12); border: 0.5px solid var(--red); color: var(--red-bright); }
 
+/* QUEUE NUMBER — matches the projector display */
+.queue-pos { display: none; text-align: center; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 22px 16px 20px; margin-bottom: 16px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.qp-label { font-family: 'Arial', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fbbf24; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+.qp-num { font-family: 'Arial', sans-serif; font-size: 96px; font-weight: 900; line-height: 1.05; color: #fbbf24; margin: 6px 0 4px; text-shadow: 3px 3px 6px rgba(0,0,0,0.5); }
+.qp-num.pop { animation: popIn 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+.qp-sub { font-family: 'Arial', sans-serif; font-size: 18px; color: rgba(255,255,255,0.8); }
+
 /* PRIMARY ACTIONS — right under the confirmation card */
 .action-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
 .btn-another { display: block; width: 100%; min-height: 60px; font-family: var(--font-d); font-size: 26px; letter-spacing: 0.1em; color: var(--green-deep); background: var(--gold); border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 24px rgba(245,197,24,0.45); transition: transform 0.1s; }
@@ -255,7 +262,7 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 .as-block { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed rgba(245,197,24,0.35); }
 @keyframes vibeFlash { 0% { box-shadow: 0 0 0 rgba(245,197,24,0); } 35% { box-shadow: 0 0 24px rgba(245,197,24,0.6); border-color: var(--gold); } 100% { box-shadow: 0 0 0 rgba(245,197,24,0); } }
 .field-card.flash { animation: vibeFlash 1s ease-out; }
-@media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } .qp-num.pop { animation: none; } }
 </style>
 <link rel="apple-touch-icon" href="icon-request.png">
 <link rel="icon" type="image/png" href="icon-request.png">
@@ -340,18 +347,19 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 
 </div>
 
-<!-- PAGE 2
-     Order:
-       1. ✅ Confirmed summary
-       2. ➕ REQUEST ANOTHER (always first, most visible)
-       3. 💬 Party chat (optional)
-       4. 🔒 Sunny-only extras (collapsed)
--->
+<!-- PAGE 2 -->
 <div class="page" id="page-2">
 
   <div class="confirm-icon">🎵</div>
   <div class="confirm-title" data-en="REQUEST RECEIVED!" data-es="¡SOLICITUD RECIBIDA!">REQUEST RECEIVED!</div>
   <div class="confirm-sub" data-en="Your song is in the queue — Sunny's got you!" data-es="¡Tu canción está en la fila — Sunny te tiene!">Your song is in the queue — Sunny's got you!</div>
+
+  <!-- Queue number: same number and look as the projector display -->
+  <div class="queue-pos" id="queue-pos">
+    <div class="qp-label" data-en="YOUR NUMBER" data-es="TU NÚMERO">YOUR NUMBER</div>
+    <div class="qp-num" id="qp-num">#…</div>
+    <div class="qp-sub" id="qp-sub"></div>
+  </div>
 
   <div class="confirm-card">
     <img id="c-thumb" class="confirm-thumb" alt="" style="display:none">
@@ -373,12 +381,10 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     </div>
   </div>
 
-  <!-- Primary actions — always visible right after confirmation -->
   <div class="action-stack">
     <button class="btn-another" onclick="resetAll()" data-en="+ REQUEST ANOTHER SONG" data-es="+ PEDIR OTRA CANCIÓN">+ REQUEST ANOTHER SONG</button>
   </div>
 
-  <!-- Party chat — clearly optional -->
   <div class="divider-label pink-div"><span>💬 SAY SOMETHING TO THE PARTY (OPTIONAL)</span></div>
 
   <div class="field-card chat-card">
@@ -394,7 +400,6 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     <div class="chat-sent" id="chat-sent">✓ MESSAGE SENT — CHECK THE DISPLAY!</div>
   </div>
 
-  <!-- Sunny-only extras — collapsed by default, low visual weight -->
   <button class="optional-toggle" id="optional-toggle" onclick="toggleOptional()">
     🔒 ADD SNAPCHAT OR A NOTE FOR SUNNY
     <span class="arrow">▼</span>
@@ -453,6 +458,7 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 <script>
 const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSeq1jXqVkA0-noEeSLkGTnj1lEjOQTJsgsy1X7uvjpJOmPUdg/formResponse';
 const CHAT_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSdhzlA9tm7A6R5b3QECXoOMyJxLiuws8Pr5HB63NWv1pXo2tA/formResponse';
+const QUEUE_URL   = 'https://script.google.com/macros/s/AKfycbwhV0ZdZXXMLPH303L8ttpZCY1Oj6Yh3aM7vw9tJbXFf-FshLDGrZzHR3OOx_O2Eu1_qA/exec';
 const YT_API_KEY  = 'AIzaSyDmIRaQ2Mb4iLiNxqgbl_lMGH_shUHS01I';
 
 let songFound = null, searchTimer = null, submitted = false;
@@ -466,12 +472,75 @@ let currentSearchPromise = null;
 let ytQuotaOut = false;
 // Reuse results when the query hasn't actually changed (typo fixed then undone, etc.).
 let lastQ = '', lastItems = null;
+// Queue-number tracking (mirrors the projector display's numbering)
+let posToken = 0, posTimer = null;
 
 function showQuotaOut() {
   const el = document.getElementById('yt-not-found');
   el.textContent = '\u26A0 Video search is maxed out for today \u2014 Sunny will match your song by hand';
   el.style.display = 'block';
   songFound = false;
+}
+
+// ===== QUEUE NUMBER =====
+// Same rules as the display: rows need song + artist, Status "Added ✓" = played,
+// everyone else is pending, and the pending list position is the number (#1 = now playing).
+function posNorm(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+function stopPosTracking() {
+  posToken++;
+  clearTimeout(posTimer);
+  const box = document.getElementById('queue-pos');
+  if (box) box.style.display = 'none';
+}
+
+function startPosTracking(name, song) {
+  stopPosTracking();
+  const my  = posToken;
+  const box = document.getElementById('queue-pos');
+  const num = document.getElementById('qp-num');
+  const sub = document.getElementById('qp-sub');
+  box.style.display = 'block';
+  num.textContent = '#…';
+  sub.textContent = isES() ? 'Buscando tu lugar…' : 'Finding your spot…';
+  let tries = 0, found = false, lastText = '';
+
+  const setNum = (text, subEn, subEs) => {
+    num.textContent = text;
+    sub.textContent = isES() ? subEs : subEn;
+    if (text !== lastText) {
+      num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop');
+      lastText = text;
+    }
+  };
+
+  const tick = async () => {
+    if (my !== posToken) return;
+    tries++;
+    try {
+      const res  = await fetch(QUEUE_URL);
+      const rows = await res.json();
+      if (my !== posToken) return;
+      const valid   = (rows || []).filter(s => s['SONG TITLE?'] && s["WHO'S THE ARTIST?"]);
+      const mine    = s => posNorm(s["WHAT'S YOUR NAME?"]) === posNorm(name) && posNorm(s['SONG TITLE?']) === posNorm(song);
+      const pending = valid.filter(s => s.Status !== 'Added ✓');
+      let idx = -1;
+      pending.forEach((s, i) => { if (mine(s)) idx = i; });
+      if (idx >= 0) {
+        found = true;
+        if (idx === 0)      setNum('#1', 'NOW PLAYING', 'SONANDO AHORA');
+        else if (idx === 1) setNum('#2', 'UP NEXT', 'SIGUE');
+        else                setNum('#' + (idx + 1), 'YOUR SPOT IN THE QUEUE', 'TU LUGAR EN LA FILA');
+      } else if (valid.some(mine)) {
+        found = true;
+        setNum('✓', 'PLAYED', 'YA SONÓ');
+      }
+    } catch (e) { /* retry below */ }
+    if (my !== posToken) return;
+    if (!found && tries >= 10) { box.style.display = 'none'; return; }
+    posTimer = setTimeout(tick, found ? 15000 : 3000);
+  };
+  posTimer = setTimeout(tick, 1500);
 }
 
 async function goToStep2() {
@@ -533,6 +602,7 @@ async function goToStep2() {
 
   document.getElementById('chat-name').value = name;
   showPage(2);
+  startPosTracking(name, finalSong);
   if (typeof window.celebrateRequest === "function") window.celebrateRequest();
 }
 
@@ -1477,6 +1547,7 @@ function setLang(lang) {
 }
 
 function resetAll() {
+  stopPosTracking();
   ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   submitted = false; optionalSaved = false; songFound = null; ytVideoId = null;
@@ -1519,11 +1590,6 @@ function resetAll() {
 </script>
 <!-- ============================================================
      FULL-SCREEN ON-DEVICE CELEBRATION ENGINE (iMessage-style)
-     10 randomized effects with full-screen coverage + strong haptics.
-     Call celebrateRequest() with no argument for a random effect,
-     or pass an effect name to force one.
-     Effects: confetti, fireworks, hearts, stars, balloons,
-              celebration, bubbles, sparkleRain, emojiBlast, spiral
 ============================================================ -->
 <script>
 (function(){
@@ -1542,14 +1608,12 @@ function resetAll() {
   function rnd(a,b){ return a + Math.random()*(b-a); }
   const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 
-  // Strong, varied haptic patterns (where supported).
   function buzz(){
     if (!navigator.vibrate) return;
     const patterns = [[30,40,30,40,60],[60,30,120],[20,20,20,20,20,20,100],[200],[40,60,40,60,40,120]];
     navigator.vibrate(pick(patterns));
   }
 
-  // ---- 10 effect builders (all tuned for FULL-SCREEN coverage) ----
   function fxConfetti(){
     for(let i=0;i<220;i++) parts.push({type:"rect",
       x: rnd(0,W()), y: -20 - rnd(0,H()),
@@ -1654,7 +1718,7 @@ function resetAll() {
       } else if (p.type === "dot"){
         ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=8;
         ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,6.28); ctx.fill();
-      } else { // rect confetti
+      } else {
         ctx.fillStyle=p.color; ctx.translate(p.x,p.y); ctx.rotate(p.rot||0);
         ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
       }
