@@ -22,6 +22,21 @@ function sameOriginal(current, original) {
     current.type === original.type && current.bytes === original.bytes && current.tags?.includes(services.TAG);
 }
 
+async function currentOriginal(cloud, asset) {
+  const current = await services.cloudAsset(cloud, asset.asset_id);
+  if (!current) return null;
+  if (!validAsset(current, asset.resource_type) || !Array.isArray(current.tags)) {
+    throw new Error("Cloudinary did not return complete source metadata");
+  }
+  return current;
+}
+
+function originalStillMatches(current, asset) {
+  if (sameOriginal(current, asset)) return true;
+  if (current?.version > asset.version) return false;
+  throw new Error("Cloudinary original is missing or no longer matches");
+}
+
 async function discover(db, cloud, type) {
   const scan = db.doc("photo_retention_scan/" + type);
   const checkpoint = (await scan.get()).data()?.cursor;
@@ -72,10 +87,10 @@ async function processJob(doc, cloud, drive) {
   let { driveId, sha256 } = job;
 
   if (!sha256) {
-    const current = await services.cloudAsset(cloud, asset.asset_id);
-    if (!sameOriginal(current, asset)) return finish(doc.ref, "source-changed");
+    const current = await currentOriginal(cloud, asset);
+    if (!originalStillMatches(current, asset)) return finish(doc.ref, "source-changed");
     const original = await services.fetchOriginal(cloud, asset, true);
-    if (!sameOriginal(await services.cloudAsset(cloud, asset.asset_id), asset)) {
+    if (!originalStillMatches(await currentOriginal(cloud, asset), asset)) {
       return finish(doc.ref, "source-changed");
     }
     if (!driveId) {
@@ -98,18 +113,18 @@ async function processJob(doc, cloud, drive) {
     return;
   }
 
-  const current = await services.cloudAsset(cloud, asset.asset_id);
+  const current = await currentOriginal(cloud, asset);
   if (!current && job.state === "deleting") {
     await services.verifyMaster(drive, driveId, asset, sha256);
     return finish(doc.ref, "deleted");
   }
-  if (!sameOriginal(current, asset)) return finish(doc.ref, "source-changed");
+  if (!originalStillMatches(current, asset)) return finish(doc.ref, "source-changed");
 
   const source = await services.fetchOriginal(cloud, asset, false);
   if (source.sha256 !== sha256) throw new Error("Cloudinary source bytes changed since backup");
   await services.checkFolder(drive);
   await services.verifyMaster(drive, driveId, asset, sha256);
-  if (!sameOriginal(await services.cloudAsset(cloud, asset.asset_id), asset)) {
+  if (!originalStillMatches(await currentOriginal(cloud, asset), asset)) {
     return finish(doc.ref, "source-changed");
   }
   await doc.ref.update({ state: "deleting", deleteRequestedAt: Timestamp.now() });
