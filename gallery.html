@@ -10,15 +10,27 @@
 </main>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getFirestore,collection,doc,getDoc,getDocs,query,where,orderBy,updateDoc,increment} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,doc,getDoc,getDocs,query,where,onSnapshot,updateDoc,increment} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {getAuth,onAuthStateChanged,signInAnonymously,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 const app=initializeApp({apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-photo-wall.firebaseapp.com",projectId:"dj-photo-wall",storageBucket:"dj-photo-wall.firebasestorage.app",messagingSenderId:"187308843014",appId:"1:187308843014:web:a4dbf9c17011767890a387"}),db=getFirestore(app),auth=getAuth(app),fn=getFunctions(app,"us-central1");
 const $=s=>document.querySelector(s);
-let ready=false,loading=false,redeeming=false;
+let loading=false,redeeming=false,session=0,stopWatching,expiryTimer;
+const guestMedia = httpsCallable(fn, "getGuestPhotoWallMedia");
+function closeGallery(reason) {
+ session++;
+ clearTimeout(expiryTimer);
+ stopWatching?.();
+ stopWatching = undefined;
+ $("#gallery").replaceChildren();
+ $("#private").hidden=true;
+ $("#gate").hidden=false;
+ if(reason) message(reason);
+}
 function message(s){$("#status").textContent=s;}
 async function showGallery(){
  if(loading)return;loading=true;
+ const attempt = ++session;
  try{
   const state=await getDoc(doc(db,"gallery_state","current"));
   if(!state.exists()||!state.data().active)throw Error("The gallery is closed.");
@@ -27,20 +39,37 @@ async function showGallery(){
   if(!access||access.eventId!==state.data().eventId||!access.expiresAt||access.expiresAt.toMillis()<=Date.now())throw Error("Your gallery pass has expired. Request a new code.");
   const q=query(collection(db,"media_queue"),where("eventId","==",state.data().eventId));
   const snap=await getDocs(q);
+  const rows = snap.docs.filter(row => row.data().v === 3);
+  const links = new Map();
+  for(let i=0; i<rows.length; i+=50){
+   const {data} = await guestMedia({ids: rows.slice(i,i+50).map(row=>row.id)});
+   data.media.forEach(entry=>links.set(entry.id,entry));
+  }
+  if(attempt !== session) return;
+  if(access.expiresAt.toMillis() <= Date.now()) throw Error("Your gallery pass has expired.");
+  clearTimeout(expiryTimer);
+  stopWatching?.();
+  expiryTimer = setTimeout(() => closeGallery("Your gallery pass has expired."), access.expiresAt.toMillis()-Date.now());
+  stopWatching = onSnapshot(doc(db,"gallery_state","current"), update=>{
+   const current = update.data();
+   if(!current?.active || current.eventId !== access.eventId) closeGallery("The gallery is closed.");
+  });
   $("#gate").hidden=true;$("#private").hidden=false;
   $("#timeLeft").textContent="Guest access expires at "+new Date(access.expiresAt.toMillis()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   const grid=$("#gallery");grid.replaceChildren();
-  for(const row of snap.docs.slice().sort((a,b)=>(b.data().timestamp?.seconds||0)-(a.data().timestamp?.seconds||0))){
+  for(const row of rows.sort((a,b)=>(b.data().timestamp?.seconds||0)-(a.data().timestamp?.seconds||0))){
+   const mediaLinks=links.get(row.id);
+   if(!mediaLinks) continue;
    const d=row.data(),card=document.createElement("article");card.className="card";
-   const media=document.createElement(d.type==="video"?"video":"img");media.src=d.url||"";if(d.type==="video"){media.controls=true;media.preload="metadata";media.playsInline=true}else media.alt="Party memory";
+   const media=document.createElement(d.type==="video"?"video":"img");media.src=mediaLinks.preview;if(d.type==="video"){media.controls=true;media.preload="metadata";media.playsInline=true}else media.alt="Party memory";
    const info=document.createElement("div");info.className="info";
    const who=document.createElement("div");who.className="who";who.textContent=d.name||"Guest";
-   const link=document.createElement("a");link.href=d.url||"#";link.target="_blank";link.rel="noopener";link.textContent="Open / save original";
+   const link=document.createElement("a");link.href=mediaLinks.download;link.target="_blank";link.rel="noopener";link.textContent="Open / save original";
    const like=document.createElement("button");like.className="like";like.textContent="♥ "+(d.likes||0);like.onclick=async()=>{like.disabled=true;try{await updateDoc(doc(db,"media_queue",row.id),{likes:increment(1)});like.textContent="♥ "+((d.likes||0)+1)}catch(e){alert(e.message)}finally{like.disabled=false}};
    info.append(who,link,document.createElement("br"),like);card.append(media,info);grid.append(card);
   }
-  $("#galleryStatus").textContent=snap.empty?"No photos or videos have been uploaded for this event yet.":"";
- }catch(e){$("#private").hidden=true;$("#gate").hidden=false;message(e.message||"Could not open gallery.");}finally{loading=false}
+  $("#galleryStatus").textContent=links.size ? "" : "No private photos or videos have been uploaded for this event yet.";
+ }catch(e){if(attempt === session) closeGallery(e.message||"Could not open gallery.");}finally{loading=false}
 }
 $("#codeForm").onsubmit=async e=>{
  e.preventDefault();const code=$("#code").value.trim();if(!/^[0-9]{8}$/.test(code)){message("Enter all eight digits.");return}
@@ -51,6 +80,6 @@ $("#codeForm").onsubmit=async e=>{
   $("#code").value="";message("");await showGallery();
  }catch(err){message(err.message||"Code rejected.");}finally{redeeming=false;$("#unlock").disabled=false}
 };
-$("#leave").onclick=async()=>{await signOut(auth);$("#private").hidden=true;$("#gate").hidden=false;message("Session ended. Ask for another code to return.")};
-onAuthStateChanged(auth,async u=>{if(!u||redeeming)return;try{await showGallery()}catch(_){}}); 
+$("#leave").onclick=async()=>{closeGallery("Session ended. Ask for another code to return.");await signOut(auth)};
+onAuthStateChanged(auth,async u=>{if(!u){closeGallery();return}if(redeeming)return;try{await showGallery()}catch(_){}}); 
 </script></body></html>

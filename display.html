@@ -315,7 +315,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// Existing Firebase project configuration retained.
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
+import { createAdminPhotoLinks } from "./photo-links.js";
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
   authDomain: "dj-photo-wall.firebaseapp.com",
@@ -328,6 +329,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const displayAuth=getAuth(app);
+const photoLinks = createAdminPhotoLinks(httpsCallable(getFunctions(app, "us-central1"), "signAdminPhotoWallUrls"));
 window.__djDisplayStarted = true;
 
 const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
@@ -395,11 +397,11 @@ fillQR();
 function thumb(m) {
   const u = m.url || "";
   if (u.indexOf("res.cloudinary.com") < 0) return "";
-  const re = /\/upload\/(?:[^\/]+\/)?(?=v\d+\/)/;
+  const re = /\/(upload|authenticated)\/(?:[^\/]+\/)?(?=v\d+\/)/;
   if (!re.test(u)) return "";
   const t = "c_fill,w_480,h_480,q_auto";
-  if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
-  return u.replace(re, "/upload/" + t + "/");
+  if (m.type === "video") return u.replace(re, "/$1/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
+  return u.replace(re, "/$1/" + t + "/");
 }
 function kindOf(x) {
   const u = String(x.url || "");
@@ -413,11 +415,11 @@ function kindOf(x) {
   return "";
 }
 function cld(u) {
-  const mt = /^(https?:\/\/res\.cloudinary\.com\/[^\/]+\/)(image|video)\/upload\/(.*)$/.exec(u || "");
+  const mt = /^(https?:\/\/res\.cloudinary\.com\/[^\/]+\/)(image|video)\/(upload|authenticated)\/(.*)$/.exec(u || "");
   if (!mt) return null;
-  const rest = mt[3], vi = rest.search(/(^|\/)v\d+\//);
+  const rest = mt[4], vi = rest.search(/(^|\/)v\d+\//);
   const tail = vi < 0 ? rest : rest.slice(rest.charAt(vi) === "/" ? vi + 1 : vi);
-  return { pre: mt[1], res: mt[2], tail: tail };
+  return { pre: mt[1], res: mt[2], delivery: mt[3], tail: tail };
 }
 function swapExt(t, ext) { return /\.[^.\/]+$/.test(t) ? t.replace(/\.[^.\/]+$/, ext) : t + ext; }
 
@@ -435,7 +437,7 @@ function playUrl(m) {
     if (Number(m.trimStart) > 0) trans.push("so_" + Number(m.trimStart).toFixed(1));
     if (Number(m.trimEnd) > 0) trans.push("eo_" + Number(m.trimEnd).toFixed(1));
     trans.push("vc_h264", "ac_aac", "f_mp4", "c_limit", "w_1920", "h_1080", "q_auto");
-    return p.pre + "video/upload/" + trans.join(",") + "/" + swapExt(p.tail, ".mp4");
+    return p.pre + "video/" + p.delivery + "/" + trans.join(",") + "/" + swapExt(p.tail, ".mp4");
   }
   
   if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url) && !m.crop) return m.url;
@@ -446,12 +448,12 @@ function playUrl(m) {
   }
   
   const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
-  return p.pre + "image/upload/" + imgTrans.join(",") + "/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
+  return p.pre + "image/" + p.delivery + "/" + imgTrans.join(",") + "/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
 }
 
 function stillUrl(m) {
   const p = cld(m.url);
-  return p ? p.pre + "video/upload/so_0,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".jpg") : "";
+  return p ? p.pre + "video/" + p.delivery + "/so_0,c_limit,w_1920,q_auto/" + swapExt(p.tail, ".jpg") : "";
 }
 
 function stillOf(m) {
@@ -604,7 +606,7 @@ function setBarIdle() {
 }
 function publish(m) {
   try {
-    setDoc(doc(db, "state", "now"), { id: m.id, name: m.name || "", type: m.type, thumb: thumb(m), t: serverTimestamp() }).catch(function (e) { console.warn(e); });
+    setDoc(doc(db, "state", "now"), { id: m.id, name: m.name || "", type: m.type, thumb: m.v === 3 || m.url.includes("/authenticated/") ? "" : thumb(m), t: serverTimestamp() }).catch(function (e) { console.warn(e); });
   } catch (e) { console.warn(e); }
 }
 
@@ -672,7 +674,8 @@ function show(m, isFresh, gesture) {
   clearTimeout(timer); clearTimeout(wd);
   mode = "loop";
   const isV = m.type === "video";
-  const src = playUrl(m);
+  const playback = playUrl(m);
+  const src = photoLinks.resolve(playback);
   const w = document.createElement("div"); w.className = "w";
   const el = document.createElement(isV ? "video" : "img"); el.className = "mi";
   w.appendChild(el);
@@ -688,7 +691,7 @@ function show(m, isFresh, gesture) {
     clearTimeout(wd);
     if (!ready) drop(w);
     if (isV) videoFail(m, isFresh, why);
-    else if (src !== m.url && !m.originalTried) {
+    else if (playback !== m.url && !m.originalTried) {
       const original = Object.assign({}, m, { originalTried: true, still: true });
       show(original, isFresh);
     } else {
@@ -877,7 +880,7 @@ function mediaEl(m) {
   const v = m.type === "video";
   const e = document.createElement(v ? "video" : "img"); e.className = "mi";
   if (v) { e.muted = true; e.loop = true; e.autoplay = true; e.playsInline = true; e.setAttribute("playsinline", ""); }
-  e.src = playUrl(m); return e;
+  e.src = photoLinks.resolve(playUrl(m)); return e;
 }
 function coverPage(sub) {
   const pg = h("div", "pg cover"), box = h("div");
@@ -919,7 +922,7 @@ function sigPage(list, pageNo, pageTotal) {
 function classPage() {
   const pg = h("div", "pg cls"), grid = h("div", "grid");
   pg.appendChild(h("div", "t2", "Class of tonight"));
-  const picks = items.map(thumb).filter(function (u) { return u; });
+  const picks = items.map(m => photoLinks.resolve(thumb(m))).filter(function (u) { return u; });
   picks.sort(function () { return Math.random() - .5; });
   picks.slice(0, 18).forEach(function (u, i) {
     const c = h("div", "cell"), im = new Image();
@@ -1039,7 +1042,9 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
   if(!wantPause) applyScreenPause(false);
 },function(e){console.warn("Display control unavailable:",e);});
 
-onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
+let mediaRevision = 0;
+onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), async function (snap) {
+  const revision = ++mediaRevision;
   const list = []; let curChanged = false;
   snap.docs.forEach(function (d) {
     const x = d.data(); x.id = d.id;
@@ -1053,6 +1058,13 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
     }
     lastLikes[d.id] = lk;
   });
+  try {
+    await photoLinks.prepare(list.flatMap(item => [item.url, playUrl(item), thumb(item),
+      item.type === "video" ? stillUrl(item) : ""]));
+  } catch (error) {
+    console.warn("Photo Wall links unavailable", error);
+  }
+  if (revision !== mediaRevision) return;
   window.__djMediaReceived = true;
   items = list;
   if (!list.length) {

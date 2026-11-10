@@ -216,9 +216,11 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, addDoc, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+
+import { createAdminPhotoLinks } from "./photo-links.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
@@ -229,7 +231,6 @@ const firebaseConfig = {
   appId: "1:187308843014:web:a4dbf9c17011767890a387"
 };
 const CLOUD_NAME = "yl4yzjh5";
-const UPLOAD_PRESET = "UPLOAD_PRESET";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -239,6 +240,8 @@ const $ = (id) => document.getElementById(id);
 
 // Access codes are generated and consumed by verified Firebase Cloud Functions.
 const galleryCall=(name)=>httpsCallable(galleryFn,name);
+const createUpload = galleryCall("createPhotoWallUpload");
+const photoLinks = createAdminPhotoLinks(galleryCall("signAdminPhotoWallUrls"));
 const galleryMsg=document.getElementById("galleryCodeStatus");
 const galleryStateText=document.getElementById("galleryEventStatus");
 let galleryOperation=false;
@@ -322,37 +325,26 @@ $("signOut").addEventListener("click", () => signOut(auth));
 /* ---- helpers ---- */
 function thumb(m) {
   const u = m.url || "";
-  const re = /\/upload\/(?:[^\/]+\/)?(?=v\d+\/)/;
+  const re = /\/(upload|authenticated)\/(?:[^\/]+\/)?(?=v\d+\/)/;
   if (u.indexOf("res.cloudinary.com") < 0 || !re.test(u)) return "";
   const t = "c_fill,w_320,h_240,q_auto";
-  if (m.type === "video") return u.replace(re, "/upload/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
-  return u.replace(re, "/upload/" + t + "/");
+  if (m.type === "video") return u.replace(re, "/$1/so_1," + t + "/").replace(/\.[^.\/]+$/, ".jpg");
+  return u.replace(re, "/$1/" + t + "/");
 }
 function finalUrl(r) {
   if (r.resource_type === "video") {
-    return r.secure_url.replace("/upload/", "/upload/vc_h264,c_limit,w_1920,q_auto/").replace(/\.[^.\/]+$/, ".mp4");
+    return r.secure_url.replace("/authenticated/", "/authenticated/vc_h264,c_limit,w_1920,q_auto/").replace(/\.[^.\/]+$/, ".mp4");
   }
-  const u = r.secure_url.replace("/upload/", "/upload/c_limit,w_2048,h_2048,q_auto/");
-  return /^(jpe?g|png|webp|gif|svg)$/i.test(r.format || "") ? u : u.replace(/\.[^.\/]+$/, ".jpg");
+  const u = r.secure_url.replace("/authenticated/", "/authenticated/c_limit,w_2048,h_2048,q_auto/");
+  return /^(jpe?g|png|webp|gif)$/i.test(r.format || "") ? u : u.replace(/\.[^.\/]+$/, ".jpg");
 }
 function dlUrl(m, tag) {
   const u = m.url || "";
-  if (u.indexOf("res.cloudinary.com") < 0 || u.indexOf("/upload/") < 0) return u;
+  if (u.indexOf("res.cloudinary.com") < 0 || !/\/(upload|authenticated)\//.test(u)) return u;
   let n = String(m.name || "party").replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "").slice(0, 40) || "party";
   if (tag != null) n += "_" + tag;
-  return u.replace("/upload/", "/upload/fl_attachment:" + n + "/");
+  return u.replace(/\/(upload|authenticated)\//, "/$1/fl_attachment:" + n + "/");
 }
-async function warmVideo(url) {
-  const end = Date.now() + 90000;
-  while (Date.now() < end) {
-    try {
-      const r = await fetch(url, { headers: { Range: "bytes=0-0" } });
-      if (r.ok || r.status !== 423) return;
-    } catch (_) { return; }
-    await new Promise((res) => setTimeout(res, 2500));
-  }
-}
-
 /* ---- inject media (same MP4 / JPEG conversion as the guest page) ---- */
 $("injectBtn").addEventListener("click", async () => {
   const name = $("adminName").value.trim() || "DJ Drop";
@@ -363,18 +355,18 @@ $("injectBtn").addEventListener("click", async () => {
   try {
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("upload_preset", UPLOAD_PRESET);
-    fd.append("tags", "party_media");
+    const { data: upload } = await createUpload();
+    Object.entries(upload.params).forEach(([key, value]) => fd.append(key, value));
     const res = await fetch("https://api.cloudinary.com/v1_1/" + CLOUD_NAME + "/auto/upload", { method: "POST", body: fd });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
+    if (data.type !== "authenticated" || data.public_id !== upload.params.public_id) {
+      throw new Error("The media provider did not confirm a private upload.");
+    }
     const vid = data.resource_type === "video";
     const url = finalUrl(data);
-    if (vid) { status.textContent = "CONVERTING VIDEO..."; await warmVideo(url); }
-    const eventSnapshot=await getDocs(collection(db,"gallery_state")).catch(()=>null);
-    const activeEvent=eventSnapshot?.docs.find(d=>d.id==="current")?.data();
-    await addDoc(collection(db, "media_queue"), {
-      eventId: activeEvent?.active ? activeEvent.eventId : null,
+    await setDoc(doc(db, "media_queue", data.public_id), {
+      eventId: upload.eventId, v: 3,
       name: name, url: url, publicId: data.public_id,
       type: vid ? "video" : "image", timestamp: serverTimestamp(), likes: 0
     });
@@ -494,10 +486,10 @@ function renderGrid() {
     const isV = data.type === "video";
     if (isV) videos++; else photos++;
     const card = h("div", "card");
-    const t = thumb(data);
+    const t = photoLinks.resolve(thumb(data));
     let media;
-    if (t || !isV) { media = document.createElement("img"); media.alt = ""; media.loading = "lazy"; media.src = t || data.url; }
-    else { media = document.createElement("video"); media.muted = true; media.preload = "metadata"; media.playsInline = true; media.src = data.url + "#t=0.5"; }
+    if (t || !isV) { media = document.createElement("img"); media.alt = ""; media.loading = "lazy"; media.src = t || photoLinks.resolve(data.url); }
+    else { media = document.createElement("video"); media.muted = true; media.preload = "metadata"; media.playsInline = true; media.src = photoLinks.resolve(data.url) + "#t=0.5"; }
     card.appendChild(media);
     if (isV) card.appendChild(h("div", "badge", "VIDEO"));
     const info = h("div", "info");
@@ -527,7 +519,8 @@ function renderGrid() {
     });
     info.appendChild(del);
     const dl = h("a", "dl", "DOWNLOAD");
-    dl.href = dlUrl(data, d.id.slice(0, 5));
+    const download = dlUrl(data, d.id.slice(0, 5));
+    dl.href = photoLinks.resolve(download) || "#";
     dl.setAttribute("download", "");
     info.appendChild(dl);
     card.appendChild(info);
@@ -543,7 +536,17 @@ function startApp() {
     displayOverride=snap.exists()?snap.data():null;
     $("overrideStatus").textContent=displayOverride&&displayOverride.paused?"Screen paused":displayOverride&&displayOverride.active?(displayOverride.repeat?"Repeating selected video":"Playing selected video once"):"Normal slideshow";
   },e=>{$("overrideStatus").textContent="Control read error: "+e.message;});
-  onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "desc")), (snap) => { mediaDocs = snap.docs; renderGrid(); }, (e) => console.warn(e));
+  onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "desc")), async (snap) => {
+    mediaDocs = snap.docs;
+    try {
+      await photoLinks.prepare(snap.docs.flatMap(row => [
+        row.data().url, thumb(row.data()), dlUrl(row.data(), row.id.slice(0, 5)),
+      ]));
+    } catch (error) {
+      console.warn("Photo Wall links unavailable", error);
+    }
+    renderGrid();
+  }, (e) => console.warn(e));
   onSnapshot(collection(db, "reactions"), (snap) => { rxDocs = snap.docs; $("rxCount").textContent = rxSum(rxDocs).n; renderGrid(); }, (e) => console.warn(e));
 
   onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(40)), (snap) => {
@@ -571,6 +574,7 @@ window.downloadAll = async function () {
     if (snapshot.empty) { alert("No media to download."); return; }
     if (!confirm("Download all " + snapshot.size + " items?")) return;
     btn.disabled = true;
+    await photoLinks.prepare(snapshot.docs.map((row, index) => dlUrl(row.data(), index + 1)));
     let delay = 0, i = 0;
     const total = snapshot.size;
     snapshot.forEach((docSnap) => {
@@ -578,7 +582,7 @@ window.downloadAll = async function () {
       const n = ++i;
       setTimeout(() => {
         const a = document.createElement("a");
-        a.href = dlUrl(data, n);
+        a.href = photoLinks.resolve(dlUrl(data, n));
         a.download = "";
         a.style.display = "none";
         document.body.appendChild(a);

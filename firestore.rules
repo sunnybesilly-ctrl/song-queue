@@ -16,7 +16,15 @@ service cloud.firestore {
   }
   match /media_queue/{id} {
    allow read: if admin() || admitted();
-   allow create: if true;
+   allow create: if request.resource.data.get('v', 0) != 3 || (
+     request.resource.data.publicId == id &&
+     exists(/databases/$(database)/documents/photo_wall_uploads/$(id)) &&
+     get(/databases/$(database)/documents/photo_wall_uploads/$(id)).data.expiresAt > request.time &&
+     get(/databases/$(database)/documents/photo_wall_uploads/$(id)).data.eventId ==
+       request.resource.data.eventId &&
+     request.resource.data.type in ['image', 'video'] &&
+     request.resource.data.timestamp == request.time
+   );
    allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
    allow delete: if admin();
   }
