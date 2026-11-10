@@ -3,7 +3,7 @@
 const crypto = require("node:crypto");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
-const { CLOUD, TAG, cloudCredentials, signedParams, deliverySignature } = require("./photo-services");
+const { CLOUD, TAG, RETENTION_TAG, cloudCredentials, signedParams, deliverySignature } = require("./photo-services");
 
 const OPTIONS = { region: "us-central1", maxInstances: 10 };
 const ADMIN = "sunnybesilly@gmail.com";
@@ -30,7 +30,7 @@ exports.createPhotoWallUpload = onCall(OPTIONS, async () => {
   return {
     eventId,
     params: signedParams(credentials, {
-      public_id: publicId, tags: TAG, type: "authenticated", overwrite: "false",
+      public_id: publicId, tags: [TAG, RETENTION_TAG].join(","), type: "authenticated", overwrite: "false",
     }),
   };
 });

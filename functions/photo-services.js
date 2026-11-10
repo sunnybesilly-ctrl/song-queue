@@ -5,6 +5,7 @@ const crypto = require("node:crypto");
 const CLOUD = "yl4yzjh5";
 const PROJECT = "dj-photo-wall";
 const TAG = "party_media";
+const RETENTION_TAG = "party_media_retention_v1";
 const DRIVE = "https://www.googleapis.com/drive/v3";
 const CLOUD_API = "https://api.cloudinary.com/v1_1/" + CLOUD;
 const MAX_BYTES = 100 * 1024 * 1024;
@@ -86,7 +87,7 @@ async function listTagged(credentials, type, cursor) {
     fields: "asset_id,public_id,type,resource_type,created_at,version,bytes,format",
   });
   if (cursor) query.set("next_cursor", cursor);
-  const response = await request("Cloudinary tag listing", CLOUD_API + "/resources/" + type + "/tags/" + TAG + "?" + query,
+  const response = await request("Cloudinary tag listing", CLOUD_API + "/resources/" + type + "/tags/" + RETENTION_TAG + "?" + query,
     { headers: credentials.headers });
   return response.json();
 }
@@ -254,6 +255,6 @@ async function fetchOriginal(credentials, asset, keepBytes) {
 }
 
 module.exports = {
-  CLOUD, TAG, MAX_BYTES, request, cloudCredentials, signedParams, deliverySignature, cloudAsset, listTagged,
+  CLOUD, TAG, RETENTION_TAG, MAX_BYTES, request, cloudCredentials, signedParams, deliverySignature, cloudAsset, listTagged,
   originalUrl, destroyAsset, driveCredentials, checkFolder, newDriveId, uploadMaster, verifyMaster, fetchOriginal,
 };
