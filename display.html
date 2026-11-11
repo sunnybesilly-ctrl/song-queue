@@ -941,8 +941,8 @@ async function yearbook() {
   stopMedia(); showQR(false); fx.innerHTML = ""; fxN = 0;
   yb.className = "on"; clearYB(); yb.appendChild(coverPage(""));
   let R = [], C = [];
-  try { const a = await getDocs(collection(db, "reactions")); R = a.docs.map(function (d) { return d.data(); }); } catch (e) { console.warn(e); }
-  try { const b = await getDocs(collection(db, "comments")); C = b.docs.map(function (d) { return d.data(); }); } catch (e) { console.warn(e); }
+  try { const a = await getDocs(collection(db, "reactions")); R = a.docs.map(function (d) { return d.data(); }).filter(d => !!currentEventId && d.eventId === currentEventId); } catch (e) { console.warn(e); }
+  try { const b = await getDocs(collection(db, "comments")); C = b.docs.map(function (d) { return d.data(); }).filter(d => !!currentEventId && d.eventId === currentEventId); } catch (e) { console.warn(e); }
   if (mode !== "yearbook") return;
 
   const S = {}; let rt = 0;
@@ -1042,14 +1042,34 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
   if(!wantPause) applyScreenPause(false);
 },function(e){console.warn("Display control unavailable:",e);});
 
-let mediaRevision = 0;
-onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), async function (snap) {
+let mediaRevision = 0, currentEventId = null, mediaSnapshot = null;
+function resetForEventChange() {
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (wd) { clearTimeout(wd); wd = null; }
+  stopMedia();
+  items = []; pos = -1; fresh = []; seen = false;
+  cur = null; curItem = null; lastId = ""; override = null; overrideKey = "";
+  Object.keys(views).forEach(id => delete views[id]);
+  Object.keys(lastLikes).forEach(id => delete lastLikes[id]);
+  mode = "idle";
+  nmEl.textContent = "WAITING FOR EVENT MEDIA";
+  hint.textContent = "New event started. Waiting for photos and videos.";
+}
+onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
+  const state = snap.exists() ? snap.data() : null;
+  const nextId = state?.active ? state.eventId : null;
+  if (currentEventId === nextId) return;
+  currentEventId = nextId;
+  resetForEventChange();
+  if (mediaSnapshot) void processMediaSnapshot(mediaSnapshot);
+}, function (e) { console.error("Event state unavailable:", e); });
+async function processMediaSnapshot(snap) {
   const revision = ++mediaRevision;
   const list = []; let curChanged = false;
   snap.docs.forEach(function (d) {
     const x = d.data(); x.id = d.id;
     x.type = kindOf(x);
-    if (!x.url || !x.type) return;
+    if (!currentEventId || x.eventId !== currentEventId || !x.url || !x.type) return;
     list.push(x);
     const lk = x.likes || 0;
     if (lastLikes[d.id] !== undefined && lk > lastLikes[d.id]) {
@@ -1068,8 +1088,8 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), as
   window.__djMediaReceived = true;
   items = list;
   if (!list.length) {
-    nmEl.textContent = snap.size ? "MEDIA RECORDS INVALID" : "NO MEDIA IN FIRESTORE";
-    hint.textContent = snap.size ? "Found " + snap.size + " records, but none has a playable URL/type." : "Firebase connected, but media_queue returned no records.";
+    nmEl.textContent = currentEventId ? "NO PHOTOS FOR THIS EVENT" : "EVENT NOT OPEN";
+    hint.textContent = currentEventId ? "Upload a photo or video for the current event." : "Start a new event in the control room.";
   }
   if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added") fresh.push(c.doc.id); });
   const first = !seen; seen = true;
@@ -1079,6 +1099,10 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), as
   }
   if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
   if (mode === "boot" || mode === "idle") next();
+}
+onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
+  mediaSnapshot = snap;
+  void processMediaSnapshot(snap);
 }, function (e) {
   console.error("Media queue listener failed:", e);
   window.__djMediaReceived = true;
@@ -1088,10 +1112,10 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), as
 
 let rInit = false;
 onSnapshot(collection(db, "reactions"), function (s) {
-  rebuildRx(s.docs);
+  rebuildRx(s.docs.filter(d => !!currentEventId && d.data().eventId === currentEventId));
   if (rInit) s.docChanges().forEach(function (c) {
     if (c.type !== "added") return;
-    const d = c.doc.data(); if (!d.c) return;
+    const d = c.doc.data(); if (!d.c || !currentEventId || d.eventId !== currentEventId) return;
     const id = d.mediaId || (curItem && curItem.id) || "";
     Object.keys(ICON).forEach(function (k) {
       const n = Math.min(Math.max(+d.c[k] || 0, 0), 60);
@@ -1111,7 +1135,7 @@ onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(10)), f
   if (!cInit) { cInit = true; return; }
   s.docChanges().forEach(function (c) {
     if (c.type !== "added") return;
-    const d = c.doc.data(); if (!d.text) return;
+    const d = c.doc.data(); if (!d.text || !currentEventId || d.eventId !== currentEventId) return;
     pushComment({ name: String(d.name || "A guest").slice(0, 24), text: String(d.text).slice(0, 70) });
   });
 }, function (e) { console.warn(e); });
