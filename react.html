@@ -340,6 +340,7 @@ async function openReactions() {
     expiryTimer = setTimeout(() => lock("Your six-hour pass has expired. Ask the DJ for a new code."), expiresAt - Date.now());
     $("#timeLeft").textContent = "Access until " + new Date(expiresAt).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
     $("#gate").hidden = true; $("#private").hidden = false;
+    httpsCallable(fn,"ensurePhotoWallet")({}).catch(e=>console.warn("Gift wallet not deployed yet:",e));
     stopEvent = onSnapshot(doc(db, "gallery_state", "current"), s => {
       if (session !== generation) return;
       const current = s.data();
