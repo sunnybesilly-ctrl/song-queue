@@ -576,6 +576,23 @@ body.qr-screen #bar .who{display:none!important}
  #rx.docked{top:1vh;right:2vw;max-width:92vw}
 }
 @media(prefers-reduced-motion:reduce){.gift-hero{animation:giftVoyagePro 2.6s ease-out both}.gift-hero:before,.gift-hero:after{animation:none}}
+
+/* Gift particles travel across footage without hiding the central media. */
+.gift-hero{isolation:isolate}
+.gift-particles{position:absolute;inset:0;pointer-events:none;z-index:0}
+.gift-particle{position:absolute;left:50%;top:48%;width:clamp(10px,2.4vh,29px);height:clamp(10px,2.4vh,29px);
+ border-radius:45%;transform:translate(-50%,-50%);background:#eeff7f;
+ box-shadow:0 0 16px 7px #e8ff6b99,0 0 32px #37ff76aa;
+ animation:giftParticle 3s cubic-bezier(.14,.7,.28,1) var(--delay,0s) both}
+.gift-particle:nth-child(3n){background:#9fffe8;box-shadow:0 0 20px #9fffe8cc}
+.gift-particle:nth-child(4n){background:#ffda75;box-shadow:0 0 20px #ffda75cc}
+.gift-hero .gift-core{z-index:1}
+.gift-hero[data-kind="supernova"] .gift-symbol{box-shadow:0 0 140px #ffff52cc,inset 0 0 64px #fff7}
+.gift-hero[data-kind="galaxy"] .gift-symbol{box-shadow:0 0 150px #cda4ff99,inset 0 0 65px #fff6}
+.gift-hero[data-kind="comet"] .gift-symbol{box-shadow:0 0 140px #7fffe8bb,inset 0 0 60px #fff5}
+@keyframes giftParticle{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}
+ 22%{opacity:.95}70%{opacity:.8}100%{opacity:0;transform:translate(calc(-50% + var(--gx)),calc(-50% + var(--gy))) scale(.4)}}
+@media(prefers-reduced-motion:reduce){.gift-particle{animation:none;opacity:.3}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -940,7 +957,17 @@ function playGift(){
  core.appendChild(symbol);
  for(let i=0;i<3;i++)core.appendChild(h("i","gift-glint"));
  core.appendChild(h("span","gift-title",gift.kind+" gift"));
- root.appendChild(core);stageGift.appendChild(root);
+ root.dataset.kind=gift.kind;
+ const halo=h("div","gift-particles");
+ for(let i=0;i<14;i++){
+   const star=h("i","gift-particle");
+   const angle=i*Math.PI*2/14,reach=18+Math.random()*23;
+   star.style.setProperty("--gx",(Math.cos(angle)*reach).toFixed(1)+"vw");
+   star.style.setProperty("--gy",(Math.sin(angle)*reach).toFixed(1)+"vh");
+   star.style.setProperty("--delay",(i%4*.1).toFixed(2)+"s");
+   halo.appendChild(star);
+ }
+ root.append(halo,core);stageGift.appendChild(root);
  setTimeout(()=>{root.remove();giftPlaying=false;playGift()},4500);
 }
 function bubble(feed, ev) {
@@ -1304,7 +1331,7 @@ function nextInner() {
 }
 function qrInterlude() {
   mode = "qr"; tok++; lastQR = Date.now();
-  stopMedia(); showQR(true);
+  stopMedia();clearMediaSignature(); showQR(true);
   timer = setTimeout(function () {
     showQR(false);
     timer = setTimeout(function () { lastQR = Date.now(); mode = "loop"; next(); }, 500);
@@ -1312,7 +1339,7 @@ function qrInterlude() {
 }
 function goIdle(retry) {
   mode = "idle"; tok++; lastQR = Date.now();
-  stopMedia(); showQR(true); setBarIdle();
+  stopMedia();clearMediaSignature(); showQR(true); setBarIdle();
   if (retry) timer = setTimeout(next, 5000);
 }
 
