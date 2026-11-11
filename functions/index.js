@@ -64,6 +64,20 @@ exports.redeemGalleryCode = onCall(OPT, async (req) => {
 });
 
 
+exports.ensurePhotoWallet = onCall(OPT, async req => {
+ requireUser(req);
+ const accessRef=db.doc("gallery_access/"+req.auth.uid),walletRef=db.doc("guest_wallets/"+req.auth.uid);
+ return db.runTransaction(async tx => {
+  const [state,access,wallet]=await Promise.all([tx.get(stateRef),tx.get(accessRef),tx.get(walletRef)]);
+  const event=state.data(),pass=access.data(),existing=wallet.data();
+  if(!event?.active||!pass||pass.eventId!==event.eventId||!pass.expiresAt||pass.expiresAt.toMillis()<=Date.now())
+   throw new HttpsError("permission-denied","A valid event pass is required.");
+  if(existing?.eventId===event.eventId)return {balance:existing.balance};
+  tx.set(walletRef,{eventId:event.eventId,balance:777,initialCredits:777,spent:0,updatedAt:NOW()});
+  return {balance:777};
+ });
+});
+
 const GIFT_COSTS = Object.freeze({spark:7, comet:77, galaxy:177, supernova:333});
 exports.sendPhotoGift = onCall(OPT, async req => {
  requireUser(req);
