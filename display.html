@@ -595,6 +595,7 @@ function setHearts(id, bumpIt) {
   if (bumpIt && eligible) { hnEl.className = ""; void hnEl.offsetWidth; hnEl.className = "bump"; }
 }
 function setBar(m, isFresh) {
+  if (!cShowing) { hint.textContent = "Scan to upload, react, or sign the yearbook."; hint.hidden = false; }
   nmEl.textContent = m.name || "Somebody";
   nmEl.className = "nm"; void nmEl.offsetWidth; nmEl.className = "nm slam";
   newb.style.display = isFresh ? "block" : "none";
@@ -856,7 +857,7 @@ function floater(k) {
   setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); fxN--; }, 4500);
 }
 
-const cq = []; let cShowing = false;
+const cq = []; let cShowing = false, commentTimer = null, commentSnapshot = null, seenCommentIds = new Set();
 function pushComment(c) {
   if (!commentsOn) return;
   if (cq.length >= 6) cq.shift();
@@ -869,7 +870,8 @@ function nextComment() {
   cShowing = true; hint.hidden = true; cmt.hidden = false;
   cn.textContent = c.name; ct.textContent = c.text;
   cmt.className = "cmt"; void cmt.offsetWidth; cmt.className = "cmt pop";
-  setTimeout(nextComment, 4800);
+  clearTimeout(commentTimer);
+  commentTimer = setTimeout(nextComment, 10000);
 }
 
 function clearYB() {
@@ -1053,7 +1055,8 @@ function resetForEventChange() {
   stage.replaceChildren();
   clearRx();
   fx.replaceChildren(); fxN = 0;
-  cq.length = 0; cShowing = false;
+  cq.length = 0; cShowing = false; clearTimeout(commentTimer); commentTimer = null;
+  cmt.hidden = true; hint.hidden = false; seenCommentIds.clear();
   yb.replaceChildren(); yb.className = "";
   showQR(true);
   items = []; pos = -1; fresh = []; seen = false;
@@ -1067,6 +1070,13 @@ function resetForEventChange() {
   mode = "idle";
   nmEl.textContent = "WAITING FOR EVENT MEDIA";
   hint.textContent = "New event started. Waiting for photos and videos.";
+  if (commentSnapshot && currentEventId) {
+    const entries = commentSnapshot.docs.filter(d => d.data().eventId === currentEventId && d.data().text);
+    entries.reverse().forEach(d => {
+      seenCommentIds.add(d.id);
+      pushComment({name: String(d.data().name || "A guest").slice(0,24), text: String(d.data().text).slice(0,70)});
+    });
+  }
 }
 onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
   const state = snap.exists() ? snap.data() : null;
@@ -1102,6 +1112,7 @@ async function processMediaSnapshot(snap) {
   if (revision !== mediaRevision || eventAtStart !== currentEventId) return;
   window.__djMediaReceived = true;
   items = list;
+  if (list.length && !cShowing) { hint.textContent = "Scan a code to react or sign the yearbook."; hint.hidden = false; }
   if (!list.length) {
     nmEl.textContent = currentEventId ? "NO PHOTOS FOR THIS EVENT" : "EVENT NOT OPEN";
     hint.textContent = currentEventId ? "Upload a photo or video for the current event." : "Start a new event in the control room.";
@@ -1146,15 +1157,20 @@ onSnapshot(collection(db, "reactions"), function (s) {
   if (curItem && mode === "loop") setHearts(curItem.id, false);
 }, function (e) { console.warn(e); });
 
-let cInit = false;
-onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(10)), function (s) {
-  if (!cInit) { cInit = true; return; }
-  s.docChanges().forEach(function (c) {
-    if (c.type !== "added") return;
-    const d = c.doc.data(); if (!d.text || !currentEventId || d.eventId !== currentEventId) return;
-    pushComment({ name: String(d.name || "A guest").slice(0, 24), text: String(d.text).slice(0, 70) });
+onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(40)), function (s) {
+  commentSnapshot = s;
+  if (!currentEventId) return;
+  // Queue recent signatures on first load, and only unseen signatures thereafter.
+  // This keeps guest entries visible even when the projector wasn't open at posting time.
+  const latest = s.docs.filter(d => d.data().eventId === currentEventId && d.data().text);
+  const initial = seenCommentIds.size === 0;
+  const additions = latest.filter(d => !seenCommentIds.has(d.id));
+  if (initial) additions.splice(4);
+  additions.reverse().forEach(d => {
+    seenCommentIds.add(d.id);
+    pushComment({name: String(d.data().name || "A guest").slice(0,24), text: String(d.data().text).slice(0,70)});
   });
-}, function (e) { console.warn(e); });
+}, function (e) { console.warn("Signatures unavailable:",e); });
 }
 const loginCover=document.createElement("div");
 loginCover.id="projectorLogin";
