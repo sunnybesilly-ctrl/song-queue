@@ -13,7 +13,7 @@
   --acid:#F4FF1A;--lime:#37FF76;--bone:#E9FFEA;--dim:#7FB391;--alarm:#FF4058;
   --bar:16vh;
   --dv:1vh;
-  --chip:4.5vh;
+  --chip:6.5vh;
   --reaction-dock:7vh;
   --display:"Big Shoulders Display",Impact,sans-serif;
   --body:"Familjen Grotesk",sans-serif;
@@ -149,7 +149,19 @@ body{font-family:var(--body);color:var(--bone)}
 #brand{position:absolute;left:1.4vw;top:1.2vh;z-index:25;display:flex;align-items:center;font-family:var(--ink);font-size:2.3vh;line-height:1;color:var(--bone);opacity:.82;text-shadow:0 0 .8vh #000,0 0 .3vh #000;pointer-events:none;max-width:92vw}
 #brand svg{width:3vh;height:3vh;margin-right:.8vh;flex:none}
 
-#rx{position:absolute;left:0;right:0;top:auto;bottom:var(--bar);height:var(--reaction-dock);width:auto;z-index:6;pointer-events:none;overflow:hidden;background:linear-gradient(90deg,#06130a,#0d2916,#06130a);border-top:1px solid rgba(55,255,118,.35);display:flex;justify-content:center;align-items:center;padding:0 2vw}
+#rx{position:absolute;left:0;right:0;top:0;bottom:calc(var(--bar) + var(--reaction-dock));height:auto;width:auto;z-index:6;pointer-events:none;overflow:hidden;background:transparent;display:block;padding:0}
+#rx.docked{top:auto;bottom:var(--bar);height:var(--reaction-dock);display:flex;justify-content:center;align-items:center;background:linear-gradient(90deg,#06130a,#0d2916,#06130a);border-top:1px solid rgba(55,255,118,.35)}
+#rx .rbox{position:absolute!important;display:flex;justify-content:center;align-items:center;height:auto;width:auto;max-height:95%;overflow:hidden}
+#rx.docked .rbox{position:relative!important;width:100%;height:100%;max-height:100%}
+#rx .rail{display:flex;flex-direction:column;gap:1.3vh;width:auto;height:auto}
+#rx.docked .rail{flex-direction:row}
+#rx .rc{background:radial-gradient(circle at 35% 30%,#2d372e,#0b100d);box-shadow:0 0 0 2px #F4FF1A,0 0 14px rgba(244,255,26,.4)}
+#marginRain{position:absolute;left:0;top:0;right:0;bottom:calc(var(--bar) + var(--reaction-dock));overflow:hidden;pointer-events:none;z-index:6}
+.rainIcon{position:absolute;top:-12vh;width:5.8vh;height:5.8vh;opacity:0;filter:drop-shadow(0 0 7px #f4ff1a88);animation:rainFall var(--rain-ms,4200ms) linear forwards;will-change:transform,opacity}
+.rainIcon svg{width:100%;height:100%}
+@keyframes rainFall{0%{transform:translateY(-5vh) rotate(-20deg) scale(.7);opacity:0}12%{opacity:.95}82%{opacity:.9}100%{transform:translateY(var(--rain-distance,65vh)) rotate(28deg) scale(1.1);opacity:0}}
+@media(prefers-reduced-motion:reduce){.rainIcon{animation:none;display:none}}
+
 .rbox{position:relative!important;right:auto!important;top:auto!important;display:flex;justify-content:center;align-items:center;width:100%;height:100%;max-height:100%;overflow:hidden}
 .rail{display:flex;flex-direction:row;align-items:center;justify-content:center;flex-wrap:nowrap;gap:1.4vh;width:auto;max-width:100%;height:100%}
 .feed{display:none}
@@ -193,7 +205,7 @@ body{font-family:var(--body);color:var(--bone)}
 .lite .cell,.lite .note{animation:none;opacity:1}
 
 @media (orientation:portrait){
-  :root{--bar:calc(var(--dv)*26);--chip:min(7vw,3.5vh);--reaction-dock:5vh}
+  :root{--bar:calc(var(--dv)*26);--chip:min(9vw,5.5vh);--reaction-dock:5vh}
   #brand{left:3vw;top:calc(var(--dv)*.8);font-size:3.2vw}
   #brand svg{width:4vw;height:4vw;margin-right:1.2vw}
   .wr{margin-top:calc(var(--dv)*1)}
@@ -257,7 +269,7 @@ body{font-family:var(--body);color:var(--bone)}
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
-<div id="rx"></div>
+<div id="rx"></div><div id="marginRain"></div>
 
 <div id="qrcard">
   <div class="qt">
