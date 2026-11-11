@@ -676,7 +676,9 @@ async function goToStep2() {
       : '<span class="confirm-found-badge not-found">⚠ Not found — Sunny will check</span>';
   }
 
+  rememberGuestName(name);
   document.getElementById('chat-name').value = name;
+  document.getElementById('chat-name').dataset.userEdited = '';
   showPage(2);
   startPosTracking(name, finalSong, activeRequestId);
   if (typeof window.celebrateRequest === "function") window.celebrateRequest();
@@ -687,13 +689,49 @@ function toggleOptional() {
   document.getElementById('optional-body').classList.toggle('open');
 }
 
+const GUEST_NAME_KEY = 'djSunnyGuestName';
+function rememberedGuestName() {
+  try {
+    const value = (localStorage.getItem(GUEST_NAME_KEY) || '').trim();
+    return /^(party )?guest$/i.test(value) ? '' : value;
+  } catch (_) { return ''; }
+}
+function rememberGuestName(value) {
+  const name = String(value || '').trim();
+  if (!name || /^(party )?guest$/i.test(name)) return;
+  try { localStorage.setItem(GUEST_NAME_KEY, name); } catch (_) {}
+}
+
+function syncSongAndChatNames() {
+  const songName = document.getElementById('f-name');
+  const chatName = document.getElementById('chat-name');
+  const remembered = rememberedGuestName();
+  if (!songName.value.trim() && remembered) songName.value = remembered;
+  if (!chatName.value.trim() && (songName.value.trim() || remembered)) {
+    chatName.value = songName.value.trim() || remembered;
+  }
+}
+document.getElementById('f-name').addEventListener('input', function () {
+  rememberGuestName(this.value);
+  const chatName = document.getElementById('chat-name');
+  if (chatName && !chatName.dataset.userEdited) chatName.value = this.value;
+});
+document.getElementById('chat-name').addEventListener('input', function () {
+  this.dataset.userEdited = this.value.trim() ? '1' : '';
+  rememberGuestName(this.value);
+});
+syncSongAndChatNames();
+window.addEventListener('pageshow', syncSongAndChatNames);
+
 async function sendChatMessage() {
   const nameEl    = document.getElementById('chat-name');
   const msgEl     = document.getElementById('chat-message');
   const btn       = document.getElementById('btn-chat');
   const sentEl    = document.getElementById('chat-sent');
   const message   = msgEl.value.trim();
-  const finalName = nameEl.value.trim() || document.getElementById('f-name').value.trim() || 'Party Guest';
+  const finalName = nameEl.value.trim() || document.getElementById('f-name').value.trim() || rememberedGuestName() || 'Party Guest';
+  rememberGuestName(finalName);
+  nameEl.value = finalName;
   if (!message) {
     msgEl.style.borderColor = 'var(--red-bright)';
     msgEl.placeholder = 'Type something first!';
@@ -1584,8 +1622,13 @@ function setLang(lang) {
 
 function resetAll() {
   stopPosTracking();
-  ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
+  const guestName = document.getElementById('f-name').value.trim() || document.getElementById('chat-name').value.trim() || rememberedGuestName();
+  rememberGuestName(guestName);
+  ['f-artist','f-song','f-snap','f-comment','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('f-name').value = guestName;
+  document.getElementById('chat-name').value = guestName;
+  document.getElementById('chat-name').dataset.userEdited = '';
   window._reqBusy = false; submitted = false; optionalSaved = false; activeRequestId = ''; songFound = null; ytVideoId = null;
   searchToken++;
   ytFinalTitle = null; ytFinalChannel = null; ytFinalThumb = null;
