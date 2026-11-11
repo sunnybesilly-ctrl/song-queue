@@ -1168,6 +1168,23 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
         });
 
         window.allSongs.sort((a, b) => new Date(getTimestamp(a)||0) - new Date(getTimestamp(b)||0));
+        // A request can arrive twice through the form's old optional-save flow.
+        // Keep the earliest record, merging nonempty metadata from any duplicate.
+        const normalized = value => String(value || "").toLowerCase().replace(/[^a-z0-9\u00c0-\u024f]+/g, "");
+        const unique = [], seenRequests = new Map();
+        for (const song of window.allSongs) {
+          const key = normalized(getSongName(song)) + "|" + normalized(getSongTitle(song));
+          if (seenRequests.has(key)) {
+            const original = unique[seenRequests.get(key)];
+            Object.keys(song).forEach(field => {
+              if (!original[field] && song[field]) original[field] = song[field];
+            });
+          } else {
+            seenRequests.set(key, unique.length);
+            unique.push({...song});
+          }
+        }
+        window.allSongs = unique;
         document.getElementById("totalCount").textContent = window.allSongs.length;
         displayQueue();
       } catch(e) { console.error("Queue fetch error:", e); }
