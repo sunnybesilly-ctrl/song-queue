@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Event Archive • Sunny</title>
+<style>
+:root{color-scheme:dark;--acid:#f4ff1a;--lime:#37ff76;--dim:#a3cbb1;--line:#285e3a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 100% 0,#153e21,#020b06 60%);color:#eaffeb;font:16px system-ui,sans-serif;min-height:100vh}
+main{max-width:1180px;margin:auto;padding:24px 18px 80px}h1{font-size:clamp(48px,10vw,88px);line-height:.95;margin:20px 0;color:var(--acid);letter-spacing:-.055em;text-transform:uppercase}h2{font-size:25px;margin:0 0 12px}p,.sub{color:var(--dim);line-height:1.5}a{color:var(--lime)}nav{display:flex;gap:15px;flex-wrap:wrap}section{margin-top:24px}input,select,button{font:inherit;border-radius:10px}input,select{padding:12px;border:1px solid var(--line);background:#06170b;color:white;max-width:100%}button{padding:12px 18px;color:#061207;background:var(--acid);font-weight:800;border:0;cursor:pointer}button:disabled{opacity:.45;cursor:wait}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:20px 0}.panel{background:#0a1f11;border:1px solid var(--line);border-radius:16px;padding:20px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:20px 0}.stat{background:#0b2815;padding:16px;border:1px solid var(--line);border-radius:12px}.stat strong{font-size:28px;color:var(--acid);display:block}.stat span{color:var(--dim);font-size:13px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.card{background:#0b2012;border:1px solid var(--line);border-radius:14px;overflow:hidden}.card img,.card video{width:100%;height:210px;object-fit:contain;background:#000;display:block}.card .body{padding:14px}.card h3{margin:0 0 5px;color:var(--acid)}.card p{margin:5px 0;overflow-wrap:anywhere}.reaction{margin:8px 0;color:#ffde5a}.notes{background:#08180c;padding:12px;border-left:3px solid var(--lime);margin-top:12px}.notes p{margin:6px 0}.dl{display:inline-block;margin-top:8px}.muted{color:var(--dim)}[hidden]{display:none!important}
+</style></head><body><main>
+<nav><a href="admin.html">← Control room</a><a href="display.html">Photo wall</a></nav>
+<h1>Event archive</h1><p>Private history of event media, reactions, and yearbook signatures. Only your verified DJ account can open this page.</p>
+<section class="panel" id="login"><h2>Admin sign-in</h2><div class="bar"><input id="email" type="email" placeholder="Verified DJ email" autocomplete="username"><input id="password" type="password" placeholder="Password" autocomplete="current-password"><button id="signIn">Open archive</button></div><p id="loginStatus" role="status"></p></section>
+<section id="app" hidden><div class="bar"><label for="events">Event</label><select id="events"></select><button id="refresh">Refresh</button><button id="exportCsv">Download CSV</button><button id="exportJson">Download full JSON</button><button id="signOut">Sign out</button></div>
+<p id="status" role="status" class="sub">Loading history…</p><div class="stats"><div class="stat"><strong id="photos">0</strong><span>PHOTOS</span></div><div class="stat"><strong id="videos">0</strong><span>VIDEOS</span></div><div class="stat"><strong id="count">0</strong><span>REACTION TAPS</span></div><div class="stat"><strong id="signatures">0</strong><span>SIGNATURES</span></div></div>
+<div class="panel"><h2>Event summary</h2><div id="summary" class="sub"></div><p class="sub">Exports include reaction and signature records; individual original files can be opened from their cards while still available from the media provider. Save downloaded exports to Google Drive for your own records. This page does not automatically back up files.</p></div>
+<section><h2>Photos and videos</h2><div id="cards" class="cards"></div></section>
+<section class="panel"><h2>Yearbook signatures</h2><div id="notes"></div></section>
+</section></main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getFirestore,collection,getDocs,doc,getDoc} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
+import {createAdminPhotoLinks} from "./photo-links.js";
+const config={apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-photo-wall.firebaseapp.com",projectId:"dj-photo-wall",storageBucket:"dj-photo-wall.firebasestorage.app",messagingSenderId:"187308843014",appId:"1:187308843014:web:a4dbf9c17011767890a387"};
+const app=initializeApp(config),db=getFirestore(app),auth=getAuth(app);
+const links=createAdminPhotoLinks(httpsCallable(getFunctions(app,"us-central1"),"signAdminPhotoWallUrls"));
+const $=id=>document.getElementById(id), kinds={heart:"❤️",bolt:"⚡",star:"☀️",lol:"😂",wow:"😮",cool:"😎",sad:"😭",down:"👎"};
+let all={media:[],reactions:[],comments:[]},state=null,current="";let loadVersion=0;
+const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
+const time=t=>t?.toDate?t.toDate().toLocaleString():t?.seconds?new Date(t.seconds*1000).toLocaleString():"Unknown date";
+const iso=t=>t?.toDate?t.toDate().toISOString():t?.seconds?new Date(t.seconds*1000).toISOString():"";
+function rows(kind){return all[kind].filter(x=>x.eventId===current)}
+function countReaction(r){return Object.values(r.c||{}).reduce((n,v)=>n+(Number(v)||0),0)}
+function totalReaction(){return rows("reactions").reduce((n,r)=>n+countReaction(r),0)}
+function downloadFile(name,content,type){const url=URL.createObjectURL(new Blob([content],{type}));const a=el("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000)}
+const safe=s=>String(s??"").replace(/^[=+@\-\t\r]/,"'"+String(s??"").charAt(0)).replace(/[\r\n]+/g," ");
+const csvRow=fields=>fields.map(v=>'"'+safe(v).replace(/"/g,'""')+'"').join(",");
+const fileStem=()=> "sunny-event-"+(current==="legacy"?"legacy":current.slice(0,16));
+function exportData(format){
+ if(!current)return;
+ const media=rows("media"),rx=rows("reactions"),comments=rows("comments");
+ const bundle={exportedAt:new Date().toISOString(),eventId:current,eventDate:media.map(x=>iso(x.timestamp)).filter(Boolean).sort()[0]||"",summary:{photos:media.filter(m=>m.type==="image").length,videos:media.filter(m=>m.type==="video").length,reactionTaps:totalReaction(),signatures:comments.length},media,reactions:rx,comments};
+ if(format==="json"){downloadFile(fileStem()+".json",JSON.stringify(bundle,null,2),"application/json");return;}
+ const lines=[csvRow(["record_type","event_id","media_id","uploader_or_guest","media_type","timestamp","reaction_kind","reaction_count","signature","source_url"])];
+ for(const m of media)lines.push(csvRow(["media",current,m.id,m.name,m.type,iso(m.timestamp),"","","",m.url]));
+ for(const r of rx)for(const [k,n]of Object.entries(r.c||{}))if(Number(n)>0)lines.push(csvRow(["reaction",current,r.mediaId,r.name,"",iso(r.t),k,n,"",""]));
+ for(const n of comments)lines.push(csvRow(["signature",current,n.mediaId,n.name,"",iso(n.t),"","",n.text,""]));
+ downloadFile(fileStem()+".csv","\uFEFF"+lines.join("\r\n"),"text/csv;charset=utf-8");
+}
+function render(){
+ if(!current)return;
+ const media=rows("media").sort((a,b)=>(a.timestamp?.seconds||0)-(b.timestamp?.seconds||0)),rx=rows("reactions"),comments=rows("comments");
+ $("photos").textContent=media.filter(x=>x.type==="image").length;$("videos").textContent=media.filter(x=>x.type==="video").length;
+ $("count").textContent=totalReaction();$("signatures").textContent=comments.length;
+ const most=media.map(m=>({m,count:rx.filter(r=>r.mediaId===m.id).reduce((n,r)=>n+countReaction(r),0)})).sort((a,b)=>b.count-a.count);
+ $("summary").textContent=media.length?media.length+" memories · "+rx.length+" reaction submissions · "+(most[0]?.count||0)+" taps on the most-reacted memory.":"No media stored for this event.";
+ const grid=$("cards");grid.replaceChildren();
+ for(const m of media){
+  const card=el("article","card"),body=el("div","body");
+  const url=links.resolve(m.url),mediaEl=el(m.type==="video"?"video":"img");
+  if(url){mediaEl.src=url;if(m.type==="video"){mediaEl.controls=true;mediaEl.preload="metadata";mediaEl.playsInline=true}else mediaEl.alt="Archived party memory"}
+  const heading=el("h3","",m.name||"Guest"),date=el("p","muted",time(m.timestamp));
+  const activity=rx.filter(r=>r.mediaId===m.id),counts={};for(const r of activity)for(const [k,n]of Object.entries(r.c||{}))counts[k]=(counts[k]||0)+Number(n||0);
+  const summary=el("div","reaction",Object.entries(counts).map(([k,n])=>(kinds[k]||k)+" "+n).join("  ")||"No reactions");
+  body.append(heading,date,summary);
+  if(url){const a=el("a","dl","Open / save media");a.href=url;a.target="_blank";a.rel="noopener noreferrer";body.append(a)}
+  else body.append(el("p","muted","Media preview unavailable or original no longer hosted."));
+  const notes=comments.filter(n=>n.mediaId===m.id);
+  if(notes.length){const wrap=el("div","notes");for(const n of notes)wrap.append(el("p","",(n.name||"Guest")+": "+(n.text||"")));body.append(wrap)}
+  card.append(mediaEl,body);grid.append(card);
+ }
+ if(!media.length)grid.append(el("p","muted","No memories recorded for this event."));
+ const list=$("notes");list.replaceChildren();
+ for(const n of comments){const p=el("p","notes");p.textContent=(n.name||"Guest")+": "+(n.text||"");list.append(p)}
+ if(!comments.length)list.append(el("p","muted","No yearbook signatures."));
+}
+async function selectEvent(id){
+ current=id;$("status").textContent="Preparing private media previews…";render();
+ const version=++loadVersion;
+ try{await links.prepare(rows("media").map(m=>m.url).filter(Boolean));if(version===loadVersion){render();$("status").textContent="Archive loaded. Media previews depend on availability of the originals."}}
+ catch(e){if(version===loadVersion){render();$("status").textContent="History loaded; some private previews could not be signed: "+e.message}}
+}
+async function reload(){
+ $("refresh").disabled=true;$("status").textContent="Loading saved events…";
+ try{
+  const [m,r,c,s]=await Promise.all([getDocs(collection(db,"media_queue")),getDocs(collection(db,"reactions")),getDocs(collection(db,"comments")),getDoc(doc(db,"gallery_state","current"))]);
+  all={media:m.docs.map(x=>({id:x.id,...x.data()})),reactions:r.docs.map(x=>({id:x.id,...x.data()})),comments:c.docs.map(x=>({id:x.id,...x.data()}))};state=s.data();
+  const ids=new Set([...all.media,...all.reactions,...all.comments].map(x=>x.eventId).filter(Boolean));
+  if(state?.eventId)ids.add(state.eventId);
+  const ordered=[...ids].sort((a,b)=>{
+   const first=id=>Math.max(0,...all.media.filter(x=>x.eventId===id).map(x=>x.timestamp?.seconds||0));
+   return first(b)-first(a);
+  });
+  if(all.media.some(x=>!x.eventId))ordered.push("legacy");
+  $("events").replaceChildren();
+  for(const id of ordered){const media=all.media.filter(m=>m.eventId===id);const date=media.map(m=>m.timestamp?.seconds||0).filter(Boolean).sort((a,b)=>a-b)[0];
+   const label=id==="legacy"?"Legacy / unassigned media":(id===state?.eventId?"Current event · ":"Event · ")+(date?new Date(date*1000).toLocaleDateString()+" · ":"")+id.slice(0,10);
+   const op=el("option","",label);op.value=id;$("events").append(op);
+  }
+  if(!ordered.length){current="";$("status").textContent="No event history found.";return}
+  const chosen=ordered.includes(current)?current:ordered[0];$("events").value=chosen;await selectEvent(chosen);
+ }catch(e){$("status").textContent="Could not load the archive: "+e.message}finally{$("refresh").disabled=false}
+}
+$("signIn").onclick=async()=>{
+ $("loginStatus").textContent="Signing in…";
+ try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(e){$("loginStatus").textContent=e.message}
+};
+$("signOut").onclick=()=>signOut(auth);
+$("events").onchange=e=>void selectEvent(e.target.value);
+$("refresh").onclick=()=>void reload();
+$("exportCsv").onclick=()=>exportData("csv");
+$("exportJson").onclick=()=>exportData("json");
+onAuthStateChanged(auth,user=>{
+ const ok=user?.email==="sunnybesilly@gmail.com"&&user.emailVerified;
+ $("login").hidden=!!ok;$("app").hidden=!ok;
+ if(ok)void reload();else $("loginStatus").textContent=user?"Use the verified DJ admin account to view the archive.":"";
+});
+</script></body></html>
