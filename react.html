@@ -163,7 +163,7 @@ body{
   <div class="step s2">
     <div class="sh"><span class="num">2</span><span class="sl">Hit it</span><span class="sn">react to your selected memory</span></div>
     <div class="rx" id="rx"></div><div class="gift-zone"><div class="gift-header"><strong>Send a spectacle</strong><span id="creditStatus">Credits loading…</span></div><div id="giftGrid" class="gift-grid"></div><p id="giftStatus" class="status" aria-live="polite">Select a memory to send a gift.</p></div>
-    <p class="sent">You have sent <b id="sent">0</b></p>
+    <p class="sent">Reactions tapped: <b id="sent">0</b> · Gifts sent: <b id="giftsSent">0</b></p>
   </div>
 
   <div class="step s3">
@@ -243,13 +243,14 @@ nmIn.addEventListener("input", function () {
 
 /* Access uses the same server-issued pass as the Party Album. */
 let access = null, generation = 0, previewVersion = 0, redeeming = false, expiryTimer;
-let stopMedia, stopEvent, stopAccess, stopWallet; let browseVersion = 0; const signedMedia = httpsCallable(fn, "getGuestPhotoWallMedia");
+let stopMedia, stopEvent, stopAccess, stopWallet, stopGifts; let browseVersion = 0; const signedMedia = httpsCallable(fn, "getGuestPhotoWallMedia");
 function gateMessage(text) { $("#gateStatus").textContent = text; }
 function lock(reason = "") {
   generation++; previewVersion++;
   clearTimeout(expiryTimer); clearTimeout(flushT); flushT = null; pending = {};
-  stopMedia?.(); stopEvent?.(); stopAccess?.(); stopWallet?.();
-  stopMedia = stopEvent = stopAccess = stopWallet = undefined; walletBalance=null; updateGiftControls();
+  stopMedia?.(); stopEvent?.(); stopAccess?.(); stopWallet?.(); stopGifts?.();
+  stopMedia = stopEvent = stopAccess = stopWallet = stopGifts = undefined; walletBalance=null; updateGiftControls();
+   $("#giftsSent").textContent="0";
   browseVersion++; $("#memoryGrid").replaceChildren(); $("#browseStatus").textContent = "Loading memories…"; $("#emptyMediaAction").hidden = true;
   access = null; now = {}; sent = 0; sentEl.textContent = "0";
   nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Choose a photo or video";
@@ -352,6 +353,14 @@ async function openReactions() {
       if (!current || current.eventId !== access?.eventId || current.expiresAt?.toMillis() !== expiresAt) lock("Your pass has changed. Enter a fresh code to return.");
     }, () => { if (session === generation) lock("Could not verify your pass. Please try again."); });
     stopWallet = onSnapshot(doc(db,"guest_wallets",user.uid), s=>{if(session!==generation)return;walletBalance=s.data()?.eventId===access?.eventId?Number(s.data().balance):null;updateGiftControls()}, err=>{walletBalance=null;updateGiftControls("Gift service awaiting deployment");console.warn(err)});
+    // Count confirmed gifts from Firestore, including gifts sent before a reload.
+    // Query by event to satisfy guest read rules; filter this guest locally.
+    stopGifts = onSnapshot(query(collection(db,"photo_gifts"),where("eventId","==",access.eventId)), s=>{
+      if(session!==generation || !hasPass())return;
+      const total=s.docs.filter(d=>d.data().uid===user.uid).length;
+      $("#giftsSent").textContent=String(total);
+    },err=>{console.warn("Gift count unavailable:",err);$("#giftsSent").title="Could not load saved gift count";});
+
     stopMedia = onSnapshot(query(collection(db, "media_queue"), where("eventId", "==", access.eventId)), s => {
       if (session === generation && hasPass()) void renderMemories(s, session);
     }, err => {
