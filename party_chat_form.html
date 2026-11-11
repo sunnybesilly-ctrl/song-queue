@@ -399,6 +399,26 @@ footer {
 // *** entry.345897145 = Message
 const CHAT_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSdhzlA9tm7A6R5b3QECXoOMyJxLiuws8Pr5HB63NWv1pXo2tA/formResponse';
 
+const GUEST_NAME_KEY = 'djSunnyGuestName';
+function rememberedGuestName() {
+  try {
+    const value = (localStorage.getItem(GUEST_NAME_KEY) || '').trim();
+    return /^(party )?guest$/i.test(value) ? '' : value;
+  } catch (_) { return ''; }
+}
+function rememberGuestName(value) {
+  const name = String(value || '').trim();
+  if (!name || /^(party )?guest$/i.test(name)) return;
+  try { localStorage.setItem(GUEST_NAME_KEY, name); } catch (_) {}
+}
+
+const standaloneChatName = document.getElementById('f-name');
+if (!standaloneChatName.value.trim()) standaloneChatName.value = rememberedGuestName();
+standaloneChatName.addEventListener('input', function () { rememberGuestName(this.value); });
+window.addEventListener('pageshow', function () {
+  if (!standaloneChatName.value.trim()) standaloneChatName.value = rememberedGuestName();
+});
+
 async function submitChat() {
   const nameEl  = document.getElementById('f-name');
   const msgEl   = document.getElementById('f-message');
@@ -416,7 +436,9 @@ async function submitChat() {
   }
   errEl.classList.remove('visible');
 
-  const finalName = name || 'Party Guest';
+  const finalName = name || rememberedGuestName() || 'Party Guest';
+  rememberGuestName(finalName);
+  nameEl.value = finalName;
 
   btn.textContent = 'SENDING...';
   btn.disabled = true;
@@ -466,7 +488,7 @@ async function submitChat() {
 
 function resetForm() {
   // *** Clear and reset for another message
-  document.getElementById('f-name').value = '';
+  document.getElementById('f-name').value = rememberedGuestName();
   document.getElementById('f-message').value = '';
   document.getElementById('submit-btn').disabled = false;
   document.getElementById('submit-btn').textContent = 'DROP IT 💬';
