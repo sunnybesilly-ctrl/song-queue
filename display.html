@@ -447,6 +447,18 @@ $("#hi").innerHTML = ICON.heart;
 let items = [], pos = -1, fresh = [], seen = false;
 let override = null, overrideKey = "", overridePlayed = false;
 let screenPaused = false, pausedRemaining = 0, slideDeadline = 0;
+let activeEventStartedMs = 0, lastControlDoc = null;
+function effectivePause(v){
+  if(!v?.paused)return false;
+  const changed = v.changedAt?.toMillis?.() || (v.changedAt?.seconds||0)*1000;
+  // A pause left from an earlier event must not block a freshly started event.
+  return !(activeEventStartedMs && changed && changed < activeEventStartedMs);
+}
+function showPauseStatus(){
+  nmEl.textContent="SCREEN PAUSED";
+  cmt.hidden=true;hint.hidden=false;
+  hint.textContent="Resume the screen in your DJ Admin Control Room.";
+}
 let mode = "boot";            
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
@@ -929,7 +941,7 @@ function next() {
   try { nextInner(); } catch (e) { console.error(e); clearTimeout(timer); timer = setTimeout(next, 4000); }
 }
 function nextInner() {
-  if (screenPaused) return;
+  if (screenPaused) { if(!curItem)showPauseStatus();return; }
   clearTimeout(timer); clearTimeout(wd);
   if (mode === "yearbook") return;
   if (override && override.active && (!overridePlayed || override.repeat)) {
@@ -1156,7 +1168,8 @@ function applyScreenPause(paused) {
 function beginDisplayListeners(){
 onSnapshot(doc(db,"display_control","current"),function(snap){
   const v=snap.exists()?snap.data():null;
-  const wantPause=!!(v&&v.paused);
+  lastControlDoc=v;
+  const wantPause=effectivePause(v);
   if(wantPause) applyScreenPause(true);
   const key=v&&v.active?v.mediaId+"|"+!!v.repeat+"|"+(v.changedAt&&v.changedAt.seconds||0)+"|"+(v.changedAt&&v.changedAt.nanoseconds||0):"";
   if(key!==overrideKey){
@@ -1217,6 +1230,10 @@ onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
   const nextId = state?.active ? state.eventId : null;
   if (currentEventId === nextId) return;
   currentEventId = nextId;
+  activeEventStartedMs=state?.startedAt?.toMillis?.() || (state?.startedAt?.seconds||0)*1000;
+  const oldPaused=screenPaused;
+  screenPaused=effectivePause(lastControlDoc);
+  if(oldPaused&&!screenPaused)pausedRemaining=0;
   lastMediaSignature="";pendingMediaSignature="";
   resetForEventChange();
   if (mediaSnapshot) void processMediaSnapshot(mediaSnapshot);
@@ -1311,6 +1328,7 @@ async function processMediaSnapshot(snap) {
   }
   if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
   if (mode === "boot" || mode === "idle") next();
+  if(screenPaused && !curItem && list.length)showPauseStatus();
 }
 onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
   mediaSnapshot=snap;
