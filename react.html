@@ -375,6 +375,15 @@ async function openReactions() {
     if (session === generation) lock("Could not verify your pass. Enter a code to try again.");
   }
 }
+// One-time QR invitations put the code in the URL fragment, not the
+// network request. Strip it immediately from browser history after reading.
+(function loadScannedInvite(){
+ const match=/^#invite=([0-9]{8})$/.exec(location.hash);
+ if(!match)return;
+ $("#code").value=match[1];
+ history.replaceState(null,"",location.pathname+location.search);
+ gateMessage("Invitation ready! Tap UNLOCK to join the party.");
+})();
 $("#codeForm").addEventListener("submit", async e => {
   e.preventDefault();
   if (redeeming) return;
