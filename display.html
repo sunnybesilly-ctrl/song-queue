@@ -1167,6 +1167,11 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
 },function(e){console.warn("Display control unavailable:",e);});
 
 let mediaRevision = 0, currentEventId = null, mediaSnapshot = null, reactionSnapshot = null, giftSnapshot = null, archivePlayback = false;
+let pendingMediaSignature = "", lastMediaSignature = "";
+function safeMediaError(error){return String(error?.code||error?.message||error||"Unknown error").replace(/^functions\//,"").slice(0,150);}
+function mediaPlaybackSignature(snap){
+  return [currentEventId||"",...snap.docs.map(d=>{const x=d.data();return d.id+"|"+(x.url||"")+"|"+(x.type||"")+"|"+(x.eventId||"")+"|"+!!x.rotationPaused;})].join("\n");
+}
 function refreshArchiveReactions(){if(!reactionSnapshot)return;const ids=new Set(items.map(x=>x.id));rebuildRx(reactionSnapshot.docs.filter(d=>ids.has(d.data().mediaId) && (archivePlayback||d.data().eventId===currentEventId)));}
 function refreshArchiveGifts(){Object.keys(GIFT).forEach(id=>delete GIFT[id]);if(!giftSnapshot)return;const ids=new Set(items.map(x=>x.id));giftSnapshot.docs.forEach(d=>{const v=d.data();if(!ids.has(v.mediaId)||!ICON[v.kind]||(!archivePlayback&&v.eventId!==currentEventId))return;const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});counts[v.kind]=(counts[v.kind]||0)+1;});}
 function resetForEventChange() {
@@ -1212,6 +1217,7 @@ onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
   const nextId = state?.active ? state.eventId : null;
   if (currentEventId === nextId) return;
   currentEventId = nextId;
+  lastMediaSignature="";pendingMediaSignature="";
   resetForEventChange();
   if (mediaSnapshot) void processMediaSnapshot(mediaSnapshot);
   else { window.__djMediaReceived = true; }
@@ -1230,28 +1236,34 @@ async function processMediaSnapshot(snap) {
   // before starting the screen can starve playback as the archive grows.
   const list=fallback?historical.slice(-18):current;
   list.forEach(x=>{const lk=x.likes||0;if(lastLikes[x.id]!==undefined&&lk>lastLikes[x.id]&&curItem?.id===x.id)curChanged=true;lastLikes[x.id]=lk;});
-  // The projector only needs playable URLs. Thumbnails are signed on demand
-  // elsewhere; avoid a large batch of thumbnail transformations at startup.
-  const urls=list.flatMap(item=>[item.url,playUrl(item)]).filter(Boolean);
+  // Sign the current event first; do not let historical media or frequent
+  // like/reaction updates restart the entire signing operation.
+  const urls=[...new Set(list.flatMap(item=>[item.url,playUrl(item)]).filter(Boolean))];
+  window.__djMediaReceived=true;
   nmEl.textContent=list.length?"LOADING EVENT MEDIA":"NO MEDIA AVAILABLE";
   if(!cShowing){
-    hint.textContent=list.length?"Preparing secure playback links for "+list.length+" item(s)…":"Scan to upload your first photo or video.";
+    hint.textContent=list.length?"Preparing secure links for "+list.length+" media item(s)…":"Scan to upload your first photo or video.";
     hint.hidden=false;
   }
   let linkFailure=null;
   try{
     await Promise.race([
       photoLinks.prepare(urls),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Secure media links timed out")),15000))
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Secure-link service timed out after 12 seconds")),12000))
     ]);
   }catch(error){linkFailure=error;console.error("Secure media signing failed:",error);}
   if(revision!==mediaRevision || eventAtStart!==currentEventId)return;
-  if(linkFailure){
-    window.__djMediaReceived=true;
+  const playable=list.filter(item=>!!photoLinks.resolve(playUrl(item)));
+  if(!playable.length && list.length){
     nmEl.textContent="MEDIA LINK ERROR";
-    hint.textContent="Secure media links unavailable. Refresh the display or check Firebase Functions.";
+    hint.textContent=linkFailure ? "Secure media service: "+safeMediaError(linkFailure) : "No signed playback URLs returned. Check Firebase Function signAdminPhotoWallUrls.";
+    pendingMediaSignature="";
     return;
   }
+  if(linkFailure)console.warn("Some media links might be unavailable:",safeMediaError(linkFailure));
+  // Retain only records that have a usable delivery URL, rather than trying
+  // an empty image/video source and falling back to a permanent QR screen.
+  list.splice(0,list.length,...playable);
   window.__djMediaReceived = true;
   const leavingArchive=archivePlayback&&!fallback&&!!curItem;
   archivePlayback=fallback;items=list;
@@ -1272,8 +1284,23 @@ async function processMediaSnapshot(snap) {
   if (mode === "boot" || mode === "idle") next();
 }
 onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
-  mediaSnapshot = snap;
-  void processMediaSnapshot(snap);
+  mediaSnapshot=snap;
+  const signature=mediaPlaybackSignature(snap);
+  if(signature===pendingMediaSignature||signature===lastMediaSignature){
+    // Like-count changes still update the visible counter without re-signing.
+    if(curItem&&mode==="loop"){
+      const row=snap.docs.find(d=>d.id===curItem.id);
+      if(row){curItem.likes=row.data().likes||0;setHearts(curItem.id,false);}
+    }
+    return;
+  }
+  pendingMediaSignature=signature;
+  void processMediaSnapshot(snap).finally(()=>{
+    if(pendingMediaSignature===signature){
+      lastMediaSignature=signature;
+      pendingMediaSignature="";
+    }
+  });
 }, function (e) {
   console.error("Media queue listener failed:", e);
   window.__djMediaReceived = true;
