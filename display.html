@@ -13,7 +13,8 @@
   --acid:#F4FF1A;--lime:#37FF76;--bone:#E9FFEA;--dim:#7FB391;--alarm:#FF4058;
   --bar:16vh;
   --dv:1vh;
-  --chip:7.4vh;
+  --chip:5.4vh;
+  --reaction-gutter:clamp(84px,10vw,140px);
   --display:"Big Shoulders Display",Impact,sans-serif;
   --body:"Familjen Grotesk",sans-serif;
   --ink:"Permanent Marker","Comic Sans MS",cursive;
@@ -24,7 +25,7 @@
 html,body{width:100%;height:100%;overflow:hidden;background:var(--deep);cursor:none}
 body{font-family:var(--body);color:var(--bone)}
 
-#stage{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:1;overflow:hidden;
+#stage{position:absolute;left:0;top:0;right:var(--reaction-gutter);bottom:var(--bar);z-index:1;overflow:hidden;
   background:radial-gradient(120% 90% at 85% 10%,#0e2a17 0%,transparent 60%),radial-gradient(90% 70% at 10% 100%,#2a0a0a 0%,transparent 55%),#050a07}
 .w{position:absolute;left:0;top:0;right:0;bottom:0;opacity:0;z-index:1;overflow:hidden}
 .w.top{z-index:3}
@@ -148,10 +149,10 @@ body{font-family:var(--body);color:var(--bone)}
 #brand{position:absolute;left:1.4vw;top:1.2vh;z-index:25;display:flex;align-items:center;font-family:var(--ink);font-size:2.3vh;line-height:1;color:var(--bone);opacity:.82;text-shadow:0 0 .8vh #000,0 0 .3vh #000;pointer-events:none;max-width:92vw}
 #brand svg{width:3vh;height:3vh;margin-right:.8vh;flex:none}
 
-#rx{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:6;pointer-events:none;overflow:hidden}
-.rbox{position:absolute;display:flex;flex-direction:row-reverse;align-items:flex-start}
+#rx{position:absolute;left:auto;top:0;right:0;bottom:var(--bar);width:var(--reaction-gutter);z-index:6;pointer-events:none;overflow:hidden;background:linear-gradient(90deg,#07160d,#06170b);border-left:1px solid rgba(55,255,118,.3);display:flex;justify-content:center;align-items:flex-start;padding-top:3vh}
+.rbox{position:relative!important;right:auto!important;top:auto!important;display:flex;justify-content:center;align-items:flex-start;width:100%;max-height:100%;overflow:hidden}
 .rail{display:flex;flex-direction:column;align-items:center;width:var(--chip)}
-.feed{display:flex;flex-direction:column;align-items:flex-end;margin-right:calc(var(--chip)*.35);padding-top:calc(var(--chip)*.2)}
+.feed{display:none}
 .rc{position:relative;isolation:isolate;width:var(--chip);height:var(--chip);margin:calc(var(--chip)*.09) 0;display:flex;align-items:center;justify-content:center;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#3b2a00,#140d00);box-shadow:0 0 0 calc(var(--chip)*.06) #FFC21A,0 0 calc(var(--chip)*.5) rgba(255,194,26,.7);animation:rcIn .5s cubic-bezier(.2,1.5,.4,1) both}
 .rc.off{display:none}
@@ -170,7 +171,7 @@ body{font-family:var(--body);color:var(--bone)}
 .bi{display:block;margin-left:calc(var(--chip)*.14)}
 .bi svg{display:block;width:calc(var(--chip)*.46);height:calc(var(--chip)*.46)}
 .bx{margin-left:calc(var(--chip)*.1);color:#FFC21A;font-family:var(--display);font-weight:900}
-.srail{position:absolute;right:calc(var(--chip)*-.5);top:5%}
+.srail{position:static;display:flex;flex-flow:row wrap;gap:.4vh;justify-content:flex-start;width:auto;max-width:100%;margin-top:2vh}.srail .rc{width:4.8vh;height:4.8vh;margin:.5vh}
 .wr{display:flex;align-items:center;margin-top:1.6vh}
 .wr .av{margin-right:0;margin-left:calc(var(--chip)*-.14);border:3px solid #140d00}
 .wr .av:first-child{margin-left:0}
@@ -192,7 +193,7 @@ body{font-family:var(--body);color:var(--bone)}
 .lite .cell,.lite .note{animation:none;opacity:1}
 
 @media (orientation:portrait){
-  :root{--bar:calc(var(--dv)*26);--chip:11.5vw}
+  :root{--bar:calc(var(--dv)*26);--chip:min(9vw,5.5vh);--reaction-gutter:15vw}
   #brand{left:3vw;top:calc(var(--dv)*.8);font-size:3.2vw}
   #brand svg{width:4vw;height:4vw;margin-right:1.2vw}
   .wr{margin-top:calc(var(--dv)*1)}
@@ -541,10 +542,10 @@ function mediaRect(el) {
   const s = Math.min(sw / iw, sh / ih), w = iw * s, hh = ih * s;
   return { sw: sw, sh: sh, l: (sw - w) / 2, t: (sh - hh) / 2, w: w, h: hh };
 }
-function placeRx(box, el, count) {
-  const r = mediaRect(el), cw = box.firstChild.offsetWidth || 60, hgt = count * cw * 1.18;
-  box.style.right = Math.max(0, r.sw - (r.l + r.w + cw * 0.5)) + "px";
-  box.style.top = Math.max(6, Math.min(r.t + r.h * 0.05, r.sh - hgt - 6)) + "px";
+function placeRx(box) {
+  // The dedicated rail sits outside #stage. Never position reactions over media.
+  box.style.right = "auto";
+  box.style.top = "auto";
 }
 function clearRx() { rxT.forEach(clearTimeout); rxT.length = 0; rxBox.innerHTML = ""; rxCtl = null; }
 function showRx(el, m, instant) {
@@ -574,7 +575,7 @@ function liveRx(e, id, replay) {
   if (replay) return;
   if (!RX[id]) RX[id] = { n: 0, c: {}, ev: [] };
   if (!RX[id].c[e.k]) { RX[id].c[e.k] = e.n; RX[id].n += e.n; }
-  if (cur) showRx(cur.firstChild, { id: id }, true);
+  if (cur && curItem && curItem.id === id) showRx(cur.firstChild, { id: id }, true);
   if (rxCtl) bubble(rxCtl.feed, e);
 }
 function awardRail(snap, id) {
@@ -905,7 +906,7 @@ function awardPage(a) {
   const pg = h("div", "pg"), snap = h("div", "snap"), cap = h("div", "cap");
   snap.appendChild(mediaEl(a.m));
   snap.appendChild(h("em", "", a.m.name ? "by " + a.m.name : ""));
-  awardRail(snap, a.m.id);
+  awardRail(cap, a.m.id);
   cap.appendChild(h("div", "k", a.kicker));
   cap.appendChild(h("div", "t", a.title));
   cap.appendChild(h("div", "n", a.who || a.m.name || ""));
