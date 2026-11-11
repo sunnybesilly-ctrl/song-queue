@@ -124,7 +124,7 @@ body{
 @media (prefers-reduced-motion:reduce){
   .title span{animation:none;opacity:1}
 }
-.memory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.memory-card{padding:0;background:#061a0d;border:2px solid var(--line);color:var(--bone);text-align:left;cursor:pointer;min-width:0;overflow:hidden;font:inherit}.memory-card.selected{border-color:var(--acid);box-shadow:0 0 0 2px rgba(244,255,26,.28)}.memory-card img,.memory-card video{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#010904}.memory-card strong{display:block;padding:10px;overflow-wrap:anywhere}.memory-card small{display:block;padding:0 10px 10px;color:var(--dim)}.memory-card:focus-visible{outline:3px solid var(--lime)}.memory-grid:empty{display:none}.rx button:disabled{opacity:.35;cursor:not-allowed}</style>
+.memory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.memory-card{padding:0;background:#061a0d;border:2px solid var(--line);color:var(--bone);text-align:left;cursor:pointer;min-width:0;overflow:hidden;font:inherit}.memory-card.selected{border-color:var(--acid);box-shadow:0 0 0 2px rgba(244,255,26,.28)}.memory-card img,.memory-card video{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#010904}.memory-card strong{display:block;padding:10px;overflow-wrap:anywhere}.memory-card small{display:block;padding:0 10px 10px;color:var(--dim)}.memory-card:focus-visible{outline:3px solid var(--lime)}.memory-grid:empty{display:none}.rx button:disabled{opacity:.35;cursor:not-allowed}.gift-zone{margin-top:20px;padding:16px;background:linear-gradient(145deg,#12371f,#031108);border:1px solid #3b8049;border-radius:16px}.gift-header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;color:#f4ff1a;font-weight:800}.gift-header span{font-size:14px}.gift-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.gift-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:15px 8px;background:linear-gradient(145deg,#163b22,#06160c);color:#efffee;border:1px solid #397747;border-radius:14px;font:inherit;cursor:pointer}.gift-btn svg{width:55px;height:55px;filter:drop-shadow(0 0 8px #f4ff1a66)}.gift-btn strong{color:#f4ff1a}.gift-btn small{color:#9bd9ac}.gift-btn:disabled{opacity:.4;cursor:not-allowed}.rb{border-radius:15px;background:linear-gradient(145deg,#173c24,#031109)}@media(min-width:480px){.gift-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}</style>
 </head>
 <body>
 <div class="floor"></div>
@@ -162,7 +162,7 @@ body{
 
   <div class="step s2">
     <div class="sh"><span class="num">2</span><span class="sl">Hit it</span><span class="sn">react to your selected memory</span></div>
-    <div class="rx" id="rx"></div>
+    <div class="rx" id="rx"></div><div class="gift-zone"><div class="gift-header"><strong>Send a spectacle</strong><span id="creditStatus">Credits loading…</span></div><div id="giftGrid" class="gift-grid"></div><p id="giftStatus" class="status" aria-live="polite">Select a memory to send a gift.</p></div>
     <p class="sent">You have sent <b id="sent">0</b></p>
   </div>
 
@@ -217,7 +217,7 @@ const $ = function (s) { return document.querySelector(s); };
 const rx = $("#rx"), sentEl = $("#sent"), nimg = $("#nimg"), nname = $("#nname");
 const nmIn = $("#nm"), msgIn = $("#msg"), signBtn = $("#sign"), statusEl = $("#status");
 
-let now = {}, sent = 0, pending = {}, flushT = null, lastSign = 0;
+let now = {}, sent = 0, pending = {}, flushT = null, lastSign = 0, walletBalance = null, giftBusy = false;
 try { nmIn.value = localStorage.getItem(NAME_KEY) || ""; } catch (e) {}
 
 function reactName() { return (nmIn.value.trim() || "Guest").slice(0, 24); }
@@ -228,13 +228,13 @@ nmIn.addEventListener("input", function () {
 
 /* Access uses the same server-issued pass as the Party Album. */
 let access = null, generation = 0, previewVersion = 0, redeeming = false, expiryTimer;
-let stopMedia, stopEvent, stopAccess; let browseVersion = 0; const signedMedia = httpsCallable(fn, "getGuestPhotoWallMedia");
+let stopMedia, stopEvent, stopAccess, stopWallet; let browseVersion = 0; const signedMedia = httpsCallable(fn, "getGuestPhotoWallMedia");
 function gateMessage(text) { $("#gateStatus").textContent = text; }
 function lock(reason = "") {
   generation++; previewVersion++;
   clearTimeout(expiryTimer); clearTimeout(flushT); flushT = null; pending = {};
-  stopMedia?.(); stopEvent?.(); stopAccess?.();
-  stopMedia = stopEvent = stopAccess = undefined;
+  stopMedia?.(); stopEvent?.(); stopAccess?.(); stopWallet?.();
+  stopMedia = stopEvent = stopAccess = stopWallet = undefined; walletBalance=null; updateGiftControls();
   browseVersion++; $("#memoryGrid").replaceChildren(); $("#browseStatus").textContent = "Loading memories…"; $("#emptyMediaAction").hidden = true;
   access = null; now = {}; sent = 0; sentEl.textContent = "0";
   nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Choose a photo or video";
@@ -288,7 +288,7 @@ async function renderMemories(snapshot, session) {
     const chosen = available.find(r => r.id === previousId);
     if (chosen) {
       const d = chosen.data(); selectMemory(chosen.id, d.name || "Guest", links.get(chosen.id).preview, d.type);
-    } else { now = {}; nimg.hidden = true; nname.textContent = "Choose a photo or video"; }
+    } else { now = {}; nimg.hidden = true; nname.textContent = "Choose a photo or video"; updateGiftControls(); }
   } catch (err) {
     if (session !== generation || version !== browseVersion) return;
     console.warn("Memories unavailable", err);
@@ -306,7 +306,7 @@ function selectMemory(id, name, url, type) {
     b.classList.toggle("selected", chosen);
     b.setAttribute("aria-pressed", String(chosen));
   });
-  $("#browseStatus").textContent = "Selected: " + name + ". Reactions will go to this memory.";
+  $("#browseStatus").textContent = "Selected: " + name + ". Reactions and gifts go to this memory.";updateGiftControls();
 }
 async function openReactions() {
   lock(); const session = generation, user = auth.currentUser;
@@ -335,6 +335,7 @@ async function openReactions() {
       const current = s.data();
       if (!current || current.eventId !== access?.eventId || current.expiresAt?.toMillis() !== expiresAt) lock("Your pass has changed. Enter a fresh code to return.");
     }, () => { if (session === generation) lock("Could not verify your pass. Please try again."); });
+    stopWallet = onSnapshot(doc(db,"guest_wallets",user.uid), s=>{if(session!==generation)return;walletBalance=s.data()?.eventId===access?.eventId?Number(s.data().balance):null;updateGiftControls()}, err=>{walletBalance=null;updateGiftControls("Gift service awaiting deployment");console.warn(err)});
     stopMedia = onSnapshot(query(collection(db, "media_queue"), where("eventId", "==", access.eventId)), s => {
       if (session === generation && hasPass()) void renderMemories(s, session);
     }, err => {
