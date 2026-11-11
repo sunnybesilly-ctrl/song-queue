@@ -311,9 +311,9 @@ body{font-family:var(--body);color:var(--bone)}
 @media(prefers-reduced-motion:reduce){.gift-hero{animation:giftVoyage 1.4s ease-out both}.gift-glint{display:none}}
 @media(orientation:portrait){#rx.docked .rc{height:32px;min-width:44px;padding:0 6px}#rx.docked .ic{width:20px;height:20px}#rx.docked .rn{font-size:14px}}
 
-.w.triptych{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#03140c}
-.w.triptych>.mi{grid-column:2;grid-row:1;z-index:2;min-width:0;width:100%;height:100%;object-fit:contain}
-.w.triptych>.portrait-side{grid-row:1;width:100%;height:100%;min-width:0;object-fit:cover;opacity:.7;filter:saturate(.75) brightness(.78)}
+.w.triptych{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:4px;background:#03140c}
+.w.triptych>.mi{grid-column:2;grid-row:1;z-index:2;min-width:0;min-height:0;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain!important;object-position:center center;transform:none!important;animation:none!important}
+.w.triptych>.portrait-side{grid-row:1;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover;opacity:.7;filter:saturate(.75) brightness(.78)}
 .w.triptych>.portrait-side.left{grid-column:1}.w.triptych>.portrait-side.right{grid-column:3}
 #reactionCascade{position:absolute;inset:0 0 calc(var(--bar) + var(--reaction-dock));z-index:6;pointer-events:none;overflow:hidden}
 .cascade-icon{position:absolute;top:-7%;width:clamp(24px,5vh,52px);height:clamp(24px,5vh,52px);opacity:0;animation:reactionDrift 3.2s ease-in-out both;filter:drop-shadow(0 2px 8px #0008)}
@@ -419,6 +419,9 @@ body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18p
  #qrcard .qb .ql{font-size:3vh}
 }
 @media(prefers-reduced-motion:reduce){#qrcard.on .qt .a,#qrcard.on .qb{animation:none}}
+/* Center frame safety applies to landscape and portrait media alike. */
+.w>.mi{object-fit:contain!important;object-position:center;min-width:0;min-height:0;max-width:100%;max-height:100%;transform:none!important}
+.w>.mi.kb{animation:none!important}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -654,9 +657,7 @@ function playUrl(m) {
   if (m.url.indexOf("c_limit") >= 0 && /\.(jpe?g|png|webp|gif)$/i.test(m.url) && !m.crop) return m.url;
   
   let imgTrans = ["c_limit", "w_2048", "h_2048", "q_auto"];
-  if (m.crop && m.crop.includes(":")) {
-    imgTrans = ["c_fill", "ar_" + m.crop, "w_2048", "h_2048", "q_auto"];
-  }
+  // Keep the original framing for center playback; side panels can crop.
   
   const keep = /\.(jpe?g|png|webp|gif)$/i.test(p.tail);
   return p.pre + "image/" + p.delivery + "/" + imgTrans.join(",") + "/" + (keep ? p.tail : swapExt(p.tail, ".jpg"));
@@ -1043,11 +1044,7 @@ function reveal(w, m, isFresh, my) {
   } else {
     const ms = holdFor(isFresh);
     planned = ms;
-    if (!lite) {
-      el.style.transformOrigin = (25 + Math.random() * 50) + "% " + (25 + Math.random() * 50) + "%";
-      el.style.animationDuration = ((ms + t.ms) / 1000) + "s";
-      el.className = "mi kb";
-    }
+    // Main photos are deliberately not zoomed: edge-to-edge content stays visible.
     slideDeadline = Date.now() + ms;
     timer = setTimeout(next, ms);
   }
