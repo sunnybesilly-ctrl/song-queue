@@ -593,6 +593,7 @@ body.qr-screen #bar .who{display:none!important}
 @keyframes giftParticle{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}
  22%{opacity:.95}70%{opacity:.8}100%{opacity:0;transform:translate(calc(-50% + var(--gx)),calc(-50% + var(--gy))) scale(.4)}}
 @media(prefers-reduced-motion:reduce){.gift-particle{animation:none;opacity:.3}}
+.gift-sender{font:900 clamp(17px,3.3vh,37px)/1.05 var(--display);letter-spacing:.08em;text-transform:uppercase;color:#f3ffe8;text-shadow:0 3px 18px #000,0 0 16px #d4ffbd;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -913,10 +914,10 @@ function queueGiftDoc(v,id){
  if(seenGiftIds.has(id)||!ICON[v.kind]||!v.mediaId)return;
  if(!archivePlayback&&v.eventId!==currentEventId)return;
  seenGiftIds.add(id);
- if(curItem?.id===v.mediaId&&mode==="loop")featureGift(v.kind);
+ if(curItem?.id===v.mediaId&&mode==="loop")featureGift(v.kind,v.name);
  else{
    const q=pendingGiftMedia.get(v.mediaId)||[];
-   q.push(v.kind);pendingGiftMedia.set(v.mediaId,q.slice(-3));
+   q.push({kind:v.kind,name:v.name});pendingGiftMedia.set(v.mediaId,q.slice(-3));
    if(items.some(m=>m.id===v.mediaId&&!m.rotationPaused)&&!giftSpotlightIds.includes(v.mediaId))
      giftSpotlightIds.push(v.mediaId);
  }
@@ -938,11 +939,11 @@ function cascadeReaction(kind,amount=1){
 }
 function showPendingGifts(id){
  const q=pendingGiftMedia.get(id)||[];pendingGiftMedia.delete(id);
- q.slice(-3).forEach(kind=>featureGift(kind));
+ q.slice(-3).forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
 }
-function featureGift(kind){
+function featureGift(kind,name){
  if(!ICON[kind]||!curItem||mode!=="loop")return;
- giftQueue.push({kind,id:curItem.id});
+ giftQueue.push({kind,name:String(name||"A party guest").slice(0,60),id:curItem.id});
  if(giftQueue.length>4)giftQueue.shift();
  playGift();
 }
@@ -956,7 +957,8 @@ function playGift(){
  symbol.innerHTML=ICON[gift.kind];
  core.appendChild(symbol);
  for(let i=0;i<3;i++)core.appendChild(h("i","gift-glint"));
- core.appendChild(h("span","gift-title",gift.kind+" gift"));
+ core.appendChild(h("span","gift-title",gift.kind==="spark"?"STARLIGHT":gift.kind.toUpperCase()));
+ core.appendChild(h("span","gift-sender","FROM "+gift.name));
  root.dataset.kind=gift.kind;
  const halo=h("div","gift-particles");
  for(let i=0;i<14;i++){
