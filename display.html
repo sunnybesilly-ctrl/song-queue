@@ -1166,7 +1166,9 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
   if(!wantPause) applyScreenPause(false);
 },function(e){console.warn("Display control unavailable:",e);});
 
-let mediaRevision = 0, currentEventId = null, mediaSnapshot = null, reactionSnapshot = null;
+let mediaRevision = 0, currentEventId = null, mediaSnapshot = null, reactionSnapshot = null, giftSnapshot = null, archivePlayback = false;
+function refreshArchiveReactions(){if(!reactionSnapshot)return;const ids=new Set(items.map(x=>x.id));rebuildRx(reactionSnapshot.docs.filter(d=>ids.has(d.data().mediaId) && (archivePlayback||d.data().eventId===currentEventId)));}
+function refreshArchiveGifts(){Object.keys(GIFT).forEach(id=>delete GIFT[id]);if(!giftSnapshot)return;const ids=new Set(items.map(x=>x.id));giftSnapshot.docs.forEach(d=>{const v=d.data();if(!ids.has(v.mediaId)||!ICON[v.kind]||(!archivePlayback&&v.eventId!==currentEventId))return;const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});counts[v.kind]=(counts[v.kind]||0)+1;});}
 function resetForEventChange() {
   // Invalidate media loads and callbacks from the previous event.
   mediaRevision++;
@@ -1182,12 +1184,12 @@ function resetForEventChange() {
   cmt.hidden = true; hint.hidden = false; seenCommentIds.clear();
   yb.replaceChildren(); yb.className = "";
   showQR(true);
-  items = []; pos = -1; fresh = []; seen = false;
+  items = []; pos = -1; fresh = []; seen = false; archivePlayback=false;
   cur = null; curItem = null; lastId = ""; override = null; overrideKey = ""; overridePlayed = false;
   hnEl.textContent = "0";
   newb.style.display = "none";
   Object.keys(RX).forEach(id => delete RX[id]);
-  if (reactionSnapshot) rebuildRx(reactionSnapshot.docs.filter(d => !!currentEventId && d.data().eventId === currentEventId));
+  // Reaction counts are loaded after selecting the playable media.
   Object.keys(views).forEach(id => delete views[id]);
   try{
    const stored=JSON.parse(sessionStorage.getItem("photowall_views_"+currentEventId)||"{}");
@@ -1217,19 +1219,15 @@ onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
 async function processMediaSnapshot(snap) {
   const revision = ++mediaRevision;
   const eventAtStart = currentEventId;
-  const list = []; let curChanged = false;
-  snap.docs.forEach(function (d) {
-    const x = d.data(); x.id = d.id;
-    x.type = kindOf(x);
-    if (!eventAtStart || x.eventId !== eventAtStart || !x.url || !x.type) return;
-    list.push(x);
-    const lk = x.likes || 0;
-    if (lastLikes[d.id] !== undefined && lk > lastLikes[d.id]) {
-      
-      if (curItem && curItem.id === d.id) curChanged = true;
-    }
-    lastLikes[d.id] = lk;
+  const current=[],historical=[];let curChanged=false;
+  snap.docs.forEach(d=>{
+    const x=d.data();x.id=d.id;x.type=kindOf(x);
+    if(!x.url||!x.type)return;
+    (eventAtStart&&x.eventId===eventAtStart?current:historical).push(x);
   });
+  const fallback=current.length===0;
+  const list=fallback?historical:current;
+  list.forEach(x=>{const lk=x.likes||0;if(lastLikes[x.id]!==undefined&&lk>lastLikes[x.id]&&curItem?.id===x.id)curChanged=true;lastLikes[x.id]=lk;});
   try {
     await photoLinks.prepare(list.flatMap(item => [item.url, playUrl(item), thumb(item),
       item.type === "video" ? stillUrl(item) : ""]));
@@ -1238,13 +1236,16 @@ async function processMediaSnapshot(snap) {
   }
   if (revision !== mediaRevision || eventAtStart !== currentEventId) return;
   window.__djMediaReceived = true;
-  items = list;
-  if (list.length && !cShowing) { hint.textContent = "Scan a code to react or sign the yearbook."; hint.hidden = false; }
+  const leavingArchive=archivePlayback&&!fallback&&!!curItem;
+  archivePlayback=fallback;items=list;
+  refreshArchiveReactions();refreshArchiveGifts();
+  if (list.length && !cShowing) { hint.textContent = fallback ? "Playing earlier memories until this event receives new photos and videos." : "Scan a code to react or sign the yearbook."; hint.hidden = false; }
+  if(leavingArchive){stopMedia();mode="idle";pos=-1;}
   if (!list.length) {
-    nmEl.textContent = currentEventId ? "NO PHOTOS FOR THIS EVENT" : "EVENT NOT OPEN";
-    hint.textContent = currentEventId ? "Upload a photo or video for the current event." : "Start a new event in the control room.";
+    nmEl.textContent = "NO AVAILABLE MEDIA";
+    hint.textContent = "Scan to upload your first photo or video.";
   }
-  if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added" && c.doc.data().eventId === currentEventId) fresh.push(c.doc.id); });
+  if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added" && list.some(m=>m.id===c.doc.id)) fresh.push(c.doc.id); });
   const first = !seen; seen = true;
   if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
   if (curItem && mode === "loop" && list.some(function (m) { return m.id === curItem.id && m.rotationPaused; })) {
@@ -1266,10 +1267,10 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
 let rInit = false;
 onSnapshot(collection(db, "reactions"), function (s) {
   reactionSnapshot = s;
-  rebuildRx(s.docs.filter(d => !!currentEventId && d.data().eventId === currentEventId));
+  refreshArchiveReactions();
   if (rInit) s.docChanges().forEach(function (c) {
     if (c.type !== "added") return;
-    const d = c.doc.data(); if (!d.c || !currentEventId || d.eventId !== currentEventId) return;
+    const d = c.doc.data(); if (!d.c || !items.some(m=>m.id===d.mediaId) || (!archivePlayback && d.eventId !== currentEventId)) return;
     const id = d.mediaId || (curItem && curItem.id) || "";
     Object.keys(ICON).forEach(function (k) {
       const n = Math.min(Math.max(+d.c[k] || 0, 0), 60);
@@ -1287,18 +1288,13 @@ onSnapshot(collection(db, "reactions"), function (s) {
 
 let giftInit=false;
 onSnapshot(collection(db,"photo_gifts"),function(s){
- Object.keys(GIFT).forEach(id=>delete GIFT[id]);
- const active=s.docs.filter(d=>!!currentEventId && d.data().eventId===currentEventId);
- for(const d of active){
-  const v=d.data();if(!v.mediaId||!ICON[v.kind])continue;
-  const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});
-  counts[v.kind]=(counts[v.kind]||0)+1;
- }
+ giftSnapshot=s;
+ refreshArchiveGifts();
  if(giftInit){
   for(const change of s.docChanges()){
    if(change.type!=="added")continue;
    const v=change.doc.data();
-   if(v.eventId!==currentEventId||!curItem||v.mediaId!==curItem.id||(views[curItem.id]||0)<2)continue;
+   if((!archivePlayback&&v.eventId!==currentEventId)||!curItem||v.mediaId!==curItem.id||(views[curItem.id]||0)<2)continue;
    featureGift(v.kind);
   }
  }
