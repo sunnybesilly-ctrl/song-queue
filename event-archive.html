@@ -10,7 +10,7 @@ main{max-width:1180px;margin:auto;padding:24px 18px 80px}h1{font-size:clamp(48px
 <h1>Event archive</h1><p>Private history of event media, reactions, and yearbook signatures. Only your verified DJ account can open this page.</p>
 <section class="panel" id="login"><h2>Admin sign-in</h2><div class="bar"><input id="email" type="email" placeholder="Verified DJ email" autocomplete="username"><input id="password" type="password" placeholder="Password" autocomplete="current-password"><button id="signIn">Open archive</button></div><p id="loginStatus" role="status"></p></section>
 <section id="app" hidden><div class="bar"><label for="events">Event</label><select id="events"></select><button id="refresh">Refresh</button><button id="exportCsv">Download CSV</button><button id="exportJson">Download full JSON</button><button id="signOut">Sign out</button></div>
-<p id="status" role="status" class="sub">Loading history…</p><div class="stats"><div class="stat"><strong id="photos">0</strong><span>PHOTOS</span></div><div class="stat"><strong id="videos">0</strong><span>VIDEOS</span></div><div class="stat"><strong id="count">0</strong><span>REACTION TAPS</span></div><div class="stat"><strong id="signatures">0</strong><span>SIGNATURES</span></div></div>
+<p id="status" role="status" class="sub">Loading history…</p><div class="stats"><div class="stat"><strong id="photos">0</strong><span>PHOTOS</span></div><div class="stat"><strong id="videos">0</strong><span>VIDEOS</span></div><div class="stat"><strong id="count">0</strong><span>REACTION TAPS</span></div><div class="stat"><strong id="signatures">0</strong><span>SIGNATURES</span></div><div class="stat"><strong id="giftCount">0</strong><span>GIFTS SENT</span></div><div class="stat"><strong id="creditsSpent">0</strong><span>GIFT CREDITS</span></div></div>
 <div class="panel"><h2>Event summary</h2><div id="summary" class="sub"></div><p class="sub">Exports include reaction and signature records; individual original files can be opened from their cards while still available from the media provider. Save downloaded exports to Google Drive for your own records. This page does not automatically back up files.</p></div>
 <section><h2>Photos and videos</h2><div id="cards" class="cards"></div></section>
 <section class="panel"><h2>Yearbook signatures</h2><div id="notes"></div></section>
@@ -25,7 +25,7 @@ const config={apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-ph
 const app=initializeApp(config),db=getFirestore(app),auth=getAuth(app);
 const links=createAdminPhotoLinks(httpsCallable(getFunctions(app,"us-central1"),"signAdminPhotoWallUrls"));
 const $=id=>document.getElementById(id), kinds={heart:"❤️",bolt:"⚡",star:"☀️",lol:"😂",wow:"😮",cool:"😎",sad:"😭",down:"👎"};
-let all={media:[],reactions:[],comments:[]},state=null,current="";let loadVersion=0;
+let all={media:[],reactions:[],comments:[],gifts:[]},state=null,current="";let loadVersion=0;
 const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
 const time=t=>t?.toDate?t.toDate().toLocaleString():t?.seconds?new Date(t.seconds*1000).toLocaleString():"Unknown date";
 const iso=t=>t?.toDate?t.toDate().toISOString():t?.seconds?new Date(t.seconds*1000).toISOString():"";
@@ -38,20 +38,21 @@ const csvRow=fields=>fields.map(v=>'"'+safe(v).replace(/"/g,'""')+'"').join(",")
 const fileStem=()=> "sunny-event-"+(current==="legacy"?"legacy":current.slice(0,16));
 function exportData(format){
  if(!current)return;
- const media=rows("media"),rx=rows("reactions"),comments=rows("comments");
- const bundle={exportedAt:new Date().toISOString(),eventId:current,eventDate:media.map(x=>iso(x.timestamp)).filter(Boolean).sort()[0]||"",summary:{photos:media.filter(m=>m.type==="image").length,videos:media.filter(m=>m.type==="video").length,reactionTaps:totalReaction(),signatures:comments.length},media,reactions:rx,comments};
+ const media=rows("media"),rx=rows("reactions"),comments=rows("comments"),gifts=rows("gifts");
+ const bundle={exportedAt:new Date().toISOString(),eventId:current,eventDate:media.map(x=>iso(x.timestamp)).filter(Boolean).sort()[0]||"",summary:{photos:media.filter(m=>m.type==="image").length,videos:media.filter(m=>m.type==="video").length,reactionTaps:totalReaction(),signatures:comments.length,gifts:gifts.length,creditsSpent:gifts.reduce((n,g)=>n+(Number(g.cost)||0),0)},media,reactions:rx,comments,gifts};
  if(format==="json"){downloadFile(fileStem()+".json",JSON.stringify(bundle,null,2),"application/json");return;}
  const lines=[csvRow(["record_type","event_id","media_id","uploader_or_guest","media_type","timestamp","reaction_kind","reaction_count","signature","source_url"])];
  for(const m of media)lines.push(csvRow(["media",current,m.id,m.name,m.type,iso(m.timestamp),"","","",m.url]));
  for(const r of rx)for(const [k,n]of Object.entries(r.c||{}))if(Number(n)>0)lines.push(csvRow(["reaction",current,r.mediaId,r.name,"",iso(r.t),k,n,"",""]));
  for(const n of comments)lines.push(csvRow(["signature",current,n.mediaId,n.name,"",iso(n.t),"","",n.text,""]));
+ for(const g of gifts)lines.push(csvRow(["gift",current,g.mediaId,g.name,"",iso(g.t),g.kind,g.cost,"",""]));
  downloadFile(fileStem()+".csv","\uFEFF"+lines.join("\r\n"),"text/csv;charset=utf-8");
 }
 function render(){
  if(!current)return;
- const media=rows("media").sort((a,b)=>(a.timestamp?.seconds||0)-(b.timestamp?.seconds||0)),rx=rows("reactions"),comments=rows("comments");
+ const media=rows("media").sort((a,b)=>(a.timestamp?.seconds||0)-(b.timestamp?.seconds||0)),rx=rows("reactions"),comments=rows("comments"),gifts=rows("gifts");
  $("photos").textContent=media.filter(x=>x.type==="image").length;$("videos").textContent=media.filter(x=>x.type==="video").length;
- $("count").textContent=totalReaction();$("signatures").textContent=comments.length;
+ $("count").textContent=totalReaction();$("signatures").textContent=comments.length;$("giftCount").textContent=gifts.length;$("creditsSpent").textContent=gifts.reduce((n,g)=>n+(Number(g.cost)||0),0);
  const most=media.map(m=>({m,count:rx.filter(r=>r.mediaId===m.id).reduce((n,r)=>n+countReaction(r),0)})).sort((a,b)=>b.count-a.count);
  $("summary").textContent=media.length?media.length+" memories · "+rx.length+" reaction submissions · "+(most[0]?.count||0)+" taps on the most-reacted memory.":"No media stored for this event.";
  const grid=$("cards");grid.replaceChildren();
@@ -62,7 +63,8 @@ function render(){
   const heading=el("h3","",m.name||"Guest"),date=el("p","muted",time(m.timestamp));
   const activity=rx.filter(r=>r.mediaId===m.id),counts={};for(const r of activity)for(const [k,n]of Object.entries(r.c||{}))counts[k]=(counts[k]||0)+Number(n||0);
   const summary=el("div","reaction",Object.entries(counts).map(([k,n])=>(kinds[k]||k)+" "+n).join("  ")||"No reactions");
-  body.append(heading,date,summary);
+  const giftSummary=el("p","reaction",gifts.filter(g=>g.mediaId===m.id).map(g=>(g.name||"Guest")+" sent "+g.kind+" ("+g.cost+" credits)").join(" · ")||"No gifts");
+  body.append(heading,date,summary,giftSummary);
   if(url){const a=el("a","dl","Open / save media");a.href=url;a.target="_blank";a.rel="noopener noreferrer";body.append(a)}
   else body.append(el("p","muted","Media preview unavailable or original no longer hosted."));
   const notes=comments.filter(n=>n.mediaId===m.id);
@@ -83,9 +85,9 @@ async function selectEvent(id){
 async function reload(){
  $("refresh").disabled=true;$("status").textContent="Loading saved events…";
  try{
-  const [m,r,c,s]=await Promise.all([getDocs(collection(db,"media_queue")),getDocs(collection(db,"reactions")),getDocs(collection(db,"comments")),getDoc(doc(db,"gallery_state","current"))]);
-  all={media:m.docs.map(x=>({id:x.id,...x.data()})),reactions:r.docs.map(x=>({id:x.id,...x.data()})),comments:c.docs.map(x=>({id:x.id,...x.data()}))};state=s.data();
-  const ids=new Set([...all.media,...all.reactions,...all.comments].map(x=>x.eventId).filter(Boolean));
+  const [m,r,c,g,s]=await Promise.all([getDocs(collection(db,"media_queue")),getDocs(collection(db,"reactions")),getDocs(collection(db,"comments")),getDocs(collection(db,"photo_gifts")),getDoc(doc(db,"gallery_state","current"))]);
+  all={media:m.docs.map(x=>({id:x.id,...x.data()})),reactions:r.docs.map(x=>({id:x.id,...x.data()})),comments:c.docs.map(x=>({id:x.id,...x.data()})),gifts:g.docs.map(x=>({id:x.id,...x.data()}))};state=s.data();
+  const ids=new Set([...all.media,...all.reactions,...all.comments,...all.gifts].map(x=>x.eventId).filter(Boolean));
   if(state?.eventId)ids.add(state.eventId);
   const ordered=[...ids].sort((a,b)=>{
    const first=id=>Math.max(0,...all.media.filter(x=>x.eventId===id).map(x=>x.timestamp?.seconds||0));
