@@ -501,6 +501,15 @@ const qName   = s => qVal(s, Q_NAME);
 const qArtist = s => qVal(s, Q_ARTIST);
 const qTitle  = s => qVal(s, Q_TITLE);
 const qTs     = s => s['Timestamp'] || s['timestamp'] || s['TIMESTAMP'] || '';
+const qReqId  = s => String(s['Request ID'] || s.requestId || '').trim();
+let activeRequestId = '';
+function newRequestId() {
+  if (self.crypto && crypto.randomUUID) return crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  if (self.crypto && crypto.getRandomValues) crypto.getRandomValues(bytes);
+  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random()*256);
+  return Array.from(bytes, b => b.toString(16).padStart(2,'0')).join('');
+}
 
 // Exactly the display's list: today only, oldest first, same request counted once.
 function buildQueueList(rows) {
@@ -511,12 +520,12 @@ function buildQueueList(rows) {
     .sort((a, b) => new Date(qTs(a) || 0) - new Date(qTs(b) || 0));
   const out = [], recent = new Map();
   for (const s of list) {
-    const id = String(s['Request ID'] || s.requestId || '').trim();
+    const id = qReqId(s);
     const key = id ? 'id:' + id : 'legacy:' + posKey(qName(s)) + '|' + posKey(qArtist(s)) + '|' + posKey(qTitle(s));
     const when = new Date(qTs(s)).getTime();
-    const previous = recent.get(key);
-    if (previous && (id || (Number.isFinite(when) && Number.isFinite(previous.when) && Math.abs(when - previous.when) <= 10000))) {
-      const first = out[previous.index];
+    const prev = recent.get(key);
+    if (prev && (id || (Number.isFinite(when) && Number.isFinite(prev.when) && Math.abs(when - prev.when) <= 10000))) {
+      const first = out[prev.index];
       Object.keys(s).forEach(k => { if (!first[k] && s[k]) first[k] = s[k]; });
     } else {
       recent.set(key, {index: out.length, when});
@@ -534,7 +543,8 @@ async function fetchQueueRows() {
   } catch (e) { return null; }
 }
 
-function isMine(s, nameK, songK) {
+function isMine(s, nameK, songK, requestId) {
+  if (requestId && qReqId(s)) return qReqId(s) === requestId;
   if (posKey(qName(s)) !== nameK) return false;
   const t = posKey(qTitle(s));
   return !!t && !!songK && (t === songK || t.indexOf(songK) > -1 || songK.indexOf(t) > -1);
@@ -548,7 +558,7 @@ function stopPosTracking() {
 }
 
 // baseCount = number of pending songs in the queue BEFORE this request was sent (null if unknown).
-function startPosTracking(name, song, baseCount) {
+function startPosTracking(name, song, requestId) {
   stopPosTracking();
   const my    = posToken;
   const box   = document.getElementById('queue-pos');
@@ -584,7 +594,7 @@ function startPosTracking(name, song, baseCount) {
     if (valid) {
       const pending = valid;
       let idx = -1;
-      pending.forEach((s, i) => { if (isMine(s, nameK, songK)) idx = i; });
+      pending.forEach((s, i) => { if (isMine(s, nameK, songK, requestId)) idx = i; });
       if (idx >= 0) {
         exact = true;
         const n = idx + 1, t = spotText(n);
@@ -618,6 +628,7 @@ async function goToStep2() {
   window._reqBusy = true;
 
   const btn = document.getElementById('btn-next');
+  activeRequestId = newRequestId();
   // Snapshot the queue length BEFORE posting so the guest gets a number instantly.
   const basePromise = Promise.race([fetchQueueRows(), new Promise(r => setTimeout(() => r(null), 3500))]);
 
@@ -641,7 +652,7 @@ async function goToStep2() {
     'entry.1627059384': name,
     'entry.68806247':   finalArtist,
     'entry.1305392283': finalSong,
-    'entry.606492518':  [document.getElementById('f-snap').value.trim(), document.getElementById('f-comment').value.trim() ? 'NOTE: ' + document.getElementById('f-comment').value.trim() : ''].filter(Boolean).join(' | '),
+    'entry.606492518':  ['REQID:' + activeRequestId, document.getElementById('f-snap').value.trim() ? 'SNAP:' + document.getElementById('f-snap').value.trim() : '', document.getElementById('f-comment').value.trim() ? 'NOTE:' + document.getElementById('f-comment').value.trim() : ''].filter(Boolean).join(' | '),
     'entry.505222990':  ytVideoId || ''
   }).then(() => { submitted = true; }).catch(e => console.warn(e));
 
@@ -667,7 +678,7 @@ async function goToStep2() {
 
   document.getElementById('chat-name').value = name;
   showPage(2);
-  startPosTracking(name, finalSong, null);
+  startPosTracking(name, finalSong, activeRequestId);
   if (typeof window.celebrateRequest === "function") window.celebrateRequest();
 }
 
@@ -1575,7 +1586,7 @@ function resetAll() {
   stopPosTracking();
   ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  window._reqBusy = false; submitted = false; optionalSaved = false; songFound = null; ytVideoId = null;
+  window._reqBusy = false; submitted = false; optionalSaved = false; activeRequestId = ''; songFound = null; ytVideoId = null;
   searchToken++;
   ytFinalTitle = null; ytFinalChannel = null; ytFinalThumb = null;
   const ct = document.getElementById('c-thumb'); if (ct) { ct.style.display = 'none'; ct.src = ''; }
