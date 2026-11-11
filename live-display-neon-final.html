@@ -1231,6 +1231,25 @@
         });
 
         window.allSongs.sort((a, b) => new Date(getTimestamp(a)||0) - new Date(getTimestamp(b)||0));
+        // Same request-ID filtering as Lite. Separate requests for the same song remain separate.
+        const normalized = value => String(value || "").toLowerCase().replace(/[^a-z0-9\u00c0-\u024f]+/g, "");
+        const unique = [], recent = new Map();
+        for (const song of window.allSongs) {
+          const id = String(song["Request ID"] || song.requestId || "").trim();
+          const key = id ? "id:" + id : "legacy:" + normalized(getSongName(song)) + "|" + normalized(getArtist(song)) + "|" + normalized(getSongTitle(song));
+          const when = new Date(getTimestamp(song)).getTime();
+          const prev = recent.get(key);
+          if (prev && (id || (Number.isFinite(when) && Number.isFinite(prev.when) && Math.abs(when - prev.when) <= 10000))) {
+            const original = unique[prev.index];
+            Object.keys(song).forEach(field => {
+              if (!original[field] && song[field]) original[field] = song[field];
+            });
+          } else {
+            recent.set(key, {index: unique.length, when});
+            unique.push({...song});
+          }
+        }
+        window.allSongs = unique;
         document.getElementById("totalCount").textContent = window.allSongs.length;
         displayQueue();
       } catch(e) { console.error("Queue fetch error:", e); }
