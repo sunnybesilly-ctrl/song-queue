@@ -539,6 +539,23 @@ function chipSet(ch, v, bump) {
   ch.el.className = "rc";
   if (bump) { ch.n.className = "rn"; void ch.n.offsetWidth; ch.n.className = "rn bump"; }
 }
+
+function rainInMargin(k, count=1, gift=false) {
+ if(!cur || !cur.firstChild || mode!=="loop" || !(views[curItem?.id]>1)) return;
+ const pane=document.getElementById("marginRain"),r=mediaRect(cur.firstChild);
+ const left=r.l,right=r.sw-r.l-r.w,space=Math.max(left,right);
+ if(space<Math.max(48,window.innerHeight*.07))return;
+ const limit=Math.min(gift?16:count*2,24),mediaId=curItem.id;
+ for(let i=0;i<limit;i++)setTimeout(()=>{
+  if(!curItem||curItem.id!==mediaId||mode!=="loop")return;
+  const e=document.createElement("div");e.className="rainIcon";e.innerHTML=ICON[k]||ICON.star;
+  e.style.left=((left>=right?0:r.l+r.w)+Math.random()*Math.max(0,space-65))+"px";
+  e.style.setProperty("--rain-ms",(gift?3600:3000+Math.random()*1300)+"ms");
+  e.style.setProperty("--rain-distance",Math.max(160,pane.clientHeight+40)+"px");
+  pane.appendChild(e);setTimeout(()=>e.remove(),5000);
+ },i*(gift?90:180));
+}
+
 function bubble(feed, ev) {
   const b = h("div", "bub"), av = h("div", "av", ini(ev.w)), nm = h("span", "bn", ev.w), ic = h("span", "bi");
   av.style.background = hue(ev.w); ic.innerHTML = ICON[ev.k];
@@ -554,12 +571,18 @@ function mediaRect(el) {
   const s = Math.min(sw / iw, sh / ih), w = iw * s, hh = ih * s;
   return { sw: sw, sh: sh, l: (sw - w) / 2, t: (sh - hh) / 2, w: w, h: hh };
 }
-function placeRx(box) {
-  // The dedicated rail sits outside #stage. Never position reactions over media.
-  box.style.right = "auto";
-  box.style.top = "auto";
+function placeRx(box, el) {
+ const r=mediaRect(el),badge=Math.max(52,window.innerHeight*.078);
+ const left=r.l,right=r.sw-r.l-r.w,space=Math.max(left,right),railWidth=badge*1.35;
+ if(space>=railWidth+12){
+  rxBox.classList.remove("docked");
+  box.style.left=(right>=left?r.l+r.w+(right-railWidth)/2:Math.max(0,(left-railWidth)/2))+"px";
+  box.style.top="4%";box.style.maxWidth=railWidth+"px";
+ }else{
+  rxBox.classList.add("docked");box.style.left="auto";box.style.top="auto";box.style.maxWidth="100%";
+ }
 }
-function clearRx() { rxT.forEach(clearTimeout); rxT.length = 0; rxBox.innerHTML = ""; rxCtl = null; }
+function clearRx() { rxT.forEach(clearTimeout); rxT.length = 0; rxBox.innerHTML = ""; rxBox.classList.remove("docked"); rxCtl = null; }
 function showRx(el, m, instant) {
   clearRx();
   const a = RX[m.id]; if (!a || !a.n || !el) return;
@@ -573,7 +596,7 @@ function showRx(el, m, instant) {
     Object.keys(ch).forEach(function (k) { if (base[k] > 0) chipSet(ch[k], base[k], false); });
   }
   rxBox.appendChild(box);
-  placeRx(box, el, Object.keys(ch).length);
+  placeRx(box, el);
   rxCtl = { feed: feed, ch: ch };
   const win = Math.max(1500, Math.min(planned * 0.75, 5000));
   const step = Math.max(160, Math.min(520, win / Math.max(tail.length, 1)));
@@ -583,12 +606,12 @@ function showRx(el, m, instant) {
 }
 function liveRx(e, id, replay) {
   const c = rxCtl;
-  if (c && c.ch[e.k]) { chipSet(c.ch[e.k], c.ch[e.k].v + e.n, true); bubble(c.feed, e); return; }
+  if (c && c.ch[e.k]) { chipSet(c.ch[e.k], c.ch[e.k].v + e.n, true); bubble(c.feed, e); rainInMargin(e.k,e.n); return; }
   if (replay) return;
   if (!RX[id]) RX[id] = { n: 0, c: {}, ev: [] };
   if (!RX[id].c[e.k]) { RX[id].c[e.k] = e.n; RX[id].n += e.n; }
   if (cur && curItem && curItem.id === id) showRx(cur.firstChild, { id: id }, true);
-  if (rxCtl) bubble(rxCtl.feed, e);
+  if (rxCtl) bubble(rxCtl.feed, e); rainInMargin(e.k,e.n);
 }
 function awardRail(snap, id) {
   const a = RX[id]; if (!a || !a.n) return;
