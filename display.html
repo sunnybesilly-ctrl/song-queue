@@ -345,6 +345,15 @@ body{font-family:var(--body);color:var(--bone)}
  .tv-safe #brand{left:2.4vw;top:auto;bottom:calc(var(--bar) + var(--reaction-dock) + 1.2vh);max-width:55vw}
  .tv-safe #bar .say{padding-left:2.5vw}
 }
+
+/* Hide media-specific attribution on QR / idle screens while retaining
+   the event status and live yearbook message area. */
+body.qr-screen #bar .who { display:none !important }
+body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18px,3vw,54px) }
+@media(orientation:portrait){
+ body.qr-screen #bar { display:flex; align-items:center }
+ body.qr-screen #bar .say { display:flex; width:100%; height:100%; padding:1.5vh 4vw; border-top:0 }
+}
 </style>
 </head>
 <body>
@@ -503,7 +512,12 @@ function isBad(m) { return (bad[m.url] || 0) > Date.now(); }
 function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
 function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
-function showQR(on) { qrcard.className = on ? "on" : ""; }
+function showQR(on) {
+  qrcard.className = on ? "on" : "";
+  // The QR interlude is not attributed to anyone. Keep event status/signatures
+  // but hide the stale "Shot by" name and like total until media plays.
+  document.body.classList.toggle("qr-screen", !!on);
+}
 
 function qrSvg(text, fg, bg) {
   const q = qrcode(0, "M"); q.addData(text); q.make();
