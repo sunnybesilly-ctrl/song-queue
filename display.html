@@ -1042,7 +1042,7 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
   if(!wantPause) applyScreenPause(false);
 },function(e){console.warn("Display control unavailable:",e);});
 
-let mediaRevision = 0, currentEventId = null, mediaSnapshot = null;
+let mediaRevision = 0, currentEventId = null, mediaSnapshot = null, reactionSnapshot = null;
 function resetForEventChange() {
   // Invalidate media loads and callbacks from the previous event.
   mediaRevision++;
@@ -1061,6 +1061,7 @@ function resetForEventChange() {
   hnEl.textContent = "0";
   newb.style.display = "none";
   Object.keys(RX).forEach(id => delete RX[id]);
+  if (reactionSnapshot) rebuildRx(reactionSnapshot.docs.filter(d => !!currentEventId && d.data().eventId === currentEventId));
   Object.keys(views).forEach(id => delete views[id]);
   Object.keys(lastLikes).forEach(id => delete lastLikes[id]);
   mode = "idle";
@@ -1126,6 +1127,7 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
 
 let rInit = false;
 onSnapshot(collection(db, "reactions"), function (s) {
+  reactionSnapshot = s;
   rebuildRx(s.docs.filter(d => !!currentEventId && d.data().eventId === currentEventId));
   if (rInit) s.docChanges().forEach(function (c) {
     if (c.type !== "added") return;
