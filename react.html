@@ -369,6 +369,41 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+
+const GIFT_COSTS={spark:7,comet:77,galaxy:177,supernova:333};
+const GIFT_NAMES={spark:"Starlight",comet:"Comet",galaxy:"Galaxy",supernova:"Supernova"};
+const GIFT_ICONS={
+ spark:'<path d="M32 4l8 20 20 8-20 8-8 20-8-20-20-8 20-8Z" fill="#F4FF1A33" stroke="#F4FF1A" stroke-width="3"/>',
+ comet:'<path d="M4 60C24 49 30 36 35 21M7 38l23-12" stroke="#37FF76" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="20" r="12" fill="#F4FF1A44" stroke="#F4FF1A" stroke-width="3"/>',
+ galaxy:'<ellipse cx="32" cy="32" rx="29" ry="12" transform="rotate(-30 32 32)" stroke="#AE92FF" stroke-width="3"/><ellipse cx="32" cy="32" rx="23" ry="17" transform="rotate(30 32 32)" stroke="#37FFDA" stroke-width="2"/><circle cx="32" cy="32" r="7" fill="#F4FF1A"/>',
+ supernova:'<circle cx="32" cy="32" r="13" fill="#F4FF1A55" stroke="#F4FF1A" stroke-width="3"/><path d="M32 2v14m0 32v14M2 32h14m32 0h14M10 10l11 11m22 22 11 11M54 10 43 21M21 43 10 54" stroke="#37FF76" stroke-width="3" stroke-linecap="round"/>'
+};
+function updateGiftControls(reason){
+ const status=$("#creditStatus");
+ if(!status)return;
+ status.textContent=reason||(walletBalance===null?"Credits unavailable until service is deployed":walletBalance+" / 777 credits remaining");
+ document.querySelectorAll(".gift-btn").forEach(b=>{
+  b.disabled=giftBusy||!access||!now.id||walletBalance===null||walletBalance<Number(b.dataset.cost);
+ });
+}
+for(const kind of Object.keys(GIFT_COSTS)){
+ const cost=GIFT_COSTS[kind];
+ const b=document.createElement("button");b.type="button";b.className="gift-btn";b.dataset.cost=String(cost);
+ b.innerHTML='<svg viewBox="0 0 64 64" fill="none">'+GIFT_ICONS[kind]+'</svg><strong>'+GIFT_NAMES[kind]+'</strong><small>'+cost+' credits</small>';
+ b.addEventListener("click",async()=>{
+  if(!hasPass()||!now.id||walletBalance===null||giftBusy)return;
+  giftBusy=true;updateGiftControls();$("#giftStatus").textContent="Sending "+GIFT_NAMES[kind]+"…";
+  try{
+   const res=(await httpsCallable(fn,"sendPhotoGift")({kind,mediaId:now.id,name:reactName()})).data;
+   walletBalance=res.balance;
+   $("#giftStatus").textContent=GIFT_NAMES[kind]+" sent to this memory!";
+  }catch(e){$("#giftStatus").textContent="Gift not sent: "+(e.message||"Please try again.")}
+  finally{giftBusy=false;updateGiftControls()}
+ });
+ $("#giftGrid").appendChild(b);
+}
+updateGiftControls();
+
 /* reactions: taps are batched into one write every ~1.2s, tagged with who sent them */
 function pop(k, b) {
   if (b.querySelectorAll(".pf").length > 8) return;
