@@ -289,12 +289,33 @@ body{font-family:var(--body);color:var(--bone)}
  .tv-safe #brand{left:2.3vw;top:2.0vh}
  .tv-safe #vbadge{left:2.3vw}
 }
+
+/* Premium reaction counters, separate from gifts */
+#rx.docked{justify-content:flex-start;padding:0 2.3vw;background:linear-gradient(90deg,#081b12ed,#102b1ded);border-top:1px solid #b4ffd433}
+#rx.docked .rbox{justify-content:flex-start!important}
+#rx.docked .rail{justify-content:flex-start;gap:clamp(5px,.8vw,13px);flex-direction:row}
+#rx.docked .rc,.tv-safe #rx .rc{width:auto;min-width:clamp(53px,7vh,80px);height:clamp(31px,5.3vh,49px);border-radius:99px;display:flex;gap:6px;padding:0 10px;background:linear-gradient(145deg,#435e4c,#112019);border:1px solid #ffffff33;box-shadow:inset 0 1px #ffffff55,0 4px 12px #0007}
+#rx.docked .rc::before{display:none}
+#rx.docked .ic{width:clamp(21px,3.4vh,31px);height:clamp(21px,3.4vh,31px)}
+#rx.docked .rn{position:static;min-width:0;height:auto;border:0;padding:0;background:none;color:#fff;font:800 clamp(14px,2.5vh,24px)/1 var(--body);text-shadow:0 2px 3px #0007}
+#giftStage{position:absolute;inset:0 0 calc(var(--bar) + var(--reaction-dock));z-index:7;pointer-events:none;overflow:hidden}
+.gift-hero{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;will-change:transform,opacity;animation:giftVoyage 3.4s cubic-bezier(.16,.75,.3,1) both}
+.gift-core{position:relative;display:flex;flex-direction:column;align-items:center;gap:1vh;opacity:.72;filter:drop-shadow(0 0 24px #baffd688)}
+.gift-symbol{display:grid;place-items:center;width:clamp(115px,25vh,280px);height:clamp(115px,25vh,280px);border-radius:50%;background:radial-gradient(circle at 35% 25%,#ffffff55,#f4ff1a24 45%,#ffffff05 72%);box-shadow:inset 0 0 28px #ffffff3c,0 0 65px #c9ffdd55}
+.gift-symbol svg{width:72%;height:72%;filter:drop-shadow(0 0 10px #faffd9aa)}
+.gift-title{font:900 clamp(20px,4vh,42px)/1 var(--display);letter-spacing:.12em;color:#f3ffe5;text-shadow:0 2px 18px #06130c;text-transform:uppercase}
+.gift-glint{position:absolute;top:12%;left:8%;width:12px;height:12px;border-radius:50%;background:#fff9be;box-shadow:0 0 20px 6px #e6ff8f88;animation:giftGlint 1.4s ease-in-out infinite alternate}
+.gift-glint:nth-child(3){top:32%;left:91%;animation-delay:.3s}.gift-glint:nth-child(4){top:85%;left:33%;animation-delay:.6s}
+@keyframes giftVoyage{0%{opacity:0;transform:translate(-45%,18%) scale(.35) rotate(-15deg)}20%{opacity:.7;transform:translate(-15%,0) scale(1.04) rotate(5deg)}48%{opacity:.65;transform:translate(0,-4%) scale(1.15) rotate(-4deg)}76%{opacity:.52;transform:translate(16%,-9%) scale(1) rotate(3deg)}100%{opacity:0;transform:translate(45%,-17%) scale(.7) rotate(12deg)}}
+@keyframes giftGlint{from{opacity:.2;transform:scale(.5)}to{opacity:.8;transform:scale(1.4)}}
+@media(prefers-reduced-motion:reduce){.gift-hero{animation:giftVoyage 1.4s ease-out both}.gift-glint{display:none}}
+@media(orientation:portrait){#rx.docked .rc{height:32px;min-width:44px;padding:0 6px}#rx.docked .ic{width:20px;height:20px}#rx.docked .rn{font-size:14px}}
 </style>
 </head>
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
-<div id="rx"></div><div id="marginRain"></div>
+<div id="rx"></div><div id="giftStage" aria-hidden="true"></div>
 
 <div id="qrcard">
   <div class="qt">
@@ -585,22 +606,27 @@ function chipSet(ch, v, bump) {
   if (bump) { ch.n.className = "rn"; void ch.n.offsetWidth; ch.n.className = "rn bump"; }
 }
 
-function rainInMargin(k, count=1, gift=false) {
- if(!cur || !cur.firstChild || mode!=="loop" || !(views[curItem?.id]>1)) return;
- const pane=document.getElementById("marginRain"),r=mediaRect(cur.firstChild);
- const left=r.l,right=r.sw-r.l-r.w,space=Math.max(left,right);
- if(space<Math.max(48,window.innerHeight*.07))return;
- const limit=Math.min(gift?16:count*2,24),mediaId=curItem.id;
- for(let i=0;i<limit;i++)setTimeout(()=>{
-  if(!curItem||curItem.id!==mediaId||mode!=="loop")return;
-  const e=document.createElement("div");e.className="rainIcon";e.innerHTML=ICON[k]||ICON.star;
-  e.style.left=((left>=right?0:r.l+r.w)+Math.random()*Math.max(0,space-65))+"px";
-  e.style.setProperty("--rain-ms",(gift?3600:3000+Math.random()*1300)+"ms");
-  e.style.setProperty("--rain-distance",Math.max(160,pane.clientHeight+40)+"px");
-  pane.appendChild(e);setTimeout(()=>e.remove(),5000);
- },i*(gift?90:180));
+const giftQueue=[];let giftPlaying=false;
+function featureGift(kind){
+ if(!ICON[kind]||!curItem||mode!=="loop")return;
+ giftQueue.push({kind,id:curItem.id});
+ if(giftQueue.length>4)giftQueue.shift();
+ playGift();
 }
-
+function playGift(){
+ if(giftPlaying||!giftQueue.length)return;
+ const gift=giftQueue.shift();
+ if(!curItem||curItem.id!==gift.id||mode!=="loop"){playGift();return;}
+ giftPlaying=true;
+ const stageGift=document.getElementById("giftStage");
+ const root=h("div","gift-hero"),core=h("div","gift-core"),symbol=h("div","gift-symbol");
+ symbol.innerHTML=ICON[gift.kind];
+ core.appendChild(symbol);
+ for(let i=0;i<3;i++)core.appendChild(h("i","gift-glint"));
+ core.appendChild(h("span","gift-title",gift.kind+" gift"));
+ root.appendChild(core);stageGift.appendChild(root);
+ setTimeout(()=>{root.remove();giftPlaying=false;playGift()},3400);
+}
 function bubble(feed, ev) {
   const b = h("div", "bub"), av = h("div", "av", ini(ev.w)), nm = h("span", "bn", ev.w), ic = h("span", "bi");
   av.style.background = hue(ev.w); ic.innerHTML = ICON[ev.k];
@@ -630,8 +656,8 @@ function placeRx(box, el) {
 function clearRx() { rxT.forEach(clearTimeout); rxT.length = 0; rxBox.innerHTML = ""; rxBox.classList.remove("docked"); rxCtl = null; }
 function showRx(el, m, instant) {
   clearRx();
-  const reactions=RX[m.id], gifts=GIFT[m.id]||{};
-  const combined={n:(reactions?.n||0),c:{...(reactions?.c||{}),...gifts},ev:reactions?.ev||[]};
+  const reactions=RX[m.id];
+  const combined={n:reactions?.n||0,c:reactions?.c||{},ev:reactions?.ev||[]};
   if (!Object.values(combined.c).some(n=>n>0) || !el) return;
   const box = h("div", "rbox"), rail = h("div", "rail"), feed = h("div", "feed");
   box.appendChild(rail); box.appendChild(feed);
@@ -643,7 +669,7 @@ function showRx(el, m, instant) {
     Object.keys(ch).forEach(function (k) { if (base[k] > 0) chipSet(ch[k], base[k], false); });
   }
   rxBox.appendChild(box);
-  placeRx(box, el);
+  rxBox.classList.add("docked");box.style.left="auto";box.style.top="auto";box.style.maxWidth="100%";
   rxCtl = { feed: feed, ch: ch };
   const win = Math.max(1500, Math.min(planned * 0.75, 5000));
   const step = Math.max(160, Math.min(520, win / Math.max(tail.length, 1)));
@@ -653,12 +679,12 @@ function showRx(el, m, instant) {
 }
 function liveRx(e, id, replay) {
   const c = rxCtl;
-  if (c && c.ch[e.k]) { chipSet(c.ch[e.k], c.ch[e.k].v + e.n, true); bubble(c.feed, e); rainInMargin(e.k,e.n); return; }
+  if (c && c.ch[e.k]) { chipSet(c.ch[e.k], c.ch[e.k].v + e.n, true); bubble(c.feed, e);  return; }
   if (replay) return;
   if (!RX[id]) RX[id] = { n: 0, c: {}, ev: [] };
   if (!RX[id].c[e.k]) { RX[id].c[e.k] = e.n; RX[id].n += e.n; }
   if (cur && curItem && curItem.id === id) showRx(cur.firstChild, { id: id }, true);
-  if (rxCtl) bubble(rxCtl.feed, e); rainInMargin(e.k,e.n);
+  if (rxCtl) bubble(rxCtl.feed, e); 
 }
 function awardRail(snap, id) {
   const a = RX[id]; if (!a || !a.n) return;
@@ -856,10 +882,7 @@ function reveal(w, m, isFresh, my) {
   }
   views[m.id] = (views[m.id] || 0) + 1;
   setHearts(m.id,false);
-  if (views[m.id] > 1 && GIFT[m.id]) {
-    const latestGift = Object.entries(GIFT[m.id]).sort((x,y)=>y[1]-x[1])[0];
-    if (latestGift) setTimeout(()=>{if(curItem?.id===m.id)rainInMargin(latestGift[0],1,true)},Math.min(1200,t.ms+200));
-  }
+  // Gifts are animated only on arrival, not replayed with each media loop.
   try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
   clearRx();
   if (views[m.id] > 1) {
@@ -1151,6 +1174,7 @@ function resetForEventChange() {
   if (timer) { clearTimeout(timer); timer = null; }
   if (wd) { clearTimeout(wd); wd = null; }
   stopMedia();
+  giftQueue.length=0;giftPlaying=false;document.getElementById("giftStage").replaceChildren();
   stage.replaceChildren();
   clearRx();
   fx.replaceChildren(); fxN = 0;
@@ -1201,7 +1225,7 @@ async function processMediaSnapshot(snap) {
     list.push(x);
     const lk = x.likes || 0;
     if (lastLikes[d.id] !== undefined && lk > lastLikes[d.id]) {
-      burst("heart", Math.min(lk - lastLikes[d.id], 5));
+      
       if (curItem && curItem.id === d.id) curChanged = true;
     }
     lastLikes[d.id] = lk;
@@ -1251,7 +1275,7 @@ onSnapshot(collection(db, "reactions"), function (s) {
       const n = Math.min(Math.max(+d.c[k] || 0, 0), 60);
       if (!n) return;
       if (id && curItem && curItem.id === id && mode === "loop" && (views[id] || 0) > 1) {
-        burst(k, n);
+        
         liveRx({ w: who(d), k: k, n: n }, id);
       }
     });
@@ -1275,7 +1299,7 @@ onSnapshot(collection(db,"photo_gifts"),function(s){
    if(change.type!=="added")continue;
    const v=change.doc.data();
    if(v.eventId!==currentEventId||!curItem||v.mediaId!==curItem.id||(views[curItem.id]||0)<2)continue;
-   rainInMargin(v.kind,1,true);
+   featureGift(v.kind);
   }
  }
  giftInit=true;
