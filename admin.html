@@ -147,6 +147,19 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
  .inject{padding:20px}
 }
 @media(min-width:761px) and (max-width:1100px){#grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.spectacle-admin{max-width:960px;margin:18px auto 28px;border:1px solid #9bff8366;border-radius:18px;background:linear-gradient(130deg,#15452d,#06190f 65%);padding:clamp(18px,3vw,28px);box-shadow:0 18px 46px #0008}
+.spectacle-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.spectacle-heading h2{font-size:clamp(36px,7vw,59px);color:var(--acid)}
+.spectacle-heading>b{border:1px solid var(--acid);padding:7px 13px;border-radius:30px;color:var(--acid)}
+.spectacle-admin>p{color:#cae8d0;line-height:1.45}
+.spectacle-admin label{display:block;font-weight:800;margin:16px 0 7px}
+.spectacle-admin input,.spectacle-admin select{display:block;width:100%;min-height:51px;padding:12px;border-radius:9px;border:1px solid #6b9471;background:#02140b;color:white;font-size:16px}
+.spectacle-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:19px}
+.spectacle-buttons button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;min-height:110px;background:#0b3220;color:var(--acid);border:1px solid #74ac78;border-radius:13px;cursor:pointer;font-size:37px}
+.spectacle-buttons button strong{font-family:var(--display);font-size:clamp(18px,2.2vw,26px)}
+.spectacle-buttons button:disabled{opacity:.4;cursor:wait}
+#adminGiftStatus{margin:13px 0 0;min-height:23px;color:var(--lime);font-weight:700}
+@media(max-width:630px){.spectacle-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -201,6 +214,21 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
  <div id="newGalleryCode" aria-live="polite" style="font-size:clamp(32px,8vw,58px);font-weight:900;letter-spacing:.13em;color:#efff17;text-align:center;padding:14px;overflow-wrap:anywhere"></div>
  <p id="galleryCodeStatus" class="l" role="status"></p>
 </section>
+  <section class="spectacle-admin">
+    <div class="spectacle-heading"><div><span class="eyebrow">ADMIN EXCLUSIVE · ZERO CREDITS</span><h2>Spectacle Studio</h2></div><b>∞ UNLIMITED</b></div>
+    <p>Send any spectacle to a selected photo or video under any sender name you choose. Guests still pay with their own credits.</p>
+    <label for="adminGiftMedia">Send to this memory</label>
+    <select id="adminGiftMedia"><option value="">Start an event and select media…</option></select>
+    <label for="adminGiftName">Display sender name</label>
+    <input id="adminGiftName" type="text" maxlength="60" value="DJ Sunny" placeholder="Enter any display name">
+    <div class="spectacle-buttons" id="adminGiftButtons">
+      <button type="button" data-kind="spark">✦<strong>STARLIGHT</strong></button>
+      <button type="button" data-kind="comet">☄<strong>COMET</strong></button>
+      <button type="button" data-kind="galaxy">◎<strong>GALAXY</strong></button>
+      <button type="button" data-kind="supernova">☀<strong>SUPERNOVA</strong></button>
+    </div>
+    <p id="adminGiftStatus" role="status" aria-live="polite">Choose a memory, sender name, and spectacle.</p>
+  </section>
   <div class="stats">
     <div class="stat">PHOTOS <span id="photoCount">0</span></div>
     <div class="stat">VIDEOS <span id="videoCount">0</span></div>
@@ -249,12 +277,47 @@ const galleryCall=(name)=>httpsCallable(galleryFn,name);
 const createUpload = galleryCall("createPhotoWallUpload");
 const photoLinks = createAdminPhotoLinks(galleryCall("signAdminPhotoWallUrls"));
 const galleryMsg=document.getElementById("galleryCodeStatus");
+let adminGiftEvent=null,adminGiftBusy=false;
+const adminGiftSender=galleryCall("sendAdminPhotoGift");
+const giftLabels={spark:"Starlight",comet:"Comet",galaxy:"Galaxy",supernova:"Supernova"};
+function updateAdminGiftList(){
+ const menu=$("adminGiftMedia"),old=menu.value;
+ menu.replaceChildren();
+ const intro=document.createElement("option");
+ intro.value="";intro.textContent=adminGiftEvent?"Select event media…":"Start an event before sending gifts";
+ menu.appendChild(intro);
+ if(adminGiftEvent)mediaDocs.filter(d=>d.data().eventId===adminGiftEvent).forEach(d=>{
+  const item=d.data(),o=document.createElement("option");
+  o.value=d.id;
+  o.textContent=(item.type==="video"?"VIDEO · ":"PHOTO · ")+String(item.name||"Untitled").slice(0,28)+" · "+d.id.slice(0,6);
+  menu.appendChild(o);
+ });
+ if([...menu.options].some(o=>o.value===old))menu.value=old;
+}
+$("adminGiftButtons").addEventListener("click",async e=>{
+ const btn=e.target.closest("button[data-kind]");if(!btn||adminGiftBusy)return;
+ const kind=btn.dataset.kind,mediaId=$("adminGiftMedia").value,name=$("adminGiftName").value.trim(),status=$("adminGiftStatus");
+ if(!adminGiftEvent){status.textContent="Start an event first.";return;}
+ if(!mediaId){status.textContent="Select a photo or video first.";return;}
+ if(!name){status.textContent="Enter a display sender name.";return;}
+ adminGiftBusy=true;
+ $("adminGiftButtons").querySelectorAll("button").forEach(b=>b.disabled=true);
+ status.textContent="Sending "+giftLabels[kind]+" as "+name+"…";
+ try{
+  const result=(await adminGiftSender({kind,mediaId,name})).data;
+  status.textContent=giftLabels[kind]+" sent as "+result.name+"! No credits deducted.";
+ }catch(err){status.textContent="Not sent: "+(err.message||err.code||err)+". The new Firebase function must be deployed.";}
+ finally{adminGiftBusy=false;$("adminGiftButtons").querySelectorAll("button").forEach(b=>b.disabled=false);}
+});
+
 const galleryStateText=document.getElementById("galleryEventStatus");
 let galleryOperation=false;
 async function syncGalleryState(){
  try{
   const snap=await getDocs(collection(db,"gallery_state"));
   const v=snap.docs.find(x=>x.id==="current")?.data();
+  adminGiftEvent=v?.active?v.eventId:null;
+  updateAdminGiftList();
   galleryStateText.textContent=v?.active?"Gallery OPEN — event "+v.eventId.slice(0,8):"Gallery CLOSED — start a new event before issuing codes.";
  }catch(e){galleryStateText.textContent="Gallery status unavailable: "+e.message;}
 }
@@ -545,6 +608,7 @@ function startApp() {
   },e=>{$("overrideStatus").textContent="Control read error: "+e.message;});
   onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "desc")), async (snap) => {
     mediaDocs = snap.docs;
+    updateAdminGiftList();
     try {
       await photoLinks.prepare(snap.docs.flatMap(row => [
         row.data().url, thumb(row.data()), dlUrl(row.data(), row.id.slice(0, 5)),
