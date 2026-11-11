@@ -831,6 +831,10 @@ function reveal(w, m, isFresh, my) {
   }
   views[m.id] = (views[m.id] || 0) + 1;
   setHearts(m.id,false);
+  if (views[m.id] > 1 && GIFT[m.id]) {
+    const latestGift = Object.entries(GIFT[m.id]).sort((x,y)=>y[1]-x[1])[0];
+    if (latestGift) setTimeout(()=>{if(curItem?.id===m.id)rainInMargin(latestGift[0],1,true)},Math.min(1200,t.ms+200));
+  }
   try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
   clearRx();
   if (views[m.id] > 1) {
