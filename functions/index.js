@@ -58,3 +58,5 @@ exports.redeemGalleryCode = onCall(OPT, async (req) => {
   return { ok:true, expiresAt:expiry.toMillis() };
  });
 });
+
+Object.assign(exports, require("./photo-access"), require("./photo-retention"));

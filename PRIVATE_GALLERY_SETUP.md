@@ -1,6 +1,6 @@
 # Private Event Gallery — deployment checklist
 
-The code is committed, but privacy is **NOT enabled** until the Firebase backend is deployed and validated.
+Deploy and validate the Firebase backend and the GitHub Pages frontend together before using the private event gallery.
 
 ## Firebase setup (project: dj-photo-wall)
 
@@ -20,9 +20,10 @@ The code is committed, but privacy is **NOT enabled** until the Firebase backend
 
 ## Important caveats
 
-- Firestore protects the **gallery listing**, but media URLs use public Cloudinary delivery; someone who already knows a direct asset URL can still open it. Strict media-level privacy requires private/authenticated Cloudinary delivery and a server-side signed URL solution.
+- New uploads use authenticated Cloudinary delivery. Guests receive preview and original-download links with the same expiry as their gallery pass. DJ and projector sessions require verified admin sign-in.
 - A browser that already loaded images cannot have those pixels retroactively removed, and a guest could take screenshots or share an authorized code.
 - Frontend deployment through GitHub Pages and Firebase backend deployment are separate.
 - Do not replace live Firestore rules before verifying projector admin authentication, guest code redemption and uploads work.
-- Existing `upload.html` remains publicly accessible so event attendees can submit without signing in; the event metadata is readable to associate new uploads. Public create is an intentional current capability.
+- The upload page remains available to event attendees. New media records require a valid server-issued upload reservation. Event metadata is readable to associate uploads with the current event.
+- Retention applies to newly signed uploads tagged `party_media_retention_v1`. Older Cloudinary uploads and existing Drive masters are outside this workflow. See `PHOTO_WALL_RETENTION.md` for verification and deployment.
 - If deploying this for a busy event, test in a private browser with a photo, a video, a used code, an expired code, and a newly started event.

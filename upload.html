@@ -216,11 +216,10 @@ body{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp, getCountFromServer, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, setDoc, serverTimestamp, getCountFromServer, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-// Existing Cloudinary account configuration retained.
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 const CLOUDINARY_CLOUD_NAME = "yl4yzjh5";
-const CLOUDINARY_UPLOAD_PRESET = "UPLOAD_PRESET";
 
 // Existing Firebase project configuration retained.
 const firebaseConfig = {
@@ -234,6 +233,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const createUpload = httpsCallable(getFunctions(app, "us-central1"), "createPhotoWallUpload");
 
 const MAX_VIDEO_MB = 75;
 const MAX_EDGE = 2048;
@@ -448,12 +448,11 @@ async function squeezeImage(file) {
   }
 }
 
-function cloudinaryUpload(file, onProgress) {
+function cloudinaryUpload(file, params, onProgress) {
   return new Promise((resolve, reject) => {
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-    fd.append("tags", "party_media");
+    Object.entries(params).forEach(([key, value]) => fd.append(key, value));
     const x = new XMLHttpRequest();
     x.open("POST", "https://api.cloudinary.com/v1_1/" + CLOUDINARY_CLOUD_NAME + "/auto/upload");
     x.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
@@ -469,27 +468,15 @@ function cloudinaryUpload(file, onProgress) {
 }
 
 function finalUrl(r) {
+  const originalUrl = r.secure_url.replace(/\/authenticated\/s--[^/]+--\//, "/authenticated/");
   if (r.resource_type === "video") {
-    return r.secure_url
-     .replace("/upload/", "/upload/c_limit,w_1920,h_1080,q_auto,f_mp4,vc_h264,ac_aac/")
+    return originalUrl
+     .replace("/authenticated/", "/authenticated/c_limit,w_1920,h_1080,q_auto,f_mp4,vc_h264,ac_aac/")
       .replace(/\.[^./]+$/, ".mp4");
   }
-  return /^(jpe?g|png|webp|gif|svg)$/i.test(r.format || "")
-    ? r.secure_url
-    : r.secure_url.replace(/\.[^./]+$/, ".jpg");
-}
-
-async function warmVideo(url) {
-  const end = Date.now() + 90000;
-  while (Date.now() < end) {
-    try {
-      const r = await fetch(url, { headers: { Range: "bytes=0-0" } });
-      if (r.ok || r.status === 206) return true;
-      if (r.status !== 423 && r.status !== 404 && r.status !== 202) return false;
-    } catch (_) { return false; }
-    await new Promise((res) => setTimeout(res, 2500));
-  }
-  return false;
+  return /^(jpe?g|png|webp|gif)$/i.test(r.format || "")
+    ? originalUrl
+    : originalUrl.replace(/\.[^./]+$/, ".jpg");
 }
 
 form.addEventListener("submit", async (e) => {
@@ -526,26 +513,22 @@ form.addEventListener("submit", async (e) => {
     setPct(0);
     meter.hidden = false;
     statusEl.textContent = "Uploading your memory. The percentage tracks your file transfer.";
-    const r = await cloudinaryUpload(prepared, setPct);
+    const { data: upload } = await createUpload();
+    const r = await cloudinaryUpload(prepared, upload.params, setPct);
+    if (r.type !== "authenticated" || r.public_id !== upload.params.public_id) {
+      throw new Error("The media provider did not confirm a private upload.");
+    }
     meter.hidden = true;
     goLabel.textContent = "Getting your memory ready…";
     statusEl.textContent = "Almost ready for the live album.";
     const vid = r.resource_type === "video";
     const url = finalUrl(r);
 
-    if (vid) {
-      goLabel.textContent = "Getting your memory ready…";
-      statusEl.textContent = "Finishing your video for the big screen…";
-      const playable = await warmVideo(url);
-      if (!playable) statusEl.textContent = "Your video may need a little more time before it plays.";
-    }
-
     meter.hidden = true;
     goLabel.textContent = "Posting to the live album…";
     statusEl.textContent = "Adding your memory to the live feed…";
-    const eventSnap = await getDoc(doc(db, "gallery_state", "current")).catch(() => null);
-    const eventId = eventSnap?.exists() && eventSnap.data().active ? eventSnap.data().eventId : null;
-    const ref = await addDoc(collection(db, "media_queue"), {
+    const ref = doc(db, "media_queue", r.public_id);
+    await setDoc(ref, {
       name: name,
       url: url,
       publicId: r.public_id,
@@ -557,8 +540,8 @@ form.addEventListener("submit", async (e) => {
       trimStart: trimA,
       trimEnd: trimB,
       uid: guestId(),
-      eventId: eventId,
-      v: 2
+      eventId: upload.eventId,
+      v: 3
     });
     try { localStorage.setItem(LAST_KEY, ref.id); } catch (_) {}
 
