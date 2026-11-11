@@ -160,6 +160,18 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 .spectacle-buttons button:disabled{opacity:.4;cursor:wait}
 #adminGiftStatus{margin:13px 0 0;min-height:23px;color:var(--lime);font-weight:700}
 @media(max-width:630px){.spectacle-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+#guestInvitePanel{margin:14px auto;max-width:700px}
+.guest-invite-card{display:flex;gap:18px;align-items:center;border-radius:17px;padding:18px;background:linear-gradient(140deg,#193f2e,#061a0e);border:1px solid #b7e85677}
+#guestInviteQr{width:clamp(164px,30vw,250px);aspect-ratio:1;background:#fff;border:8px solid #fff;border-radius:10px;flex:none;overflow:hidden}
+#guestInviteQr svg{display:block;width:100%;height:100%}
+.guest-invite-detail{display:flex;flex-direction:column;gap:8px;min-width:0}
+.guest-invite-detail strong{font-family:var(--display);font-size:clamp(35px,6vw,62px);color:var(--acid);line-height:.9}
+.guest-invite-detail span{font-size:14px;color:#d3efdb;font-weight:700}
+.guest-invite-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.guest-invite-actions button{border:1px solid #bdff91;border-radius:9px;min-height:46px;background:#0c291b;color:#e8ffcb;font-weight:900;padding:9px 12px;cursor:pointer}
+.guest-invite-note{font-size:12px;color:#b3d2bb;line-height:1.5}
+@media(max-width:460px){.guest-invite-card{flex-direction:column;text-align:center}.guest-invite-actions{justify-content:center}#guestInviteQr{width:min(65vw,240px)}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -212,7 +224,12 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
  <button class="go" id="closeGalleryEvent" type="button" style="flex:1;min-width:130px">Close gallery</button>
  </div>
  <div id="newGalleryCode" aria-live="polite" style="font-size:clamp(32px,8vw,58px);font-weight:900;letter-spacing:.13em;color:#efff17;text-align:center;padding:14px;overflow-wrap:anywhere"></div>
- <p id="galleryCodeStatus" class="l" role="status"></p>
+ <div id="guestInvitePanel" hidden><div class="guest-invite-card">
+<div id="guestInviteQr" aria-label="One-time guest invitation QR code"></div>
+<div class="guest-invite-detail"><strong>SCAN TO JOIN</strong><span>One guest · One use · 5 minutes</span><span>Scan, then tap UNLOCK. No phone number needed.</span>
+<div class="guest-invite-actions"><button id="copyGuestInvite" type="button">COPY INVITE LINK</button><button id="shareGuestInvite" type="button">SHARE INVITE</button></div></div></div>
+<p class="guest-invite-note">Show this QR privately to ONE guest. Once used, generate another. A forwarded link can be redeemed by someone else first.</p></div>
+<p id="galleryCodeStatus" class="l" role="status"></p>
 </section>
   <section class="spectacle-admin">
     <div class="spectacle-heading"><div><span class="eyebrow">ADMIN EXCLUSIVE · ZERO CREDITS</span><h2>Spectacle Studio</h2></div><b>∞ UNLIMITED</b></div>
@@ -248,6 +265,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
   <div id="grid"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, deleteDoc, getDocs, serverTimestamp, query, orderBy, limit, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -311,7 +329,32 @@ $("adminGiftButtons").addEventListener("click",async e=>{
 });
 
 const galleryStateText=document.getElementById("galleryEventStatus");
-let galleryOperation=false;
+let galleryOperation=false,guestInviteUrl="";
+function renderGuestInvite(code){
+ const url=new URL("react.html",location.href);
+ url.search="";url.hash="invite="+encodeURIComponent(code);
+ guestInviteUrl=url.href;
+ const area=$("guestInviteQr");area.replaceChildren();
+ if(typeof qrcode!=="function"){
+  const fallback=document.createElement("p");fallback.textContent="QR unavailable. Use Copy Invite Link.";area.appendChild(fallback);
+ }else{
+  const qr=qrcode(0,"M");qr.addData(guestInviteUrl);qr.make();
+  area.innerHTML=qr.createSvgTag({cellSize:5,margin:4,scalable:true});
+ }
+ $("guestInvitePanel").hidden=false;
+}
+async function copyInvite(){
+ if(!guestInviteUrl)return;
+ try{await navigator.clipboard.writeText(guestInviteUrl);galleryMsg.textContent="Invitation copied. Single use; share with ONE guest.";}
+ catch(e){galleryMsg.textContent="Copy unavailable. Let your guest scan the code.";}
+}
+$("copyGuestInvite").addEventListener("click",copyInvite);
+$("shareGuestInvite").addEventListener("click",async()=>{
+ if(!guestInviteUrl)return;
+ if(navigator.share){try{await navigator.share({title:"DJ Sunny private party invitation",url:guestInviteUrl});}catch(e){if(e.name!=="AbortError")await copyInvite();}}
+ else await copyInvite();
+});
+
 async function syncGalleryState(){
  try{
   const snap=await getDocs(collection(db,"gallery_state"));
@@ -330,9 +373,11 @@ async function gateAction(name,confirmText){
   const result=(await galleryCall(name)({})).data;
   if(name==="createGalleryCode"){
    document.getElementById("newGalleryCode").textContent=result.code;
+   renderGuestInvite(result.code);
    galleryMsg.textContent="Single use • expires at "+new Date(result.expiresAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+". Give this code to ONE attendee.";
   }else{
    document.getElementById("newGalleryCode").textContent="";
+   guestInviteUrl="";$("guestInvitePanel").hidden=true;$("guestInviteQr").replaceChildren();
    galleryMsg.textContent=name==="startGalleryEvent"?"New event opened. All previous guest codes and passes are invalid.":"Gallery closed. Guest access revoked.";
   }
   await syncGalleryState();
