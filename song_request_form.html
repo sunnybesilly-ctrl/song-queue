@@ -149,7 +149,7 @@ textarea.chat-input-ta::placeholder { color: rgba(255,255,255,0.22); font-weight
 
 /* PRIMARY ACTIONS — right under the confirmation card */
 .action-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
-.btn-another { display: block; width: 100%; min-height: 60px; font-family: var(--font-d); font-size: 26px; letter-spacing: 0.1em; color: var(--green-deep); background: var(--gold); border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 24px rgba(245,197,24,0.45); transition: transform 0.1s; }
+.btn-another { position: relative; z-index: 20; display: flex; justify-content: center; align-items: center; text-align: center; text-decoration: none; width: 100%; min-height: 60px; font-family: var(--font-d); font-size: 26px; letter-spacing: 0.1em; color: var(--green-deep); background: var(--gold); border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 24px rgba(245,197,24,0.45); transition: transform 0.1s; }
 .btn-another:active { transform: scale(0.98); }
 
 /* DIVIDERS */
@@ -410,7 +410,7 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
   </div>
 
   <div class="action-stack">
-    <button class="btn-another" onclick="resetAll()" data-en="+ REQUEST ANOTHER SONG" data-es="+ PEDIR OTRA CANCIÓN">+ REQUEST ANOTHER SONG</button>
+    <a class="btn-another" href="./song_request_form.html?another=1" data-en="+ REQUEST ANOTHER SONG" data-es="+ PEDIR OTRA CANCIÓN">+ REQUEST ANOTHER SONG</a>
   </div>
 
   <div class="divider-label pink-div"><span>💬 SAY SOMETHING TO THE PARTY (OPTIONAL)</span></div>
