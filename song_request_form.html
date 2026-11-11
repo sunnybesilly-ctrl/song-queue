@@ -458,7 +458,7 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 <script>
 const FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSeq1jXqVkA0-noEeSLkGTnj1lEjOQTJsgsy1X7uvjpJOmPUdg/formResponse';
 const CHAT_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSdhzlA9tm7A6R5b3QECXoOMyJxLiuws8Pr5HB63NWv1pXo2tA/formResponse';
-const QUEUE_URL   = 'https://script.google.com/macros/s/AKfycbwhV0ZdZXXMLPH303L8ttpZCY1Oj6Yh3aM7vw9tJbXFf-FshLDGrZzHR3OOx_O2Eu1_qA/exec';
+const QUEUE_URL   = 'https://script.google.com/macros/s/AKfycbwOl2qF3bAl5yWNolDvYlN0Thgp93jgJAQuUB7lphpw5xEqY5tdHMFjxR4VskzsWXnTvA/exec';
 const YT_API_KEY  = 'AIzaSyDmIRaQ2Mb4iLiNxqgbl_lMGH_shUHS01I';
 
 let songFound = null, searchTimer = null, submitted = false;
@@ -487,22 +487,53 @@ function showQuotaOut() {
 // everyone else is pending, and the pending list position is the number (#1 = now playing).
 function posKey(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9\u00c0-\u024f]+/g, ''); }
 
+function qVal(s, keys) {
+  for (const k of keys) {
+    const v = (s[k] || '').toString().trim();
+    if (v && !/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
+  }
+  return '';
+}
+const Q_NAME   = ["WHAT\u2019S YOUR NAME?", "WHAT'S YOUR NAME?", "What\u2019s your name?", "What's your name?", "Name", "name", "NAME", "YOUR NAME", "Your Name", "Requester", "requester", "Guest Name", "guest name"];
+const Q_ARTIST = ["WHO\u2019S THE ARTIST?", "WHO'S THE ARTIST?", "Who\u2019s the artist?", "Who's the artist?", "Artist", "artist", "ARTIST", "Artist Name", "Band"];
+const Q_TITLE  = ["SONG TITLE?", "Song Title?", "SONG TITLE", "Song Title", "Song", "song", "SONG", "Track", "track"];
+const qName   = s => qVal(s, Q_NAME);
+const qArtist = s => qVal(s, Q_ARTIST);
+const qTitle  = s => qVal(s, Q_TITLE);
+const qTs     = s => s['Timestamp'] || s['timestamp'] || s['TIMESTAMP'] || '';
+
+// Exactly the display's list: today only, oldest first, same request counted once.
+function buildQueueList(rows) {
+  const todayStr = new Date().toDateString();
+  const list = (rows || [])
+    .filter(s => qArtist(s) || qTitle(s))
+    .filter(s => { const ts = qTs(s); return !ts || new Date(ts).toDateString() === todayStr; })
+    .sort((a, b) => new Date(qTs(a) || 0) - new Date(qTs(b) || 0));
+  const seen = {}, out = [];
+  list.forEach(s => {
+    const key = posKey(qName(s)) + '|' + posKey(qTitle(s));
+    if (seen[key] !== undefined) {
+      const first = out[seen[key]];
+      Object.keys(s).forEach(k => { if (!first[k] && s[k]) first[k] = s[k]; });
+    } else {
+      seen[key] = out.length;
+      out.push(Object.assign({}, s));
+    }
+  });
+  return out;
+}
+
 async function fetchQueueRows() {
   try {
     const res  = await fetch(QUEUE_URL + (QUEUE_URL.indexOf('?') > -1 ? '&' : '?') + 't=' + Date.now());
     const rows = await res.json();
-    const todayStr = new Date().toDateString();
-    const getTs = s => s['Timestamp'] || s['timestamp'] || s['TIMESTAMP'] || '';
-    return (rows || [])
-      .filter(s => s['SONG TITLE?'] && s["WHO'S THE ARTIST?"])
-      .filter(s => { const ts = getTs(s); return !ts || new Date(ts).toDateString() === todayStr; })
-      .sort((a, b) => new Date(getTs(a) || 0) - new Date(getTs(b) || 0));
+    return buildQueueList(rows);
   } catch (e) { return null; }
 }
 
 function isMine(s, nameK, songK) {
-  if (posKey(s["WHAT'S YOUR NAME?"]) !== nameK) return false;
-  const t = posKey(s['SONG TITLE?']);
+  if (posKey(qName(s)) !== nameK) return false;
+  const t = posKey(qTitle(s));
   return !!t && !!songK && (t === songK || t.indexOf(songK) > -1 || songK.indexOf(t) > -1);
 }
 
@@ -577,6 +608,8 @@ async function goToStep2() {
     return;
   }
   errEl.classList.remove('visible');
+  if (window._reqBusy) return;
+  window._reqBusy = true;
 
   const btn = document.getElementById('btn-next');
   // Snapshot the queue length BEFORE posting so the guest gets a number instantly.
@@ -1577,7 +1610,7 @@ function resetAll() {
   stopPosTracking();
   ['f-name','f-artist','f-song','f-snap','f-comment','chat-name','chat-message']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  submitted = false; optionalSaved = false; songFound = null; ytVideoId = null;
+  window._reqBusy = false; submitted = false; optionalSaved = false; songFound = null; ytVideoId = null;
   searchToken++;
   ytFinalTitle = null; ytFinalChannel = null; ytFinalThumb = null;
   const ct = document.getElementById('c-thumb'); if (ct) { ct.style.display = 'none'; ct.src = ''; }
