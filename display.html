@@ -1196,6 +1196,7 @@ function reveal(w, m, isFresh, my) {
   if (old) { old.className = "w old"; setTimeout(function () { drop(old); }, t.ms + 150); }
   Array.prototype.slice.call(stage.children).forEach(function (c) { if (c !== w && c !== old) drop(c); });
   setBar(m, isFresh);
+  showSignatureOnReveal(m.id);
   showWhy(m);
   publish(m);
   const el = w.firstChild;
@@ -1324,21 +1325,39 @@ function floater(k) {
   setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); fxN--; }, 4500);
 }
 
-const cq = []; let cShowing = false, commentTimer = null, commentSnapshot = null, seenCommentIds = new Set();
-function pushComment(c) {
-  if (!commentsOn) return;
-  if (cq.length >= 6) cq.shift();
-  cq.push(c);
-  if (!cShowing) nextComment();
+// A signature belongs ONLY to its selected media. Never put signatures
+// into a global playlist that can overlay somebody else's photograph.
+let cShowing=false,commentTimer=null,commentSnapshot=null;
+const seenCommentIds=new Set(),signaturesByMedia=new Map();
+function clearMediaSignature(){
+  clearTimeout(commentTimer);commentTimer=null;cShowing=false;
+  cmt.hidden=true;hint.hidden=false;
 }
-function nextComment() {
-  const c = cq.shift();
-  if (!c) { cShowing = false; cmt.hidden = true; hint.hidden = false; return; }
-  cShowing = true; hint.hidden = true; cmt.hidden = false;
-  cn.textContent = c.name; ct.textContent = c.text;
-  cmt.className = "cmt"; void cmt.offsetWidth; cmt.className = "cmt pop";
+function showSignatureFor(id,entry){
+  if(!commentsOn||mode!=="loop"||curItem?.id!==id||!entry)return;
   clearTimeout(commentTimer);
-  commentTimer = setTimeout(nextComment, 10000);
+  cShowing=true;hint.hidden=true;cmt.hidden=false;
+  cn.textContent=entry.name;ct.textContent=entry.text;
+  cmt.className="cmt";void cmt.offsetWidth;cmt.className="cmt pop";
+  commentTimer=setTimeout(()=>{
+    if(curItem?.id===id)clearMediaSignature();
+  },7500);
+}
+function refreshMediaSignatures(){
+  signaturesByMedia.clear();
+  if(!commentSnapshot||!currentEventId)return;
+  for(const d of commentSnapshot.docs){
+    const x=d.data();
+    if(x.eventId!==currentEventId||!x.mediaId||!x.text)continue;
+    const row=signaturesByMedia.get(x.mediaId)||[];
+    row.push({id:d.id,name:String(x.name||"Guest").slice(0,24),text:String(x.text).slice(0,70)});
+    signaturesByMedia.set(x.mediaId,row);
+  }
+}
+function showSignatureOnReveal(id){
+  clearMediaSignature();
+  const entries=signaturesByMedia.get(id);
+  if(entries?.length)showSignatureFor(id,entries[0]);
 }
 
 function clearYB() {
@@ -1531,8 +1550,7 @@ function resetForEventChange() {
   stage.replaceChildren();
   clearRx();
   fx.replaceChildren(); fxN = 0;
-  cq.length = 0; cShowing = false; clearTimeout(commentTimer); commentTimer = null;
-  cmt.hidden = true; hint.hidden = false; seenCommentIds.clear();
+  clearMediaSignature();signaturesByMedia.clear();seenCommentIds.clear();
   yb.replaceChildren(); yb.className = "";
   showQR(true);
   items = []; pos = -1; fresh = []; seen = false; archivePlayback=false;
@@ -1550,13 +1568,7 @@ function resetForEventChange() {
   mode = "idle";
   nmEl.textContent = "WAITING FOR EVENT MEDIA";
   hint.textContent = "New event started. Waiting for photos and videos.";
-  if (commentSnapshot && currentEventId) {
-    const entries = commentSnapshot.docs.filter(d => d.data().eventId === currentEventId && d.data().text);
-    entries.reverse().forEach(d => {
-      seenCommentIds.add(d.id);
-      pushComment({name: String(d.data().name || "A guest").slice(0,24), text: String(d.data().text).slice(0,70)});
-    });
-  }
+  refreshMediaSignatures();
 }
 onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
   const state = snap.exists() ? snap.data() : null;
@@ -1730,20 +1742,21 @@ onSnapshot(collection(db,"photo_gifts"),function(s){
  if(curItem && mode==="loop" && views[curItem.id]>1)showRx(cur.firstChild,curItem,true);
 },function(e){console.warn("Gifts unavailable until deployed:",e);});
 
-onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(40)), function (s) {
-  commentSnapshot = s;
-  if (!currentEventId) return;
-  // Queue recent signatures on first load, and only unseen signatures thereafter.
-  // This keeps guest entries visible even when the projector wasn't open at posting time.
-  const latest = s.docs.filter(d => d.data().eventId === currentEventId && d.data().text);
-  const initial = seenCommentIds.size === 0;
-  const additions = latest.filter(d => !seenCommentIds.has(d.id));
-  if (initial) additions.splice(4);
-  additions.reverse().forEach(d => {
+onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(100)), function(s){
+  commentSnapshot=s;
+  if(!currentEventId)return;
+  refreshMediaSignatures();
+  // Only a brand-new signature for the CURRENT media appears immediately.
+  // Existing entries are shown when their own photo/video comes into view.
+  for(const change of s.docChanges()){
+    if(change.type!=="added")continue;
+    const d=change.doc,x=d.data();
+    if(!x.mediaId||x.eventId!==currentEventId||!x.text||seenCommentIds.has(d.id))continue;
     seenCommentIds.add(d.id);
-    pushComment({name: String(d.data().name || "A guest").slice(0,24), text: String(d.data().text).slice(0,70)});
-  });
-}, function (e) { console.warn("Signatures unavailable:",e); });
+    if(!s.metadata.fromCache&&curItem?.id===x.mediaId&&mode==="loop")
+      showSignatureFor(x.mediaId,{name:String(x.name||"Guest").slice(0,24),text:String(x.text).slice(0,70)});
+  }
+},function(e){console.warn("Signatures unavailable:",e);});
 }
 const loginCover=document.createElement("div");
 loginCover.id="projectorLogin";
