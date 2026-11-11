@@ -651,7 +651,7 @@ function whoRow(id) {
 function setHearts(id, bumpIt) {
   const m = find(id);
   // Keep every reaction indicator hidden for the first two appearances.
-  const eligible = (views[id] || 0) > 2;
+  const eligible = (views[id] || 0) > 1;
   hnEl.textContent = eligible ? (((m && m.likes) || 0) + ((RX[id] && RX[id].n) || 0)) : "0";
   if (bumpIt && eligible) { hnEl.className = ""; void hnEl.offsetWidth; hnEl.className = "bump"; }
 }
@@ -828,8 +828,9 @@ function reveal(w, m, isFresh, my) {
     timer = setTimeout(next, ms);
   }
   views[m.id] = (views[m.id] || 0) + 1;
+  try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
   clearRx();
-  if (views[m.id] > 2) {
+  if (views[m.id] > 1) {
     const rxEl = w.firstChild;
     rxT.push(setTimeout(function () { if (my === tok && cur === w) showRx(rxEl, m); }, Math.round(t.ms * 0.8)));
   }
@@ -1132,6 +1133,10 @@ function resetForEventChange() {
   Object.keys(RX).forEach(id => delete RX[id]);
   if (reactionSnapshot) rebuildRx(reactionSnapshot.docs.filter(d => !!currentEventId && d.data().eventId === currentEventId));
   Object.keys(views).forEach(id => delete views[id]);
+  try{
+   const stored=JSON.parse(sessionStorage.getItem("photowall_views_"+currentEventId)||"{}");
+   for(const [id,n] of Object.entries(stored))if(Number.isInteger(n)&&n>0)views[id]=Math.min(n,999);
+  }catch(_){} 
   Object.keys(lastLikes).forEach(id => delete lastLikes[id]);
   mode = "idle";
   nmEl.textContent = "WAITING FOR EVENT MEDIA";
@@ -1213,7 +1218,7 @@ onSnapshot(collection(db, "reactions"), function (s) {
     Object.keys(ICON).forEach(function (k) {
       const n = Math.min(Math.max(+d.c[k] || 0, 0), 60);
       if (!n) return;
-      if (id && curItem && curItem.id === id && mode === "loop" && (views[id] || 0) > 2) {
+      if (id && curItem && curItem.id === id && mode === "loop" && (views[id] || 0) > 1) {
         burst(k, n);
         liveRx({ w: who(d), k: k, n: n }, id);
       }
