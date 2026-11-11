@@ -85,7 +85,7 @@ async function selectEvent(id){
 async function reload(){
  $("refresh").disabled=true;$("status").textContent="Loading saved events…";
  try{
-  const [m,r,c,g,s]=await Promise.all([getDocs(collection(db,"media_queue")),getDocs(collection(db,"reactions")),getDocs(collection(db,"comments")),getDocs(collection(db,"photo_gifts")),getDoc(doc(db,"gallery_state","current"))]);
+  const [m,r,c,g,s]=await Promise.all([getDocs(collection(db,"media_queue")),getDocs(collection(db,"reactions")),getDocs(collection(db,"comments")),getDocs(collection(db,"photo_gifts")).catch(e=>{console.warn("Gifts unavailable until Firebase rules deploy:",e);return {docs:[]}}),getDoc(doc(db,"gallery_state","current"))]);
   all={media:m.docs.map(x=>({id:x.id,...x.data()})),reactions:r.docs.map(x=>({id:x.id,...x.data()})),comments:c.docs.map(x=>({id:x.id,...x.data()})),gifts:g.docs.map(x=>({id:x.id,...x.data()}))};state=s.data();
   const ids=new Set([...all.media,...all.reactions,...all.comments,...all.gifts].map(x=>x.eventId).filter(Boolean));
   if(state?.eventId)ids.add(state.eventId);
