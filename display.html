@@ -354,6 +354,71 @@ body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18p
  body.qr-screen #bar { display:flex; align-items:center }
  body.qr-screen #bar .say { display:flex; width:100%; height:100%; padding:1.5vh 4vw; border-top:0 }
 }
+
+/* QR INTERLUDE / MAIN SCREEN — deliberate 2-column marquee design */
+#qrcard{
+  padding:clamp(16px,2.3vw,50px) clamp(16px,3.2vw,64px);
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  align-items:center;justify-content:stretch;column-gap:clamp(14px,3.4vw,68px);
+  background:
+    radial-gradient(ellipse at 10% 40%,#183e25 0%,transparent 58%),
+    radial-gradient(ellipse at 97% 88%,#40170e 0%,transparent 47%),
+    linear-gradient(125deg,#031309,#071e12 62%,#06150d)
+}
+#qrcard::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.23;
+  background:repeating-linear-gradient(0deg,transparent 0 30px,#7fff9122 31px 32px)}
+#qrcard .qt{position:relative;min-width:0;z-index:1}
+#qrcard .qt .a{font-size:clamp(53px,15vh,190px);line-height:.79;letter-spacing:-.045em;transform-origin:left center}
+#qrcard .qt .a2{margin-left:5%}
+#qrcard .qt .a3{margin-left:1%}
+#qrcard.on .qt .a{animation:marqueeBreathe 7s ease-in-out infinite}
+#qrcard.on .qt .a2{animation-delay:-4.7s}
+#qrcard.on .qt .a3{animation-delay:-2.35s}
+@keyframes marqueeBreathe{
+  0%,100%{opacity:1;transform:translateY(0) scale(1);text-shadow:0 0 12px #f4ff1a70,0 0 26px #f4ff1a22}
+  10%{opacity:.78;transform:translateY(-1%) scale(1.013)}
+  14%{opacity:1;text-shadow:0 0 24px #f4ff1ad0,0 0 48px #f4ff1a75}
+  21%{opacity:.92;transform:translateY(0) scale(1)}
+  27%,84%{opacity:1;text-shadow:0 0 11px #f4ff1a66}
+  88%{transform:translateY(-1%) scale(1.008);text-shadow:0 0 27px #f4ff1abb}
+}
+#qrcard .qt .qs{display:flex;flex-direction:column;gap:clamp(5px,.9vh,12px);
+  margin-top:clamp(18px,3vh,40px);max-width:100%;padding-left:clamp(11px,1vw,20px);
+  border-left:4px solid var(--lime);color:#defee2;line-height:1.12}
+#qrcard .qt .qs strong{font-family:var(--display);font-size:clamp(26px,4.5vh,50px);line-height:.95;color:var(--lime);letter-spacing:.035em}
+#qrcard .qt .qs span{font-family:var(--body);font-weight:800;font-size:clamp(17px,2.75vh,30px);line-height:1.16}
+#qrcard .qq{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(10px,1.5vw,26px);align-items:stretch;width:100%;margin:0}
+#qrcard .qb,#qrcard .qb.b2{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:clamp(10px,1.5vh,20px);margin:0;padding:clamp(12px,1.5vw,28px) clamp(8px,1.2vw,22px);min-width:0;text-align:center;
+  background:linear-gradient(160deg,#153922dd,#04170acc);border:1px solid #78e99566;border-radius:clamp(12px,1.5vw,22px);box-shadow:inset 0 1px #c9ffbd25,0 12px 32px #0006}
+#qrcard .qb.b2{border-color:#72fbc8a0;background:linear-gradient(160deg,#0d3430dd,#04170acc)}
+#qrcard .qb .tile{width:min(100%,24vh);height:auto;aspect-ratio:1;box-shadow:0 0 0 clamp(3px,.4vh,6px) var(--acid),0 0 24px #f4ff1a44;background:var(--acid)}
+#qrcard .qb.b2 .tile{box-shadow:0 0 0 clamp(3px,.4vh,6px) var(--lime),0 0 24px #37ff7650;background:var(--lime)}
+#qrcard .qb .ql{font-size:clamp(22px,3.5vh,42px);line-height:1.02;margin:0;color:#f8ffbd}
+#qrcard.on .qb .tile{animation:none!important} /* don't shake QR codes while phones scan */
+#qrcard.on .qb{animation:scanCardBreath 6s ease-in-out infinite}
+#qrcard.on .qb.b2{animation-delay:-3s}
+@keyframes scanCardBreath{0%,100%{border-color:#80f8a36b;box-shadow:inset 0 1px #c9ffbd25,0 12px 32px #0006}50%{border-color:#c5ff9bbb;box-shadow:inset 0 1px #c9ffbd2a,0 0 27px #8eff6025}}
+@media(orientation:portrait){
+ #qrcard{display:flex;flex-direction:column;justify-content:center;align-items:stretch;padding:1.8vh 5vw;gap:2vh}
+ #qrcard .qt .a{font-size:clamp(47px,10.3vh,112px);line-height:.77}
+ #qrcard .qt .a2{margin-left:4%}#qrcard .qt .a3{margin-left:1%}
+ #qrcard .qt .qs{margin-top:1.6vh;gap:.35vh;padding-left:3vw}
+ #qrcard .qt .qs strong{font-size:clamp(24px,5.5vw,42px)}
+ #qrcard .qt .qs span{font-size:clamp(15px,3.6vw,24px)}
+ #qrcard .qq{gap:2.5vw;margin-top:.4vh}
+ #qrcard .qb,#qrcard .qb.b2{padding:2vw 1.5vw;gap:1.3vh}
+ #qrcard .qb .tile{width:min(100%,19vh)}
+ #qrcard .qb .ql{font-size:clamp(18px,4.6vw,30px);line-height:.96}
+}
+@media (orientation:landscape) and (max-height:550px){
+ #qrcard .qt .a{font-size:13vh}
+ #qrcard .qt .qs{margin-top:1.5vh}
+ #qrcard .qt .qs strong{font-size:3.8vh}
+ #qrcard .qt .qs span{font-size:2.5vh}
+ #qrcard .qb .tile{width:min(100%,20vh)}
+ #qrcard .qb .ql{font-size:3vh}
+}
+@media(prefers-reduced-motion:reduce){#qrcard.on .qt .a,#qrcard.on .qb{animation:none}}
 </style>
 </head>
 <body>
@@ -364,7 +429,7 @@ body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18p
 <div id="qrcard">
   <div class="qt">
     <div class="a">Drop</div><div class="a a2">your</div><div class="a a3">shot.</div>
-    <div class="qs">Upload a photo or video. Scan the second code to react and sign the yearbook.</div>
+    <div class="qs"><strong>MAKE THE SCREEN YOURS.</strong><span>Scan to upload a photo or video, react, or sign the yearbook.</span></div>
   </div>
   <div class="qq">
     <div class="qb"><div class="tile qU"></div><div class="ql">1. Upload a photo or video</div></div>
