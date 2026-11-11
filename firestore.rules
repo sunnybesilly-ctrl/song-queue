@@ -14,6 +14,39 @@ service cloud.firestore {
      get(/databases/$(database)/documents/gallery_access/$(request.auth.uid)).data.expiresAt > request.time &&
      get(/databases/$(database)/documents/gallery_state/current).data.active == true;
   }
+  // Guest reactions/comments belong to a verified six-hour event pass.
+  // Reactions: mediaId, name, uid, eventId, c (eight bounded counters), t.
+  // Comments: mediaId, name, uid, eventId, text (1..60 characters), t.
+  // Guests can create entries; only the DJ can read all events or delete entries.
+  function validGuestEntry(data) {
+   return data.keys().hasAll(['mediaId', 'name', 'uid', 'eventId', 't']) &&
+     data.uid == request.auth.uid &&
+     data.eventId == get(/databases/$(database)/documents/gallery_state/current).data.eventId &&
+     data.name is string && data.name.size() > 0 && data.name.size() <= 24 &&
+     data.mediaId is string && data.mediaId.size() <= 200 &&
+     (data.mediaId == '' || (
+       exists(/databases/$(database)/documents/media_queue/$(data.mediaId)) &&
+       get(/databases/$(database)/documents/media_queue/$(data.mediaId)).data.eventId == data.eventId
+     )) && data.t == request.time;
+  }
+  function validCount(counts, kind) {
+   return !(kind in counts) || (counts[kind] is int && counts[kind] >= 1 && counts[kind] <= 60);
+  }
+  function validReaction(data) {
+   return validGuestEntry(data) &&
+     data.keys().hasOnly(['mediaId', 'name', 'uid', 'eventId', 'c', 't']) &&
+     data.c is map && data.c.size() > 0 &&
+     data.c.keys().hasOnly(['heart', 'bolt', 'star', 'lol', 'wow', 'cool', 'sad', 'down']) &&
+     validCount(data.c, 'heart') && validCount(data.c, 'bolt') &&
+     validCount(data.c, 'star') && validCount(data.c, 'lol') &&
+     validCount(data.c, 'wow') && validCount(data.c, 'cool') &&
+     validCount(data.c, 'sad') && validCount(data.c, 'down');
+  }
+  function validComment(data) {
+   return validGuestEntry(data) &&
+     data.keys().hasOnly(['mediaId', 'name', 'uid', 'eventId', 'text', 't']) &&
+     data.text is string && data.text.size() > 0 && data.text.size() <= 60;
+  }
   match /media_queue/{id} {
    allow read: if admin() || (admitted() && resource.data.get('eventId', null) ==
      get(/databases/$(database)/documents/gallery_state/current).data.eventId);
@@ -33,16 +66,23 @@ service cloud.firestore {
    allow delete: if admin();
   }
   match /reactions/{id} {
-   allow read: if admin() || admitted();
-   allow create: if true;
+   allow read: if admin() || (admitted() && resource.data.eventId ==
+     get(/databases/$(database)/documents/gallery_state/current).data.eventId);
+   allow create: if admitted() && validReaction(request.resource.data);
+   allow update: if false;
    allow delete: if admin();
   }
   match /comments/{id} {
-   allow read: if admin() || admitted();
-   allow create: if true;
+   allow read: if admin() || (admitted() && resource.data.eventId ==
+     get(/databases/$(database)/documents/gallery_state/current).data.eventId);
+   allow create: if admitted() && validComment(request.resource.data);
+   allow update: if false;
    allow delete: if admin();
   }
-  match /state/{id} { allow read, write: if true; }
+  match /state/{id} {
+   allow read: if admin() || admitted();
+   allow write: if admin();
+  }
   match /display_control/{id} { allow read: if admin(); allow write: if admin(); }
   match /gallery_state/{id} { allow read: if true; allow write: if false; }
   match /gallery_access/{id} { allow read: if admin() || (request.auth != null && request.auth.uid == id); allow write: if false; }
