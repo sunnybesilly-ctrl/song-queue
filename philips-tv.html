@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#020a05">
+<title>Sunny Photo Wall — Philips TV / Roku</title>
+<style>
+  :root{color-scheme:dark;--edge-x:6%;--edge-y:5%}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#010603}
+  body{font:14px system-ui,Arial,sans-serif;color:#b5cfbd}
+  /* 1366×768 Philips panels can crop HDMI edges. The inset gives
+     the fullscreen show a protected title/QR safe area. */
+  .screen{
+    position:absolute;left:var(--edge-x);top:var(--edge-y);
+    width:calc(100% - 2 * var(--edge-x));
+    height:calc(100% - 2 * var(--edge-y));
+    border:0;display:block;background:#020a05;
+    box-shadow:0 0 0 1px #153a20,0 0 36px rgba(55,255,118,.10)
+  }
+  body::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 50%,#092317,#010603 80%)
+  }
+  .fallback{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:9px;opacity:.45}
+  .fallback a{color:#a7d5ac;text-decoration:none}
+  /* Smaller buffer on ordinary computer monitors, preserve extra room on TV. */
+  @media(max-width:700px) and (orientation:portrait){
+    :root{--edge-x:0%;--edge-y:0%}
+    .fallback{display:none}
+  }
+</style>
+</head>
+<body>
+<iframe class="screen" title="Sunny DJ photo wall television display" src="./display.html?screen=philips-tv&cinematic=1" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+<div class="fallback"><a href="./display.html">Full-width display</a></div>
+</body>
+</html>
