@@ -63,4 +63,32 @@ exports.redeemGalleryCode = onCall(OPT, async (req) => {
  });
 });
 
+
+const GIFT_COSTS = Object.freeze({spark:7, comet:77, galaxy:177, supernova:333});
+exports.sendPhotoGift = onCall(OPT, async req => {
+ requireUser(req);
+ const kind = String((req.data && req.data.kind) || "");
+ const mediaId = String((req.data && req.data.mediaId) || "");
+ const name = String((req.data && req.data.name) || "Guest").trim().slice(0,24) || "Guest";
+ if (!Object.prototype.hasOwnProperty.call(GIFT_COSTS,kind) || !/^[a-zA-Z0-9_/-]{1,200}$/.test(mediaId))
+   throw new HttpsError("invalid-argument","Choose an available gift and photo or video.");
+ const cost = GIFT_COSTS[kind];
+ const walletRef = db.doc("guest_wallets/"+req.auth.uid);
+ const accessRef = db.doc("gallery_access/"+req.auth.uid);
+ const mediaRef = db.doc("media_queue/"+mediaId);
+ const giftRef = db.collection("photo_gifts").doc();
+ return db.runTransaction(async tx => {
+   const snapshots = await Promise.all([tx.get(stateRef),tx.get(accessRef),tx.get(walletRef),tx.get(mediaRef)]);
+   const s=snapshots[0].data(),a=snapshots[1].data(),w=snapshots[2].data(),m=snapshots[3].data();
+   if (!s || !s.active || !a || a.eventId!==s.eventId || !a.expiresAt || a.expiresAt.toMillis()<=Date.now())
+     throw new HttpsError("permission-denied","Your event pass has expired.");
+   if (!m || m.eventId!==s.eventId) throw new HttpsError("failed-precondition","This memory is not in the current event.");
+   if (!w || w.eventId!==s.eventId) throw new HttpsError("failed-precondition","Your wallet needs a new event pass.");
+   if (!Number.isInteger(w.balance)||w.balance<cost) throw new HttpsError("resource-exhausted","Not enough credits for this gift.");
+   tx.update(walletRef,{balance:FieldValue.increment(-cost),spent:FieldValue.increment(cost),updatedAt:NOW()});
+   tx.create(giftRef,{eventId:s.eventId,mediaId,uid:req.auth.uid,name,kind,cost,t:FieldValue.serverTimestamp()});
+   return {ok:true,balance:w.balance-cost,giftId:giftRef.id};
+ });
+});
+
 Object.assign(exports, require("./photo-access"), require("./photo-retention"));
