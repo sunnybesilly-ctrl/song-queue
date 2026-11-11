@@ -132,6 +132,19 @@ body{
 <main class="wrap">
   <h1 class="title"><span>Make</span><span>some</span><span>noise.</span></h1>
 
+  <section id="gate" class="step">
+    <div class="sh"><span class="sl">YOUR INVITE CODE</span></div>
+    <p>Ask the DJ for a fresh eight-digit code. Your access lasts six hours and also works in the Party Album.</p>
+    <form id="codeForm">
+      <label class="lab" for="code">Eight-digit access code</label>
+      <input class="in" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" placeholder="00000000" required>
+      <div class="go-wrap"><button class="go" id="unlock" type="submit">Unlock reactions</button></div>
+    </form>
+    <p class="status" id="gateStatus" role="status" aria-live="polite"></p>
+  </section>
+  <section id="private" hidden>
+  <p class="sent" id="timeLeft"></p>
+  <button class="go ghost" id="leave" type="button">Leave reactions</button>
   <div class="now">
     <img id="nimg" alt="" hidden>
     <div>
@@ -162,12 +175,16 @@ body{
     <a class="go ghost" href="upload.html">Add your own shot</a>
   </div>
 
+  </section>
   <p class="brand">-A Sunny <b>neverpartlycloudy</b> production</p>
 </main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, onSnapshot, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+import { getAuth, onAuthStateChanged, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
@@ -177,10 +194,9 @@ const firebaseConfig = {
   messagingSenderId: "187308843014",
   appId: "1:187308843014:web:a4dbf9c17011767890a387"
 };
-const db = getFirestore(initializeApp(firebaseConfig));
+const app = initializeApp(firebaseConfig), db = getFirestore(app), auth = getAuth(app), fn = getFunctions(app, "us-central1");
 
 const NAME_KEY = "photowall_name";
-const UID_KEY = "photowall_uid";
 function face(inner) { return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#FFD43B" stroke="#7a4a00" stroke-width="1.3"/>' + inner + '</svg>'; }
 const ICON = {
   heart: '<svg viewBox="0 0 24 24"><path fill="#FF4058" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
@@ -202,29 +218,111 @@ const nmIn = $("#nm"), msgIn = $("#msg"), signBtn = $("#sign"), statusEl = $("#s
 let now = {}, sent = 0, pending = {}, flushT = null, lastSign = 0;
 try { nmIn.value = localStorage.getItem(NAME_KEY) || ""; } catch (e) {}
 
-function guestId() {
-  let id = "";
-  try {
-    id = localStorage.getItem(UID_KEY) || "";
-    if (!id) { id = "g" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem(UID_KEY, id); }
-  } catch (e) {}
-  return id || ("g" + Date.now().toString(36));
-}
 function reactName() { return (nmIn.value.trim() || "Guest").slice(0, 24); }
 nmIn.addEventListener("input", function () {
   nmIn.classList.remove("need");
   try { localStorage.setItem(NAME_KEY, nmIn.value.trim().slice(0, 24)); } catch (e) {}
 });
 
-/* what is on the big screen right now */
-function updateNow() {
-  nname.textContent = now.name ? now.name : "Waiting for the screen";
-  if (now.thumb) {
-    if (nimg.getAttribute("src") !== now.thumb) nimg.src = now.thumb;
-    nimg.hidden = false;
-  } else nimg.hidden = true;
+/* Access uses the same server-issued pass as the Party Album. */
+let access = null, generation = 0, previewVersion = 0, redeeming = false, expiryTimer;
+let stopNow, stopEvent, stopAccess;
+function gateMessage(text) { $("#gateStatus").textContent = text; }
+function lock(reason = "") {
+  generation++; previewVersion++;
+  clearTimeout(expiryTimer); clearTimeout(flushT); flushT = null; pending = {};
+  stopNow?.(); stopEvent?.(); stopAccess?.();
+  stopNow = stopEvent = stopAccess = undefined;
+  access = null; now = {}; sent = 0; sentEl.textContent = "0";
+  nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Waiting for the screen";
+  msgIn.value = ""; say("", false);
+  $("#private").hidden = true; $("#gate").hidden = false; gateMessage(reason);
 }
-onSnapshot(doc(db, "state", "now"), function (s) { now = s.data() || {}; updateNow(); }, function (e) { console.warn(e); });
+function hasPass() {
+  if (access && auth.currentUser?.uid === access.uid && access.expiresAt > Date.now()) return true;
+  lock("Enter a fresh code from the DJ to join reactions."); return false;
+}
+async function updateNow(data, session) {
+  const version = ++previewVersion;
+  now = {}; nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Waiting for the screen";
+  if (!data.id || !hasPass()) return;
+  try {
+    const row = await getDoc(doc(db, "media_queue", data.id));
+    if (session !== generation || version !== previewVersion || !hasPass()) return;
+    if (!row.exists() || row.data().eventId !== access.eventId) return;
+    const media = row.data();
+    now = {id: row.id}; nname.textContent = media.name || "Guest";
+    if (media.v === 3) {
+      const {data: links} = await httpsCallable(fn, "getGuestPhotoWallMedia")({ids: [row.id]});
+      if (session !== generation || version !== previewVersion || !hasPass()) return;
+      const link = links.media.find(entry => entry.id === row.id);
+      if (link && media.type === "image") { nimg.src = link.preview; nimg.hidden = false; }
+    }
+  } catch (e) {
+    if (session === generation && version === previewVersion) {
+      now = {}; nimg.removeAttribute("src"); nimg.hidden = true;
+      nname.textContent = "Waiting for the screen";
+      if (e.code === "permission-denied" || e.code === "functions/permission-denied") lock("Your access has ended. Ask the DJ for a fresh code.");
+    }
+  }
+}
+async function openReactions() {
+  lock(); const session = generation, user = auth.currentUser;
+  if (!user) return;
+  try {
+    const [stateDoc, passDoc] = await Promise.all([
+      getDoc(doc(db, "gallery_state", "current")), getDoc(doc(db, "gallery_access", user.uid))
+    ]);
+    if (session !== generation || auth.currentUser?.uid !== user.uid) return;
+    const state = stateDoc.data(), pass = passDoc.data(), expiresAt = pass?.expiresAt?.toMillis();
+    if (!state?.active) { lock("The event is closed."); return; }
+    if (!pass || pass.eventId !== state.eventId || !(expiresAt > Date.now())) {
+      lock("Ask the DJ for a fresh code to join reactions."); return;
+    }
+    access = {uid: user.uid, eventId: pass.eventId, expiresAt};
+    expiryTimer = setTimeout(() => lock("Your six-hour pass has expired. Ask the DJ for a new code."), expiresAt - Date.now());
+    $("#timeLeft").textContent = "Access until " + new Date(expiresAt).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+    $("#gate").hidden = true; $("#private").hidden = false;
+    stopEvent = onSnapshot(doc(db, "gallery_state", "current"), s => {
+      if (session !== generation) return;
+      const current = s.data();
+      if (!current?.active || current.eventId !== access?.eventId) lock("The event has ended.");
+    }, () => { if (session === generation) lock("Could not verify event access. Please try again."); });
+    stopAccess = onSnapshot(doc(db, "gallery_access", user.uid), s => {
+      if (session !== generation) return;
+      const current = s.data();
+      if (!current || current.eventId !== access?.eventId || current.expiresAt?.toMillis() !== expiresAt) lock("Your pass has changed. Enter a fresh code to return.");
+    }, () => { if (session === generation) lock("Could not verify your pass. Please try again."); });
+    stopNow = onSnapshot(doc(db, "state", "now"), s => {
+      if (session === generation && hasPass()) void updateNow(s.data() || {}, session);
+    }, () => { if (session === generation) lock("Your access has ended. Ask the DJ for a fresh code."); });
+  } catch (e) {
+    if (session === generation) lock("Could not verify your pass. Enter a code to try again.");
+  }
+}
+$("#codeForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (redeeming) return;
+  const code = $("#code").value.trim();
+  if (!/^[0-9]{8}$/.test(code)) { gateMessage("Enter all eight digits."); return; }
+  redeeming = true; $("#unlock").disabled = true; gateMessage("Checking your invitation…");
+  try {
+    if (!auth.currentUser) await signInAnonymously(auth);
+    await httpsCallable(fn, "redeemGalleryCode")({code});
+    $("#code").value = ""; await openReactions();
+  } catch (e) { gateMessage(e.message || "Code rejected. Ask the DJ for a fresh code."); }
+  finally { redeeming = false; $("#unlock").disabled = false; }
+});
+$("#leave").addEventListener("click", async () => {
+  lock("You have left reactions.");
+  try { await signOut(auth); } catch (e) { gateMessage("Please close this tab to finish leaving."); }
+});
+onAuthStateChanged(auth, () => { if (!redeeming) void openReactions(); });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && access) {
+    if (hasPass()) void openReactions();
+  }
+});
 
 /* reactions: taps are batched into one write every ~1.2s, tagged with who sent them */
 function pop(k, b) {
@@ -236,6 +334,7 @@ function pop(k, b) {
   setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); }, 950);
 }
 function tap(k, b) {
+  if (!hasPass()) return;
   if (!nmIn.value.trim()) nmIn.classList.add("need");
   const id = now.id || "";
   const p = pending[id] || (pending[id] = {});
@@ -247,10 +346,13 @@ function tap(k, b) {
 }
 async function flush() {
   flushT = null;
+  if (!hasPass()) return;
+  const session = generation;
   const ids = Object.keys(pending);
   for (let i = 0; i < ids.length; i++) {
+    if (session !== generation || !hasPass()) return;
     const c = pending[ids[i]]; delete pending[ids[i]];
-    try { await addDoc(collection(db, "reactions"), { mediaId: ids[i], name: reactName(), uid: guestId(), c: c, t: serverTimestamp() }); } catch (e) { console.warn(e); }
+    try { await addDoc(collection(db, "reactions"), { mediaId: ids[i], name: reactName(), uid: auth.currentUser.uid, eventId: access.eventId, c: c, t: serverTimestamp() }); } catch (e) { console.warn(e); }
   }
 }
 KINDS.forEach(function (k, i) {
@@ -266,6 +368,8 @@ document.addEventListener("visibilitychange", function () { if (document.hidden 
 /* sign the yearbook */
 function say(msg, err) { statusEl.textContent = msg; statusEl.className = err ? "status err" : "status"; }
 async function sign() {
+  if (!hasPass()) return;
+  const session = generation;
   const text = msgIn.value.trim().slice(0, 60);
   const name = nmIn.value.trim().slice(0, 24) || "A guest";
   if (!text) { say("Write something first.", true); msgIn.focus(); return; }
@@ -274,7 +378,8 @@ async function sign() {
   signBtn.disabled = true;
   try {
     try { localStorage.setItem(NAME_KEY, name); } catch (e) {}
-    await addDoc(collection(db, "comments"), { mediaId: now.id || "", name: name, text: text, t: serverTimestamp() });
+    await addDoc(collection(db, "comments"), { mediaId: now.id || "", name: name, text: text, uid: auth.currentUser.uid, eventId: access.eventId, t: serverTimestamp() });
+    if (session !== generation) return;
     msgIn.value = "";
     say("Signed. Watch the screen.", false);
   } catch (e) {
