@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#091809">
-<title>DJ Sunny — All Links</title>
+<title>DJ Sunny — Guest Links</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--deep:#091809;--gold:#f5c518;--dim:rgba(255,255,255,.6);--card:rgba(0,0,0,.5)}
@@ -2375,17 +2375,22 @@ var qrcode = function() {
 <script>
 const BASE='https://sunnybesilly-ctrl.github.io/song-queue/';
 const G=[
- {t:'FOR GUESTS',items:[
-  {n:'Song Request',u:BASE+'song_request_form.html?v=20261111c',c:'#f5c518',d:'Guests request songs here'},
-  {n:'Party Chat',u:BASE+'party_chat_form.html',c:'#f472b6',d:'Messages show live on the big screen'},
-  {n:'Cash App',u:'https://cash.app/$SunnyAubade',c:'#ff3333',d:'VIP payments'},
-  {n:'Snapchat',u:'https://www.snapchat.com/add/eatitall',c:'#ffffff',d:'Add DJ Sunny'}]},
- {t:'FOR THE SCREENS',items:[
-  {n:'Live Display',u:BASE+'live-display-neon-final.html',c:'#f5c518',d:'Full projector queue'},
-  {n:'Live Display Lite',u:BASE+'live-display-lite.html',c:'#f5c518',d:'For AirPlay, the slow PC and the Puffin browser'}]},
+ {t:'PHOTO WALL',items:[
+  {n:'Drop Your Shot',u:BASE+'upload.html?v=20261111-18',c:'#f4ff1a',d:'Upload a photo or video to the live wall'},
+  {n:'Reactions + Gifts',u:BASE+'react.html?v=20261111-18',c:'#f472b6',d:'React to memories, send gifts and sign the yearbook'},
+  {n:'Party Album',u:BASE+'gallery.html?v=20261111-18',c:'#37ff76',d:'Private gallery — event access code required'}
+ ]},
+ {t:'SONGS & CHAT',items:[
+  {n:'Song Request',u:BASE+'song_request_form.html?v=20261111c',c:'#f5c518',d:'Request a song for the DJ'},
+  {n:'Party Chat',u:BASE+'party_chat_form.html?v=20261111-18',c:'#f472b6',d:'Send a message to the party screen'}
+ ]},
+ {t:'FOLLOW + SUPPORT',items:[
+  {n:'Cash App',u:'https://cash.app/$SunnyAubade',c:'#ff4058',d:'VIP payments'},
+  {n:'Snapchat',u:'https://www.snapchat.com/add/eatitall',c:'#ffffff',d:'Connect with DJ Sunny'}
+ ]},
  {t:'MORE',items:[
-  {n:'Jukebox Home',u:BASE,c:'#f5c518',d:'Landing page'},
-  {n:'This Page',u:BASE+'hub.html',c:'#f5c518',d:'Scan to get every link'}]}
+  {n:'Guest Links Home',u:BASE+'hub.html?v=20261111-18',c:'#f5c518',d:'This guest-friendly link collection'}
+ ]}
 ];
 const KEY='djhub.custom',$=s=>document.querySelector(s);
 const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}};
