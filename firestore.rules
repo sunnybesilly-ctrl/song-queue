@@ -23,9 +23,12 @@ service cloud.firestore {
      get(/databases/$(database)/documents/photo_wall_uploads/$(id)).data.eventId ==
        request.resource.data.eventId &&
      request.resource.data.type in ['image', 'video'] &&
+     request.resource.data.url.matches('^https://res[.]cloudinary[.]com/yl4yzjh5/' +
+       request.resource.data.type + '/authenticated/(c_limit,[a-zA-Z0-9_,.:=-]+/|vc_h264,[a-zA-Z0-9_,.:=-]+/)?v[0-9]+/' +
+       id + '[.][a-zA-Z0-9]+$') &&
      request.resource.data.timestamp == request.time
    );
-   allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+   allow update: if admin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
    allow delete: if admin();
   }
   match /reactions/{id} {
