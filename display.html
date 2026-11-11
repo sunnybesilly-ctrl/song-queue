@@ -631,6 +631,14 @@ function chipSet(ch, v, bump) {
 
 const giftQueue=[];let giftPlaying=false;
 const pendingGiftMedia=new Map();
+const seenGiftIds=new Set();
+function queueGiftDoc(v,id){
+ if(seenGiftIds.has(id)||!ICON[v.kind]||!v.mediaId)return;
+ if(!archivePlayback&&v.eventId!==currentEventId)return;
+ seenGiftIds.add(id);
+ if(curItem?.id===v.mediaId&&mode==="loop")featureGift(v.kind);
+ else{const q=pendingGiftMedia.get(v.mediaId)||[];q.push(v.kind);pendingGiftMedia.set(v.mediaId,q.slice(-3));}
+}
 function cascadeReaction(kind,amount=1){
  if(!curItem||mode!=="loop"||!ICON[kind]||PORT.matches||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
  const media=cur?.firstChild;if(!media)return;
@@ -1242,7 +1250,7 @@ function resetForEventChange() {
   if (timer) { clearTimeout(timer); timer = null; }
   if (wd) { clearTimeout(wd); wd = null; }
   stopMedia();
-  giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();document.getElementById("giftStage").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
+  giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();seenGiftIds.clear();document.getElementById("giftStage").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
   stage.replaceChildren();
   clearRx();
   fx.replaceChildren(); fxN = 0;
@@ -1429,13 +1437,16 @@ let giftInit=false;
 onSnapshot(collection(db,"photo_gifts"),function(s){
  giftSnapshot=s;
  refreshArchiveGifts();
+ if(!giftInit){
+  s.docs.filter(d=>d.data().eventId===currentEventId)
+   .sort((a,b)=>(b.data().t?.seconds||0)-(a.data().t?.seconds||0))
+   .slice(0,2).reverse().forEach(d=>queueGiftDoc(d.data(),d.id));
+ }
  if(giftInit){
   for(const change of s.docChanges()){
    if(change.type!=="added")continue;
    const v=change.doc.data();
-   if(!items.some(m=>m.id===v.mediaId)||(!archivePlayback&&v.eventId!==currentEventId))continue;
-   if(curItem?.id===v.mediaId&&mode==="loop")featureGift(v.kind);
-   else{const q=pendingGiftMedia.get(v.mediaId)||[];q.push(v.kind);pendingGiftMedia.set(v.mediaId,q.slice(-3));}
+   queueGiftDoc(v,change.doc.id);
   }
  }
  giftInit=true;
