@@ -33,22 +33,27 @@ body{font-family:var(--body);color:var(--bone)}
 .mi.kb{animation:kb 8s linear forwards}
 @keyframes kb{0%{transform:scale(1)}100%{transform:scale(1.07)}}
 
-@keyframes tZoom{0%{opacity:0;transform:scale(1.4)}55%{opacity:1}100%{opacity:1;transform:scale(1)}}
-@keyframes tWhipL{0%{opacity:1;transform:translateX(105%)}70%{opacity:1;transform:translateX(-2%)}100%{opacity:1;transform:translateX(0)}}
-@keyframes tWhipR{0%{opacity:1;transform:translateX(-105%)}70%{opacity:1;transform:translateX(2%)}100%{opacity:1;transform:translateX(0)}}
-@keyframes tDrop{0%{opacity:1;transform:translateY(-105%)}60%{opacity:1;transform:translateY(3%)}80%{opacity:1;transform:translateY(-1.5%)}100%{opacity:1;transform:translateY(0)}}
-@keyframes tSpin{0%{opacity:0;transform:rotate(-12deg) scale(.55)}60%{opacity:1}100%{opacity:1;transform:rotate(0) scale(1)}}
-@keyframes tPop{0%{opacity:0;transform:scale(.4)}65%{opacity:1;transform:scale(1.07)}100%{opacity:1;transform:scale(1)}}
-@keyframes tCut{0%,100%{opacity:1}}
-@keyframes tFade{0%{opacity:0}100%{opacity:1}}
-.in-zoom{animation:tZoom .62s cubic-bezier(.2,.8,.2,1) forwards}
-.in-whipl{animation:tWhipL .6s cubic-bezier(.2,.9,.25,1) forwards}
-.in-whipr{animation:tWhipR .6s cubic-bezier(.2,.9,.25,1) forwards}
-.in-drop{animation:tDrop .75s ease-out forwards}
-.in-spin{animation:tSpin .72s cubic-bezier(.2,1.2,.4,1) forwards}
-.in-pop{animation:tPop .56s ease-out forwards}
-.in-cut{animation:tCut .45s linear forwards}
-.in-fade{animation:tFade .5s linear forwards}
+/* Cinematic transitions: composited opacity/transform only, no video decoding effects. */
+@keyframes tAurora{0%{opacity:0;transform:translate3d(0,7%,0) scale(1.11)}55%{opacity:1}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes tSweepLeft{0%{opacity:0;transform:translate3d(14%,0,0) scale(1.035)}38%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes tSweepRight{0%{opacity:0;transform:translate3d(-14%,0,0) scale(1.035)}38%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes tGlide{0%{opacity:0;transform:translate3d(0,-10%,0) scale(1.08)}60%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes tFocus{0%{opacity:0;transform:scale(1.22)}45%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes tPulse{0%{opacity:0;transform:scale(.91)}65%{opacity:1;transform:scale(1.015)}100%{opacity:1;transform:scale(1)}}
+@keyframes tFade{from{opacity:0}to{opacity:1}}
+@keyframes tRetreat{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.045)}}
+.w{will-change:opacity,transform}
+.w.old{animation:tRetreat .85s cubic-bezier(.16,1,.3,1) both}
+.in-aurora{animation:tAurora .95s cubic-bezier(.16,1,.3,1) both}
+.in-sweepl{animation:tSweepLeft .9s cubic-bezier(.16,1,.3,1) both}
+.in-sweepr{animation:tSweepRight .9s cubic-bezier(.16,1,.3,1) both}
+.in-glide{animation:tGlide .9s cubic-bezier(.16,1,.3,1) both}
+.in-focus{animation:tFocus 1s cubic-bezier(.16,1,.3,1) both}
+.in-pulse{animation:tPulse .85s cubic-bezier(.16,1,.3,1) both}
+.in-fade{animation:tFade .6s ease-out both}
+.w.top::after{content:"";position:absolute;inset:0;pointer-events:none;border-top:2px solid rgba(244,255,26,.55);border-bottom:2px solid rgba(55,255,118,.45);opacity:0;animation:edgeGlow .95s ease-out}
+@keyframes edgeGlow{15%{opacity:.75}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.w.top,.w.old,.w.top::after,.mi.kb{animation:none!important}.w.top{opacity:1}}
 
 #flash{position:absolute;left:0;top:0;right:0;bottom:var(--bar);z-index:5;background:#fff;opacity:0;pointer-events:none}
 #flash.go{animation:flash .45s ease-out}
@@ -612,14 +617,19 @@ function publish(m) {
 }
 
 const T = [
-  { n: "zoom", ms: 620 }, { n: "whipl", ms: 600 }, { n: "whipr", ms: 600 }, { n: "drop", ms: 750 },
-  { n: "spin", ms: 720 }, { n: "pop", ms: 560 }, { n: "cut", ms: 450, flash: true }
+  { n: "aurora", ms: 950 },
+  { n: "sweepl", ms: 900 },
+  { n: "sweepr", ms: 900 },
+  { n: "glide", ms: 900 },
+  { n: "focus", ms: 1000 },
+  { n: "pulse", ms: 850 }
 ];
 function pickT(isFresh) {
-  if (lite) return { n: "fade", ms: 500 };
-  if (isFresh) return { n: "spin", ms: 720, flash: true };
+  if (lite || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return {n:"fade",ms:600};
+  if (isFresh) return {n:"focus",ms:1000};
   let i; do { i = Math.floor(Math.random() * T.length); } while (i === lastT);
-  lastT = i; return T[i];
+  lastT = i;
+  return T[i];
 }
 function holdFor(isFresh) {
   const n = items.length;
