@@ -124,7 +124,7 @@ body{
 @media (prefers-reduced-motion:reduce){
   .title span{animation:none;opacity:1}
 }
-</style>
+.memory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.memory-card{padding:0;background:#061a0d;border:2px solid var(--line);color:var(--bone);text-align:left;cursor:pointer;min-width:0;overflow:hidden;font:inherit}.memory-card.selected{border-color:var(--acid);box-shadow:0 0 0 2px rgba(244,255,26,.28)}.memory-card img,.memory-card video{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#010904}.memory-card strong{display:block;padding:10px;overflow-wrap:anywhere}.memory-card small{display:block;padding:0 10px 10px;color:var(--dim)}.memory-card:focus-visible{outline:3px solid var(--lime)}.memory-grid:empty{display:none}.rx button:disabled{opacity:.35;cursor:not-allowed}</style>
 </head>
 <body>
 <div class="floor"></div>
@@ -148,18 +148,20 @@ body{
   <div class="now">
     <img id="nimg" alt="" hidden>
     <div>
-      <div class="lab">On the big screen now</div>
-      <div class="nname" id="nname">Waiting for the screen</div>
+      <div class="lab">Your selected memory</div>
+      <div class="nname" id="nname">Choose a photo or video</div>
     </div>
   </div>
 
+  <div class="step s1"><div class="sh"><span class="sl">Browse tonight’s memories</span></div><p class="sent">Select a photo or video to react to it. The projector can change without affecting your selection.</p><p id="browseStatus" class="status">Loading memories…</p><div id="memoryGrid" class="memory-grid"></div></div>
+
   <div class="step s1">
-    <div class="sh"><span class="num">1</span><label class="sl" for="nm">Your name</label><span class="sn">shows with every reaction</span></div>
+    <div class="sh"><span class="num">1</span><label class="sl" for="nm">Your name</label><span class="sn">appears with your reaction</span></div>
     <input class="in" id="nm" type="text" maxlength="24" placeholder="Your name" autocomplete="given-name" autocapitalize="words">
   </div>
 
   <div class="step s2">
-    <div class="sh"><span class="num">2</span><span class="sl">Hit it</span><span class="sn">tap as much as you want</span></div>
+    <div class="sh"><span class="num">2</span><span class="sl">Hit it</span><span class="sn">react to your selected memory</span></div>
     <div class="rx" id="rx"></div>
     <p class="sent">You have sent <b id="sent">0</b></p>
   </div>
@@ -181,7 +183,7 @@ body{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, onSnapshot, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, onSnapshot, getDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 import { getAuth, onAuthStateChanged, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
@@ -226,15 +228,16 @@ nmIn.addEventListener("input", function () {
 
 /* Access uses the same server-issued pass as the Party Album. */
 let access = null, generation = 0, previewVersion = 0, redeeming = false, expiryTimer;
-let stopNow, stopEvent, stopAccess;
+let stopMedia, stopEvent, stopAccess; let browseVersion = 0; const signedMedia = httpsCallable(fn, "getGuestPhotoWallMedia");
 function gateMessage(text) { $("#gateStatus").textContent = text; }
 function lock(reason = "") {
   generation++; previewVersion++;
   clearTimeout(expiryTimer); clearTimeout(flushT); flushT = null; pending = {};
-  stopNow?.(); stopEvent?.(); stopAccess?.();
-  stopNow = stopEvent = stopAccess = undefined;
+  stopMedia?.(); stopEvent?.(); stopAccess?.();
+  stopMedia = stopEvent = stopAccess = undefined;
+  browseVersion++; $("#memoryGrid").replaceChildren(); $("#browseStatus").textContent = "Loading memories…";
   access = null; now = {}; sent = 0; sentEl.textContent = "0";
-  nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Waiting for the screen";
+  nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Choose a photo or video";
   msgIn.value = ""; say("", false);
   $("#private").hidden = true; $("#gate").hidden = false; gateMessage(reason);
 }
@@ -242,29 +245,67 @@ function hasPass() {
   if (access && auth.currentUser?.uid === access.uid && access.expiresAt > Date.now()) return true;
   lock("Enter a fresh code from the DJ to join reactions."); return false;
 }
-async function updateNow(data, session) {
-  const version = ++previewVersion;
-  now = {}; nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Waiting for the screen";
-  if (!data.id || !hasPass()) return;
+async function renderMemories(snapshot, session) {
+  const version = ++browseVersion;
+  const rows = snapshot.docs.filter(r => r.data().v === 3 && r.data().eventId === access?.eventId)
+    .sort((a,b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
+  const grid = $("#memoryGrid");
+  const previousId = now.id;
+  $("#browseStatus").textContent = rows.length ? "Loading " + rows.length + " memories…" : "No photos or videos posted yet. Check back soon.";
+  if (!rows.length) { grid.replaceChildren(); now = {}; nname.textContent = "Choose a photo or video"; nimg.hidden = true; return; }
   try {
-    const row = await getDoc(doc(db, "media_queue", data.id));
-    if (session !== generation || version !== previewVersion || !hasPass()) return;
-    if (!row.exists() || row.data().eventId !== access.eventId) return;
-    const media = row.data();
-    now = {id: row.id}; nname.textContent = media.name || "Guest";
-    if (media.v === 3) {
-      const {data: links} = await httpsCallable(fn, "getGuestPhotoWallMedia")({ids: [row.id]});
-      if (session !== generation || version !== previewVersion || !hasPass()) return;
-      const link = links.media.find(entry => entry.id === row.id);
-      if (link && media.type === "image") { nimg.src = link.preview; nimg.hidden = false; }
+    const links = new Map();
+    for (let i = 0; i < rows.length; i += 50) {
+      const response = await signedMedia({ids: rows.slice(i, i + 50).map(r => r.id)});
+      if (session !== generation || version !== browseVersion || !hasPass()) return;
+      for (const entry of response.data.media || []) links.set(entry.id, entry);
     }
-  } catch (e) {
-    if (session === generation && version === previewVersion) {
-      now = {}; nimg.removeAttribute("src"); nimg.hidden = true;
-      nname.textContent = "Waiting for the screen";
-      if (e.code === "permission-denied" || e.code === "functions/permission-denied") lock("Your access has ended. Ask the DJ for a fresh code.");
+    if (session !== generation || version !== browseVersion || !hasPass()) return;
+    grid.replaceChildren();
+    const available = [];
+    for (const row of rows) {
+      const d = row.data(), url = links.get(row.id)?.preview;
+      if (!url) continue;
+      available.push(row);
+      const button = document.createElement("button");
+      button.type = "button"; button.className = "memory-card"; button.dataset.id = row.id;
+      button.setAttribute("aria-label", "React to media by " + (d.name || "Guest"));
+      const media = document.createElement(d.type === "video" ? "video" : "img");
+      media.src = url;
+      if (d.type === "video") { media.controls = true; media.preload = "metadata"; media.playsInline = true; }
+      else { media.alt = "Party memory"; media.loading = "lazy"; }
+      const title = document.createElement("strong"); title.textContent = d.name || "Guest";
+      const hint = document.createElement("small"); hint.textContent = d.type === "video" ? "Video · select to react" : "Photo · select to react";
+      button.append(media, title, hint);
+      button.addEventListener("click", e => {
+        if (e.target.closest("video")) return;
+        selectMemory(row.id, d.name || "Guest", url, d.type);
+      });
+      grid.append(button);
     }
+    $("#browseStatus").textContent = available.length ? "Choose a memory below. Reactions stay attached to that post." : "Memories are loading. Try again shortly.";
+    const chosen = available.find(r => r.id === previousId);
+    if (chosen) {
+      const d = chosen.data(); selectMemory(chosen.id, d.name || "Guest", links.get(chosen.id).preview, d.type);
+    } else { now = {}; nimg.hidden = true; nname.textContent = "Choose a photo or video"; }
+  } catch (err) {
+    if (session !== generation || version !== browseVersion) return;
+    console.warn("Memories unavailable", err);
+    $("#browseStatus").textContent = "Could not load memories. Check your connection and try reopening this page.";
   }
+}
+function selectMemory(id, name, url, type) {
+  if (!hasPass()) return;
+  now = {id};
+  nname.textContent = name;
+  nimg.hidden = type !== "image";
+  if (type === "image") nimg.src = url; else nimg.removeAttribute("src");
+  document.querySelectorAll(".memory-card").forEach(b => {
+    const chosen = b.dataset.id === id;
+    b.classList.toggle("selected", chosen);
+    b.setAttribute("aria-pressed", String(chosen));
+  });
+  $("#browseStatus").textContent = "Selected: " + name + ". Reactions will go to this memory.";
 }
 async function openReactions() {
   lock(); const session = generation, user = auth.currentUser;
@@ -293,9 +334,11 @@ async function openReactions() {
       const current = s.data();
       if (!current || current.eventId !== access?.eventId || current.expiresAt?.toMillis() !== expiresAt) lock("Your pass has changed. Enter a fresh code to return.");
     }, () => { if (session === generation) lock("Could not verify your pass. Please try again."); });
-    stopNow = onSnapshot(doc(db, "state", "now"), s => {
-      if (session === generation && hasPass()) void updateNow(s.data() || {}, session);
-    }, () => { if (session === generation) lock("Your access has ended. Ask the DJ for a fresh code."); });
+    stopMedia = onSnapshot(query(collection(db, "media_queue"), where("eventId", "==", access.eventId)), s => {
+      if (session === generation && hasPass()) void renderMemories(s, session);
+    }, err => {
+      if (session === generation) $("#browseStatus").textContent = "Couldn't load the album: " + (err?.message || "check your connection.");
+    });
   } catch (e) {
     if (session === generation) lock("Could not verify your pass. Enter a code to try again.");
   }
@@ -337,6 +380,7 @@ function tap(k, b) {
   if (!hasPass()) return;
   if (!nmIn.value.trim()) nmIn.classList.add("need");
   const id = now.id || "";
+  if (!id) { $("#browseStatus").textContent = "Choose a photo or video before reacting."; $("#memoryGrid").scrollIntoView({behavior:"smooth",block:"start"}); return; }
   const p = pending[id] || (pending[id] = {});
   p[k] = Math.min((p[k] || 0) + 1, 60);
   sent++; sentEl.textContent = sent;
@@ -371,6 +415,7 @@ async function sign() {
   if (!hasPass()) return;
   const session = generation;
   const text = msgIn.value.trim().slice(0, 60);
+  if (!now.id) { say("Choose a memory before signing.", true); return; }
   const name = nmIn.value.trim().slice(0, 24) || "A guest";
   if (!text) { say("Write something first.", true); msgIn.focus(); return; }
   if (Date.now() - lastSign < 6000) { say("Easy. One at a time.", true); return; }
