@@ -1236,34 +1236,63 @@ async function processMediaSnapshot(snap) {
   // before starting the screen can starve playback as the archive grows.
   const list=fallback?historical.slice(-18):current;
   list.forEach(x=>{const lk=x.likes||0;if(lastLikes[x.id]!==undefined&&lk>lastLikes[x.id]&&curItem?.id===x.id)curChanged=true;lastLikes[x.id]=lk;});
-  // Sign the current event first; do not let historical media or frequent
-  // like/reaction updates restart the entire signing operation.
-  const urls=[...new Set(list.flatMap(item=>[item.url,playUrl(item)]).filter(Boolean))];
+  // Load one playable item first. The rest must not block the slideshow.
+  // Both DJ/Admin uploads and guest uploads are already in media_queue.
   window.__djMediaReceived=true;
-  nmEl.textContent=list.length?"LOADING EVENT MEDIA":"NO MEDIA AVAILABLE";
-  if(!cShowing){
-    hint.textContent=list.length?"Preparing secure links for "+list.length+" media item(s)…":"Scan to upload your first photo or video.";
-    hint.hidden=false;
+  const allItems=list.slice();
+  const ready=[];
+  let firstError=null;
+  const tryItem=async item=>{
+    const url=playUrl(item);
+    try{
+      await Promise.race([
+        photoLinks.prepare([url]),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error("Media signing timed out")),9000))
+      ]);
+      if(photoLinks.resolve(url)){ready.push(item);return true;}
+      firstError=firstError||new Error("The secure-link service returned no URL for this media");
+    }catch(error){firstError=firstError||error;console.warn("Media "+item.id+" unavailable:",error);}
+    return false;
+  };
+  if(!curItem && list.length){
+    nmEl.textContent="LOADING EVENT MEDIA";
+    if(!cShowing){
+      hint.textContent="Connecting to the first photo or video…";
+      hint.hidden=false;
+    }
   }
-  let linkFailure=null;
-  try{
-    await Promise.race([
-      photoLinks.prepare(urls),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Secure-link service timed out after 12 seconds")),12000))
-    ]);
-  }catch(error){linkFailure=error;console.error("Secure media signing failed:",error);}
-  if(revision!==mediaRevision || eventAtStart!==currentEventId)return;
-  const playable=list.filter(item=>!!photoLinks.resolve(playUrl(item)));
-  if(!playable.length && list.length){
+  // Try up to three recent items before showing a clear failure. This also
+  // avoids blocking playback on one expired historical Cloudinary asset.
+  const firstCandidates=allItems.slice(-3).reverse();
+  for(const item of firstCandidates){
+    if(await tryItem(item))break;
+    if(revision!==mediaRevision||eventAtStart!==currentEventId)return;
+  }
+  if(revision!==mediaRevision||eventAtStart!==currentEventId)return;
+  if(!ready.length&&list.length){
     nmEl.textContent="MEDIA LINK ERROR";
-    hint.textContent=linkFailure ? "Secure media service: "+safeMediaError(linkFailure) : "No signed playback URLs returned. Check Firebase Function signAdminPhotoWallUrls.";
-    pendingMediaSignature="";
+    cmt.hidden=true;hint.hidden=false;
+    hint.textContent="Secure playback unavailable: "+safeMediaError(firstError)+". Check the deployed signing function.";
+    console.error("No media could be signed",firstError);
     return;
   }
-  if(linkFailure)console.warn("Some media links might be unavailable:",safeMediaError(linkFailure));
-  // Retain only records that have a usable delivery URL, rather than trying
-  // an empty image/video source and falling back to a permanent QR screen.
-  list.splice(0,list.length,...playable);
+  list.splice(0,list.length,...ready);
+  // Prepare the rest without delaying the first item. A media revision check
+  // prevents stale results from an old event entering the rotation.
+  const leftovers=allItems.filter(x=>!ready.some(y=>y.id===x.id));
+  void (async()=>{
+    for(let k=0;k<leftovers.length;k+=10){
+      if(revision!==mediaRevision||eventAtStart!==currentEventId)return;
+      const batch=leftovers.slice(k,k+10);
+      try{await Promise.race([
+        photoLinks.prepare(batch.map(playUrl)),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error("Additional media signing timed out")),12000))
+      ]);}catch(e){console.warn("Additional media unavailable",e);}
+      if(revision!==mediaRevision||eventAtStart!==currentEventId)return;
+      const valid=batch.filter(x=>photoLinks.resolve(playUrl(x)));
+      valid.forEach(x=>{if(!items.some(y=>y.id===x.id))items.push(x);});
+    }
+  })();
   window.__djMediaReceived = true;
   const leavingArchive=archivePlayback&&!fallback&&!!curItem;
   archivePlayback=fallback;items=list;
