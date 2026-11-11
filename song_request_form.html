@@ -568,13 +568,10 @@ function startPosTracking(name, song, baseCount) {
   };
   const spotText = n => n === 1 ? ['NOW PLAYING', 'SONANDO AHORA'] : n === 2 ? ['UP NEXT', 'SIGUE'] : ['YOUR SPOT IN THE QUEUE', 'TU LUGAR EN LA FILA'];
 
-  // Instant number: you went in at the end of the line.
-  if (baseCount !== null && baseCount !== undefined) {
-    const n = baseCount + 1, t = spotText(n);
-    setNum('#' + n, t[0], t[1]);
-  } else {
-    setNum('#…', 'Finding your spot…', 'Buscando tu lugar…');
-  }
+  // Never guess a queue number from a pre-submit count: rows may be
+  // duplicated or filtered differently by the server and display.
+  // Wait for the submitted row in the same deduplicated queue used by Lite.
+  setNum('#…', 'Confirming your number…', 'Confirmando tu número…');
 
   const tick = async () => {
     if (my !== posToken) return;
@@ -592,7 +589,10 @@ function startPosTracking(name, song, baseCount) {
       }
     }
     if (my !== posToken) return;
-    if (!exact && tries >= 12 && (baseCount === null || baseCount === undefined)) { box.style.display = 'none'; return; }
+    if (!exact && tries >= 12) {
+      setNum('#…', 'Queue number unavailable — see the live display', 'Número no disponible — mira la pantalla');
+      return;
+    }
     posTimer = setTimeout(tick, exact ? 15000 : 3000);
   };
   posTimer = setTimeout(tick, 2500);
@@ -632,8 +632,7 @@ async function goToStep2() {
   const finalArtist = ytFinalChannel || artist;
   const finalSong   = ytFinalTitle   || song;
 
-  const baseRows = await basePromise;
-  const baseCount = baseRows ? baseRows.length : null;
+  await basePromise; // Keep existing preflight but don't use it to guess a number.
 
   postToGoogleForm(FORM_ACTION, {
     'entry.1627059384': name,
