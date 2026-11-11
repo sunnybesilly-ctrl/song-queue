@@ -310,12 +310,23 @@ body{font-family:var(--body);color:var(--bone)}
 @keyframes giftGlint{from{opacity:.2;transform:scale(.5)}to{opacity:.8;transform:scale(1.4)}}
 @media(prefers-reduced-motion:reduce){.gift-hero{animation:giftVoyage 1.4s ease-out both}.gift-glint{display:none}}
 @media(orientation:portrait){#rx.docked .rc{height:32px;min-width:44px;padding:0 6px}#rx.docked .ic{width:20px;height:20px}#rx.docked .rn{font-size:14px}}
+
+.w.triptych{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#03140c}
+.w.triptych>.mi{grid-column:2;grid-row:1;z-index:2;min-width:0;width:100%;height:100%;object-fit:contain}
+.w.triptych>.portrait-side{grid-row:1;width:100%;height:100%;min-width:0;object-fit:cover;opacity:.7;filter:saturate(.75) brightness(.78)}
+.w.triptych>.portrait-side.left{grid-column:1}.w.triptych>.portrait-side.right{grid-column:3}
+#reactionCascade{position:absolute;inset:0 0 calc(var(--bar) + var(--reaction-dock));z-index:6;pointer-events:none;overflow:hidden}
+.cascade-icon{position:absolute;top:-7%;width:clamp(24px,5vh,52px);height:clamp(24px,5vh,52px);opacity:0;animation:reactionDrift 3.2s ease-in-out both;filter:drop-shadow(0 2px 8px #0008)}
+.cascade-icon svg{width:100%;height:100%}
+@keyframes reactionDrift{0%{opacity:0;transform:translateY(-5vh) rotate(-20deg) scale(.7)}16%{opacity:.9}85%{opacity:.8}100%{opacity:0;transform:translate(var(--sway,10px),75vh) rotate(24deg) scale(1.1)}}
+@media (orientation:portrait){.w.triptych{display:block}.w.triptych>.portrait-side{display:none}.w.triptych>.mi{width:100%;height:100%}}
+@media(prefers-reduced-motion:reduce){.cascade-icon{display:none}}
 </style>
 </head>
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
-<div id="rx"></div><div id="giftStage" aria-hidden="true"></div>
+<div id="rx"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
 
 <div id="qrcard">
   <div class="qt">
@@ -619,6 +630,26 @@ function chipSet(ch, v, bump) {
 }
 
 const giftQueue=[];let giftPlaying=false;
+const pendingGiftMedia=new Map();
+function cascadeReaction(kind,amount=1){
+ if(!curItem||mode!=="loop"||!ICON[kind]||PORT.matches||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+ const media=cur?.firstChild;if(!media)return;
+ const r=mediaRect(media),gutter=cur.classList.contains("triptych")?r.sw/3:r.l;
+ if(gutter<65)return;
+ const id=curItem.id;
+ for(let i=0;i<Math.min(5,Math.max(1,amount));i++)setTimeout(()=>{
+  if(curItem?.id!==id||mode!=="loop")return;
+  const icon=h("span","cascade-icon");icon.innerHTML=ICON[kind];
+  icon.style.left=((i%2===0?0:r.sw-gutter)+12+Math.random()*Math.max(1,gutter-62))+"px";
+  icon.style.setProperty("--sway",(Math.random()*32-16)+"px");
+  document.getElementById("reactionCascade").append(icon);
+  setTimeout(()=>icon.remove(),3300);
+ },i*170);
+}
+function showPendingGifts(id){
+ const q=pendingGiftMedia.get(id)||[];pendingGiftMedia.delete(id);
+ q.slice(-3).forEach(kind=>featureGift(kind));
+}
 function featureGift(kind){
  if(!ICON[kind]||!curItem||mode!=="loop")return;
  giftQueue.push({kind,id:curItem.id});
@@ -691,12 +722,13 @@ function showRx(el, m, instant) {
 }
 function liveRx(e, id, replay) {
   const c = rxCtl;
-  if (c && c.ch[e.k]) { chipSet(c.ch[e.k], c.ch[e.k].v + e.n, true); bubble(c.feed, e);  return; }
+  if (c && c.ch[e.k]) { chipSet(c.ch[e.k], c.ch[e.k].v + e.n, true); bubble(c.feed, e); cascadeReaction(e.k,e.n); return; }
   if (replay) return;
   if (!RX[id]) RX[id] = { n: 0, c: {}, ev: [] };
   if (!RX[id].c[e.k]) { RX[id].c[e.k] = e.n; RX[id].n += e.n; }
   if (cur && curItem && curItem.id === id) showRx(cur.firstChild, { id: id }, true);
-  if (rxCtl) bubble(rxCtl.feed, e); 
+  if (rxCtl) bubble(rxCtl.feed, e);
+  cascadeReaction(e.k,e.n); 
 }
 function awardRail(snap, id) {
   const a = RX[id]; if (!a || !a.n) return;
@@ -768,7 +800,7 @@ function drop(w) {
   }
   if (w.parentNode) w.parentNode.removeChild(w);
 }
-function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; clearRx(); }
+function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); document.getElementById("reactionCascade").replaceChildren();cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; clearRx(); }
 
 function usable(m) {
   if (!isBad(m)) return m;
@@ -846,6 +878,21 @@ function show(m, isFresh, gesture) {
   wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 90000 : 15000);
 
   el.src = src;
+  const addSides=url=>{
+    if(!url||my!==tok||PORT.matches||stage.clientWidth<700||!w.isConnected||w.classList.contains("triptych"))return;
+    w.classList.add("triptych");
+    const left=new Image(),right=new Image();
+    left.className="portrait-side left";right.className="portrait-side right";
+    left.alt=right.alt="";left.src=right.src=url;w.append(left,right);
+  };
+  const checkPortrait=()=>{
+    const iw=el.videoWidth||el.naturalWidth,ih=el.videoHeight||el.naturalHeight;
+    if(!iw||!ih||ih<iw*1.17)return;
+    if(!isV){addSides(src);return;}
+    const still=stillUrl(m);
+    if(still)void photoLinks.prepare([still]).then(()=>addSides(photoLinks.resolve(still))).catch(e=>console.warn("Portrait still unavailable",e));
+  };
+  el.addEventListener(isV?"loadedmetadata":"load",checkPortrait,{once:true});
   stage.appendChild(w);
   if (gesture && isV) { try { const pp = el.play(); if (pp && pp.catch) pp.catch(function () {}); } catch (e) {} }
 }
@@ -855,7 +902,7 @@ function reveal(w, m, isFresh, my) {
   cur = w; curItem = m; lastId = m.id; revealAt = Date.now();
   if (qrcard.className === "on") showQR(false);
   const t = pickT(isFresh);
-  w.className = "w top in-" + t.n;
+  w.className = "w top in-" + t.n + (w.classList.contains("triptych")?" triptych":"");
   if (t.flash) fire();
   if (old) { old.className = "w old"; setTimeout(function () { drop(old); }, t.ms + 150); }
   Array.prototype.slice.call(stage.children).forEach(function (c) { if (c !== w && c !== old) drop(c); });
@@ -893,6 +940,7 @@ function reveal(w, m, isFresh, my) {
     timer = setTimeout(next, ms);
   }
   views[m.id] = (views[m.id] || 0) + 1;
+  showPendingGifts(m.id);
   setHearts(m.id,false);
   // Gifts are animated only on arrival, not replayed with each media loop.
   try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
@@ -1194,7 +1242,7 @@ function resetForEventChange() {
   if (timer) { clearTimeout(timer); timer = null; }
   if (wd) { clearTimeout(wd); wd = null; }
   stopMedia();
-  giftQueue.length=0;giftPlaying=false;document.getElementById("giftStage").replaceChildren();
+  giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();document.getElementById("giftStage").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
   stage.replaceChildren();
   clearRx();
   fx.replaceChildren(); fxN = 0;
@@ -1385,8 +1433,9 @@ onSnapshot(collection(db,"photo_gifts"),function(s){
   for(const change of s.docChanges()){
    if(change.type!=="added")continue;
    const v=change.doc.data();
-   if((!archivePlayback&&v.eventId!==currentEventId)||!curItem||v.mediaId!==curItem.id||(views[curItem.id]||0)<2)continue;
-   featureGift(v.kind);
+   if(!items.some(m=>m.id===v.mediaId)||(!archivePlayback&&v.eventId!==currentEventId))continue;
+   if(curItem?.id===v.mediaId&&mode==="loop")featureGift(v.kind);
+   else{const q=pendingGiftMedia.get(v.mediaId)||[];q.push(v.kind);pendingGiftMedia.set(v.mediaId,q.slice(-3));}
   }
  }
  giftInit=true;
