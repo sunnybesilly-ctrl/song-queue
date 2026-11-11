@@ -53,10 +53,10 @@ exports.redeemGalleryCode = onCall(OPT, async (req) => {
       entry.data().expiresAt.toMillis() <= now)
    throw new HttpsError("permission-denied","Code is invalid, expired, or already used.");
   const expiry = Timestamp.fromMillis(now + 6*60*60*1000);
-  tx.update(codeRef,{ used:true, redeemedAt:NOW(), redeemedBy:req.auth.uid });
   const walletRef = db.doc("guest_wallets/" + req.auth.uid);
   const existingWallet = await tx.get(walletRef);
   const sameEventWallet = existingWallet.exists && existingWallet.data().eventId === state.data().eventId;
+  tx.update(codeRef,{ used:true, redeemedAt:NOW(), redeemedBy:req.auth.uid });
   tx.set(accessRef,{ eventId:state.data().eventId, expiresAt:expiry, issuedAt:NOW() });
   if (!sameEventWallet) tx.set(walletRef,{eventId:state.data().eventId,balance:777,initialCredits:777,spent:0,updatedAt:NOW()});
   return { ok:true, expiresAt:expiry.toMillis() };
