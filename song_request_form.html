@@ -509,17 +509,20 @@ function buildQueueList(rows) {
     .filter(s => qArtist(s) || qTitle(s))
     .filter(s => { const ts = qTs(s); return !ts || new Date(ts).toDateString() === todayStr; })
     .sort((a, b) => new Date(qTs(a) || 0) - new Date(qTs(b) || 0));
-  const seen = {}, out = [];
-  list.forEach(s => {
-    const key = posKey(qName(s)) + '|' + posKey(qTitle(s));
-    if (seen[key] !== undefined) {
-      const first = out[seen[key]];
+  const out = [], recent = new Map();
+  for (const s of list) {
+    const id = String(s['Request ID'] || s.requestId || '').trim();
+    const key = id ? 'id:' + id : 'legacy:' + posKey(qName(s)) + '|' + posKey(qArtist(s)) + '|' + posKey(qTitle(s));
+    const when = new Date(qTs(s)).getTime();
+    const previous = recent.get(key);
+    if (previous && (id || (Number.isFinite(when) && Number.isFinite(previous.when) && Math.abs(when - previous.when) <= 10000))) {
+      const first = out[previous.index];
       Object.keys(s).forEach(k => { if (!first[k] && s[k]) first[k] = s[k]; });
     } else {
-      seen[key] = out.length;
-      out.push(Object.assign({}, s));
+      recent.set(key, {index: out.length, when});
+      out.push({...s});
     }
-  });
+  }
   return out;
 }
 
@@ -664,7 +667,7 @@ async function goToStep2() {
 
   document.getElementById('chat-name').value = name;
   showPage(2);
-  startPosTracking(name, finalSong, baseCount);
+  startPosTracking(name, finalSong, null);
   if (typeof window.celebrateRequest === "function") window.celebrateRequest();
 }
 
