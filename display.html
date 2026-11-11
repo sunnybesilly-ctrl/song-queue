@@ -321,6 +321,30 @@ body{font-family:var(--body);color:var(--bone)}
 @keyframes reactionDrift{0%{opacity:0;transform:translateY(-5vh) rotate(-20deg) scale(.7)}16%{opacity:.9}85%{opacity:.8}100%{opacity:0;transform:translate(var(--sway,10px),75vh) rotate(24deg) scale(1.1)}}
 @media (orientation:portrait){.w.triptych{display:block}.w.triptych>.portrait-side{display:none}.w.triptych>.mi{width:100%;height:100%}}
 @media(prefers-reduced-motion:reduce){.cascade-icon{display:none}}
+
+/* The projector already shows full-size codes on its scan interlude;
+   keep the lower third as a clean on-air title and guest message bar. */
+#bar .say{flex:1;min-width:0;padding-left:clamp(12px,2.3vw,42px);padding-right:clamp(12px,2.3vw,42px)}
+@media (orientation:portrait){
+ #bar{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+ #bar .who{grid-column:1;grid-row:1;padding-right:4vw}
+ #bar .say{grid-column:1;grid-row:2;padding:1vh 4vw}
+}
+#brand{position:absolute;left:2vw;top:auto;bottom:calc(var(--bar) + var(--reaction-dock) + 1.5vh);z-index:25;max-width:min(65vw,720px);display:flex;align-items:center;gap:clamp(8px,1.3vh,18px);padding:1vh 1.5vw;border-left:4px solid var(--acid);border-radius:0 12px 12px 0;background:linear-gradient(90deg,rgba(2,12,7,.92),rgba(6,28,14,.72));box-shadow:0 8px 26px #0008,0 0 24px #a9ff3112;pointer-events:none;opacity:1;text-shadow:0 2px 8px #000;line-height:1.08;font-family:var(--body)}
+#brand .brand-symbol{font:700 clamp(30px,6vh,68px)/1 system-ui;color:#ffda39;text-shadow:0 0 18px #ffd35188}
+#brand .brand-copy{display:flex;flex-direction:column;min-width:0;gap:.3vh}
+#brand .brand-copy strong{display:block;font-family:var(--display);font-size:clamp(27px,5.4vh,58px);letter-spacing:.095em;line-height:.9;color:var(--acid)}
+#brand .brand-copy span{font-family:var(--body);font-size:clamp(13px,2.25vh,26px);font-weight:800;letter-spacing:.045em;color:#e8ffee;overflow-wrap:anywhere}
+@media (orientation:portrait){
+ #brand{left:3vw;bottom:calc(var(--bar) + var(--reaction-dock) + 1vh);max-width:90vw;padding:1vh 3vw;gap:2vw}
+ #brand .brand-symbol{font-size:clamp(28px,7vw,46px)}
+ #brand .brand-copy strong{font-size:clamp(23px,6.3vw,42px)}
+ #brand .brand-copy span{font-size:clamp(11px,2.8vw,18px)}
+}
+@media (orientation:landscape){
+ .tv-safe #brand{left:2.4vw;top:auto;bottom:calc(var(--bar) + var(--reaction-dock) + 1.2vh);max-width:55vw}
+ .tv-safe #bar .say{padding-left:2.5vw}
+}
 </style>
 </head>
 <body>
@@ -349,17 +373,13 @@ body{font-family:var(--body);color:var(--bone)}
     <div class="new" id="newb">Just dropped</div>
   </div>
   <div class="say">
-    <div class="hint" id="hint">Scan a code to upload, react, or sign the yearbook.</div>
+    <div class="hint" id="hint">Tonight’s memories · live</div>
     <div class="cmt" id="cmt" hidden><b id="cn"></b><span id="ct"></span></div>
-  </div>
-  <div class="qrs">
-    <div class="q"><div class="tile qU"></div><i>ADD YOURS</i></div>
-    <div class="q"><div class="tile qR"></div><i>REACT + SIGN</i></div>
   </div>
 </div>
 
 <div id="yb"></div>
-<div id="brand"><svg viewBox="0 0 24 24"><g stroke="#FFC21A" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></g><circle cx="12" cy="12" r="5" fill="#FFC21A"/></svg>-A Sunny neverpartlycloudy production</div>
+<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>A SUNNY</strong><span>NEVERPARTLYCLOUDY PRODUCTION</span></span></div>
 <div id="vbadge"></div>
 <div id="toast"></div>
 
@@ -761,7 +781,7 @@ function setHearts(id, bumpIt) {
   if (bumpIt && eligible) { hnEl.className = ""; void hnEl.offsetWidth; hnEl.className = "bump"; }
 }
 function setBar(m, isFresh) {
-  if (!cShowing) { hint.textContent = "Scan to upload, react, or sign the yearbook."; hint.hidden = false; }
+  if (!cShowing) { hint.textContent = "Tonight’s memories · live"; hint.hidden = false; }
   nmEl.textContent = m.name || "Somebody";
   nmEl.className = "nm"; void nmEl.offsetWidth; nmEl.className = "nm slam";
   newb.style.display = isFresh ? "block" : "none";
@@ -1370,7 +1390,7 @@ async function processMediaSnapshot(snap) {
   const leavingArchive=archivePlayback&&!fallback&&!!curItem;
   archivePlayback=fallback;items=list;
   refreshArchiveReactions();refreshArchiveGifts();
-  if (list.length && !cShowing) { hint.textContent = fallback ? "Playing earlier memories until this event receives new photos and videos." : "Scan a code to react or sign the yearbook."; hint.hidden = false; }
+  if (list.length && !cShowing) { hint.textContent = fallback ? "Playing earlier memories until this event receives new photos and videos." : "Tonight’s memories · live"; hint.hidden = false; }
   if(leavingArchive){stopMedia();mode="idle";pos=-1;}
   if (!list.length) {
     nmEl.textContent = "NO AVAILABLE MEDIA";
