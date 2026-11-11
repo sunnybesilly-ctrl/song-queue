@@ -991,19 +991,40 @@ function show(m, isFresh, gesture) {
   wd = setTimeout(function () { if (!ready && my === tok) fail("VIDEO TIMED OUT LOADING"); }, isV ? 90000 : 15000);
 
   el.src = src;
-  const addSides=url=>{
-    if(!url||my!==tok||PORT.matches||stage.clientWidth<700||!w.isConnected||w.classList.contains("triptych"))return;
-    w.classList.add("triptych");
+  // Keep original center untouched. Decorative sides use two independent
+  // still frames for video, or two different crops of a photo.
+  const addSides=(leftSrc,rightSrc)=>{
+    if(!leftSrc||my!==tok||PORT.matches||stage.clientWidth<700||!w.isConnected)return;
     const left=new Image(),right=new Image();
     left.className="portrait-side left";right.className="portrait-side right";
-    left.alt=right.alt="";left.src=right.src=url;w.append(left,right);
+    left.alt=right.alt="";
+    left.src=leftSrc;right.src=rightSrc||leftSrc;
+    // Bad signed preview URLs should not create black broken-image strips.
+    left.onerror=()=>{if(left.src!==src && !isV)left.src=src;else left.style.opacity="0";};
+    right.onerror=()=>{if(right.src!==leftSrc)right.src=leftSrc;else right.style.opacity="0";};
+    w.append(left,right);
+    w.classList.add("triptych");
   };
   const checkPortrait=()=>{
     const iw=el.videoWidth||el.naturalWidth,ih=el.videoHeight||el.naturalHeight;
     if(!iw||!ih||ih<iw*1.17)return;
-    if(!isV){addSides(src);return;}
-    const still=stillUrl(m);
-    if(still)void photoLinks.prepare([still]).then(()=>addSides(photoLinks.resolve(still))).catch(e=>console.warn("Portrait still unavailable",e));
+    if(!isV){addSides(src,src);return;}
+    // Two different moments of the SAME video. Use native Cloudinary
+    // authenticated still images, never duplicate the playing video.
+    const duration=Number.isFinite(el.duration)&&el.duration>0?el.duration:12;
+    const maxMoment=Math.max(.25,duration-.2);
+    const first=Math.min(maxMoment,Math.max(.25,duration*.18));
+    const second=Math.min(maxMoment,Math.max(first+.2,duration*.76));
+    const base=cld(m.url);
+    if(!base)return;
+    const makeStill=(sec)=>base.pre+"video/"+base.delivery+"/so_"+sec.toFixed(2)+",c_limit,w_1100,q_auto/"+swapExt(base.tail,".jpg");
+    const firstUrl=makeStill(first),secondUrl=makeStill(second);
+    // Prepare independently: one missing preview must not block the other.
+    void Promise.allSettled([photoLinks.prepare([firstUrl]),photoLinks.prepare([secondUrl])]).then(()=>{
+      const l=photoLinks.resolve(firstUrl),r=photoLinks.resolve(secondUrl);
+      if(l||r)addSides(l||r,r||l);
+      else console.warn("Video portrait side previews unavailable");
+    });
   };
   el.addEventListener(isV?"loadedmetadata":"load",checkPortrait,{once:true});
   stage.appendChild(w);
