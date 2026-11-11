@@ -1168,8 +1168,9 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
         });
 
         window.allSongs.sort((a, b) => new Date(getTimestamp(a)||0) - new Date(getTimestamp(b)||0));
-        // Keep separate guest requests; collapse only near-simultaneous duplicate deliveries.
-        const normalized = value => String(value || "").toLowerCase().replace(/[^a-z0-9\\u00c0-\\u024f]+/g, "");
+        // Request IDs distinguish intentional repeat requests from duplicate delivery.
+        // Legacy rows without IDs only dedupe matching guest/song within ten seconds.
+        const normalized = value => String(value || "").toLowerCase().replace(/[^a-z0-9\u00c0-\u024f]+/g, "");
         const unique = [], recent = new Map();
         for (const song of window.allSongs) {
           const id = String(song["Request ID"] || song.requestId || "").trim();
