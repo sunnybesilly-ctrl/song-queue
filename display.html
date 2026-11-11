@@ -480,6 +480,102 @@ body.qr-screen #qrcard .scan-text p{font-size:clamp(15px,2.4vh,30px);line-height
  body.qr-screen #qrcard .scan-text p{font-size:clamp(13px,3.1vw,20px)}
  body.qr-screen #bar .hint{font-size:5vw}
 }
+
+/* CINEMATIC, FULL-HEIGHT WALL — slim title/likes ticker, not a lower third. */
+:root{--bar:8vh;--reaction-dock:0vh}
+@media(orientation:landscape){html.tv-safe{--bar:9vh;--reaction-dock:0vh}}
+@media(orientation:portrait){:root{--bar:10vh;--reaction-dock:0vh}}
+#bar,.tv-safe #bar{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,24%);align-items:center;
+ height:var(--bar);min-height:0;padding:0.5vh 1.8vw;gap:1vw;
+ border-top:.38vh solid var(--acid);background:linear-gradient(100deg,#04160b,#061e11 55%,#021007);
+}
+#bar .who,.tv-safe #bar .who{
+ grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:flex-end;
+ flex-direction:row;gap:1.2vw;min-width:0;width:100%;height:100%;
+ padding:0;border:0;overflow:visible;text-align:right;
+}
+#bar .who .lab{display:none}
+#bar .who .nm,.tv-safe #bar .who .nm{
+ flex:0 1 auto;min-width:0;max-width:42%;overflow:hidden;
+ white-space:nowrap;display:block;text-overflow:ellipsis;
+ color:#b9dbc3;font:700 clamp(12px,1.85vh,22px)/1 var(--body);
+}
+#bar .who .hr,.tv-safe #bar .who .hr{
+ flex:none;display:flex;align-items:center;gap:.6vw;margin:0;color:#ff79b5;
+ font-size:clamp(25px,4.2vh,48px);font-weight:900;line-height:1;
+}
+#bar .who .hr svg{width:clamp(23px,4.2vh,46px);height:clamp(23px,4.2vh,46px);margin:0}
+#bar .who .hr b{color:#fff;min-width:1.4ch;text-align:left}
+#bar .who .new{top:-2.7vh;right:2vw;font-size:2vh}
+#bar .say,.tv-safe #bar .say{
+ grid-column:1;grid-row:1;min-width:0;height:100%;
+ display:flex;align-items:center;padding:0;
+ border:0;overflow:hidden;
+}
+#bar .hint,.tv-safe #bar .hint{display:none}
+#bar .cmt{margin-left:min(38vw,650px);padding-left:1.1vw;min-width:0}
+#bar .cmt b{font-size:clamp(12px,1.8vh,21px)}
+#bar .cmt span{font-size:clamp(14px,2.2vh,27px);max-height:5vh;overflow:hidden}
+#brand,.tv-safe #brand{
+ display:flex!important;position:absolute;left:2vw;top:auto;bottom:1vh;
+ z-index:20;max-width:35vw;gap:clamp(5px,.7vw,13px);padding:0;border:0;
+ background:none;border-radius:0;box-shadow:none;align-items:center;
+ opacity:1;pointer-events:none;
+}
+#brand .brand-symbol{font-size:clamp(23px,3.8vh,43px)}
+#brand .brand-copy{gap:.12vh}
+#brand .brand-copy strong{font-size:clamp(22px,3.55vh,40px);white-space:nowrap;letter-spacing:.065em}
+#brand .brand-copy span{font-size:clamp(9px,1.45vh,17px);white-space:nowrap;letter-spacing:.025em}
+#rx.docked,.tv-safe #rx.docked{
+ position:absolute;z-index:6;top:1.5vh;bottom:auto;left:auto;right:1.7vw;
+ width:auto;max-width:70vw;height:auto;min-height:0;display:flex;
+ align-items:center;justify-content:flex-end;flex-direction:row;
+ padding:.2vh .5vw;background:#03160c99;border:1px solid #bbff9c44;
+ border-radius:99px;backdrop-filter:blur(6px);overflow:hidden;
+}
+#rx.docked .rbox{width:auto;max-width:100%;height:auto}
+#rx.docked .rail{gap:6px;flex-wrap:nowrap}
+#rx.docked .rc,.tv-safe #rx .rc{
+ min-width:clamp(36px,5vh,62px);height:clamp(27px,4.2vh,44px);
+ padding:0 7px;
+}
+#rx.docked .ic{width:clamp(18px,3vh,28px);height:clamp(18px,3vh,28px)}
+#rx.docked .rn{font-size:clamp(12px,2vh,20px)}
+body.qr-screen #brand{display:none!important}
+body.qr-screen #bar .say{display:flex;grid-column:1/-1;padding-left:1vw}
+body.qr-screen #bar .hint{display:block}
+body.qr-screen #bar .who{display:none!important}
+/* Gift celebrations are semi-transparent, sweeping across the media.
+   The media remains visible and interactive controls stay unaffected. */
+#giftStage{z-index:8}
+.gift-hero{animation:giftVoyagePro 4.5s cubic-bezier(.17,.73,.3,1) both;mix-blend-mode:screen}
+.gift-core{opacity:.88;filter:drop-shadow(0 0 24px #f4ff1a99);gap:1.1vh}
+.gift-symbol{width:clamp(140px,37vh,460px);height:clamp(140px,37vh,460px);background:radial-gradient(circle at 34% 20%,#ffffff68,#f4ff1a45 38%,#c2fffa18 68%,transparent 82%);box-shadow:inset 0 0 65px #ffffff4a,0 0 100px #9effaa55,0 0 170px #edff4b38}
+.gift-symbol svg{width:78%;height:78%;filter:drop-shadow(0 0 15px #fffcc8)}
+.gift-title{font-size:clamp(26px,5vh,62px);text-shadow:0 0 18px #000,0 0 32px #f4ff1a}
+.gift-hero:before,.gift-hero:after{content:"";position:absolute;top:15%;bottom:15%;left:25%;right:25%;border:2px solid #c4ffb055;border-radius:50%;box-shadow:0 0 90px #ddff66aa;animation:giftHalo 2s ease-in-out infinite alternate;opacity:.45}
+.gift-hero:after{inset:26% 33%;animation-delay:-1s;border-color:#a0fff199}
+@keyframes giftHalo{from{transform:rotate(-20deg) scale(.74);opacity:.18}to{transform:rotate(23deg) scale(1.3);opacity:.66}}
+@keyframes giftVoyagePro{
+ 0%{opacity:0;transform:translate(-48%,23%) scale(.38) rotate(-14deg)}
+ 16%{opacity:.83;transform:translate(-18%,4%) scale(.85) rotate(3deg)}
+ 43%{opacity:.9;transform:translate(0,-4%) scale(1.14) rotate(-3deg)}
+ 68%{opacity:.78;transform:translate(14%,-8%) scale(1.08) rotate(5deg)}
+ 100%{opacity:0;transform:translate(48%,-21%) scale(.67) rotate(12deg)}
+}
+@media(orientation:portrait){
+ #bar,.tv-safe #bar{grid-template-columns:minmax(0,1fr) auto;padding:0 3vw}
+ #brand,.tv-safe #brand{left:3vw;bottom:1.5vh;max-width:57vw}
+ #brand .brand-symbol{font-size:5vw}
+ #brand .brand-copy strong{font-size:4.6vw}
+ #brand .brand-copy span{font-size:1.85vw}
+ #bar .who .nm{display:none}
+ #bar .who .hr{font-size:5vw}
+ #bar .say .cmt{display:none}
+ #rx.docked{top:1vh;right:2vw;max-width:92vw}
+}
+@media(prefers-reduced-motion:reduce){.gift-hero{animation:giftVoyagePro 2.6s ease-out both}.gift-hero:before,.gift-hero:after{animation:none}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -519,7 +615,7 @@ body.qr-screen #qrcard .scan-text p{font-size:clamp(15px,2.4vh,30px);line-height
 </div>
 
 <div id="yb"></div>
-<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>A SUNNY</strong><span>NEVERPARTLYCLOUDY PRODUCTION</span></span></div>
+<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>ALWAYS SUNNY</strong><span>NEVERPARTLYCLOUDY PRODUCTION</span></span></div>
 <div id="vbadge"></div>
 <div id="toast"></div>
 
