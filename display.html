@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Familjen+Grotesk:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+<script>if(new URLSearchParams(location.search).get("screen")==="philips-tv")document.documentElement.classList.add("tv-safe");</script>
 <style>
 :root{
   --base:#04140A;--deep:#020A05;--bog:#0B2615;--line:#1F6B3A;
@@ -263,6 +264,30 @@ body{font-family:var(--body);color:var(--bone)}
   .grid{flex:0 0 auto}
   .cell{width:19vw;height:19vw;margin:0 1.2vw calc(var(--dv)*1.2)}
   .foot{left:6vw;right:6vw;bottom:calc(var(--dv)*3);font-size:5.4vw}
+}
+
+/* Philips / Roku display mode: reserve a generous caption-safe band while
+   preserving the standard browser and portrait layouts. */
+@media (orientation:landscape){
+ html.tv-safe{--bar:22vh;--reaction-dock:8.5vh;--chip:5.6vh}
+ .tv-safe #bar{padding:1.2vh 2.1vw 1.7vh;height:var(--bar);align-items:center}
+ .tv-safe .who{flex:0 0 27%;height:100%;padding:0 1.6vw 0 .8vw;justify-content:center}
+ .tv-safe .nm{font-size:clamp(22px,5.2vh,50px);line-height:1.02;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+ .tv-safe .lab{font-size:1.8vh;line-height:1.2}
+ .tv-safe .hr{font-size:2.5vh;margin-top:.7vh}
+ .tv-safe .say{height:100%;padding:1vh 1.7vw;align-items:center}
+ .tv-safe .hint{font-size:clamp(19px,3.15vh,34px);line-height:1.12;overflow-wrap:anywhere}
+ .tv-safe .cmt span{font-size:clamp(17px,2.7vh,30px);line-height:1.14;max-height:12vh;overflow-wrap:anywhere}
+ .tv-safe .cmt b{font-size:2.35vh}
+ .tv-safe .qrs{height:100%;padding:0 .5vw;align-items:center;gap:.9vw}
+ .tv-safe .q{margin:0;min-width:0}
+ .tv-safe .q .tile{width:8.3vh;height:8.3vh;margin:auto}
+ .tv-safe .q i{font-size:1.25vh;letter-spacing:.06em;line-height:1.1;white-space:normal;max-width:10vh}
+ .tv-safe #rx.docked{padding:0 2vw;overflow:hidden}
+ .tv-safe #rx .rc{width:5.6vh;height:5.6vh}
+ .tv-safe #rx .rail{gap:1.6vh;flex-wrap:nowrap}
+ .tv-safe #brand{left:2.3vw;top:2.0vh}
+ .tv-safe #vbadge{left:2.3vw}
 }
 </style>
 </head>
