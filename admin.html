@@ -332,10 +332,11 @@ function thumb(m) {
   return u.replace(re, "/$1/" + t + "/");
 }
 function finalUrl(r) {
+  const originalUrl = r.secure_url.replace(/\/authenticated\/s--[^/]+--\//, "/authenticated/");
   if (r.resource_type === "video") {
-    return r.secure_url.replace("/authenticated/", "/authenticated/vc_h264,c_limit,w_1920,q_auto/").replace(/\.[^.\/]+$/, ".mp4");
+    return originalUrl.replace("/authenticated/", "/authenticated/vc_h264,c_limit,w_1920,q_auto/").replace(/\.[^.\/]+$/, ".mp4");
   }
-  const u = r.secure_url.replace("/authenticated/", "/authenticated/c_limit,w_2048,h_2048,q_auto/");
+  const u = originalUrl.replace("/authenticated/", "/authenticated/c_limit,w_2048,h_2048,q_auto/");
   return /^(jpe?g|png|webp|gif)$/i.test(r.format || "") ? u : u.replace(/\.[^.\/]+$/, ".jpg");
 }
 function dlUrl(m, tag) {
