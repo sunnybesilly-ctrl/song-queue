@@ -105,4 +105,34 @@ exports.sendPhotoGift = onCall(OPT, async req => {
  });
 });
 
+/**
+ * DJ-only spectacles are unlimited and do not touch guest wallets.
+ * Authorization is enforced by Firebase Auth custom identity checks on the
+ * server, not by hiding a button or trusting an "admin" field from the client.
+ */
+exports.sendAdminPhotoGift = onCall(OPT, async req => {
+ requireAdmin(req);
+ const kind=String(req.data?.kind||"");
+ const mediaId=String(req.data?.mediaId||"");
+ const rawName=String(req.data?.name||"").trim();
+ if(!Object.prototype.hasOwnProperty.call(GIFT_COSTS,kind))
+   throw new HttpsError("invalid-argument","Select an available spectacle.");
+ if(!/^[a-zA-Z0-9_/-]{1,200}$/.test(mediaId))
+   throw new HttpsError("invalid-argument","Select a photo or video from this event.");
+ if(!rawName||rawName.length>60||/[\u0000-\u001f\u007f]/.test(rawName))
+   throw new HttpsError("invalid-argument","Choose a display name (1–60 characters).");
+ const [event,media]=await Promise.all([stateRef.get(),db.doc("media_queue/"+mediaId).get()]);
+ const state=event.data(),item=media.data();
+ if(!state?.active||!state.eventId)
+   throw new HttpsError("failed-precondition","Start an event before sending spectacles.");
+ if(!item||item.eventId!==state.eventId)
+   throw new HttpsError("failed-precondition","Choose media uploaded to the active event.");
+ const giftRef=db.collection("photo_gifts").doc();
+ await giftRef.create({
+  eventId:state.eventId,mediaId,kind,name:rawName,uid:req.auth.uid,
+  cost:0,adminGift:true,t:FieldValue.serverTimestamp()
+ });
+ return {ok:true,giftId:giftRef.id,kind,mediaId,name:rawName,unlimited:true};
+});
+
 Object.assign(exports, require("./photo-access"), require("./photo-retention"));
