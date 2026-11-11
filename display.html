@@ -422,6 +422,64 @@ body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18p
 /* Center frame safety applies to landscape and portrait media alike. */
 .w>.mi{object-fit:contain!important;object-position:center;min-width:0;min-height:0;max-width:100%;max-height:100%;transform:none!important}
 .w>.mi.kb{animation:none!important}
+
+/* Scan interlude: use the whole screen, except a slim branding footer. */
+body.qr-screen{--bar:9vh;--reaction-dock:0vh}
+body.qr-screen #rx{display:none!important}
+body.qr-screen #bar{height:var(--bar);background:linear-gradient(90deg,#072516,#03120a);border-top:.35vh solid var(--acid)}
+body.qr-screen #bar .say{padding-left:3vw}
+body.qr-screen #bar .hint{color:#f4ff1a;font-size:clamp(24px,4.3vh,49px);letter-spacing:.045em}
+body.qr-screen #brand{display:none!important}
+body.qr-screen #qrcard{
+ padding:clamp(16px,2vw,34px) clamp(20px,3.2vw,62px);
+ grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+ gap:clamp(14px,2.6vw,45px);
+}
+body.qr-screen #qrcard .qt .a{font-size:clamp(76px,18vh,220px);line-height:.78;letter-spacing:-.035em}
+body.qr-screen #qrcard .qt .qs{margin-top:3vh;border-left:5px solid var(--lime);padding-left:1.4vw}
+body.qr-screen #qrcard .qt .qs strong{font-size:clamp(29px,5vh,64px);line-height:1}
+body.qr-screen #qrcard .qt .qs span{font-size:clamp(19px,3.1vh,38px);line-height:1.23;max-width:30ch}
+body.qr-screen #qrcard .qq{
+ display:flex;flex-direction:column;justify-content:center;
+ gap:clamp(12px,2vh,28px);height:100%;
+}
+body.qr-screen #qrcard .qb,body.qr-screen #qrcard .qb.b2{
+ width:100%;flex:0 1 auto;flex-direction:row;
+ align-items:center;justify-content:flex-start;text-align:left;
+ padding:clamp(12px,1.6vh,22px);
+ gap:clamp(16px,2vw,35px);
+ min-height:0;border-radius:18px
+}
+body.qr-screen #qrcard .qb .tile{
+ display:block;flex:0 0 auto;width:min(25vh,18vw);height:min(25vh,18vw);
+ min-width:0;aspect-ratio:1;overflow:hidden;
+}
+body.qr-screen #qrcard .scan-text{display:flex;flex-direction:column;gap:.35vh;flex:1;min-width:0}
+body.qr-screen #qrcard .scan-number{font:900 clamp(17px,2.8vh,36px)/1 var(--display);letter-spacing:.09em;color:var(--lime)}
+body.qr-screen #qrcard .qb .ql{font-size:clamp(26px,5vh,66px);line-height:.93;color:var(--acid)}
+body.qr-screen #qrcard .scan-text p{font-size:clamp(15px,2.4vh,30px);line-height:1.1;font-weight:800;color:#e4ffeb}
+.w.triptych>.portrait-side.left{object-position:17% center}
+.w.triptych>.portrait-side.right{object-position:83% center}
+@media(orientation:landscape) and (max-height:550px){
+ body.qr-screen #qrcard .qt .a{font-size:17vh}
+ body.qr-screen #qrcard .qb .tile{width:min(24vh,17vw);height:min(24vh,17vw)}
+ body.qr-screen #qrcard .qb .ql{font-size:4.7vh}
+ body.qr-screen #qrcard .qt .qs span{font-size:3vh}
+}
+@media(orientation:portrait){
+ body.qr-screen{--bar:10vh;--reaction-dock:0vh}
+ body.qr-screen #qrcard{display:flex;flex-direction:column;padding:2vh 4vw;gap:2vh;justify-content:center}
+ body.qr-screen #qrcard .qt .a{font-size:clamp(52px,11vh,125px)}
+ body.qr-screen #qrcard .qt .qs{margin-top:1.7vh;padding-left:3vw}
+ body.qr-screen #qrcard .qt .qs strong{font-size:clamp(24px,6vw,42px)}
+ body.qr-screen #qrcard .qt .qs span{font-size:clamp(16px,3.6vw,25px)}
+ body.qr-screen #qrcard .qq{height:auto;width:100%;gap:1.5vh;flex:0 1 auto}
+ body.qr-screen #qrcard .qb,body.qr-screen #qrcard .qb.b2{padding:2vw;gap:3vw}
+ body.qr-screen #qrcard .qb .tile{width:min(30vw,15vh);height:min(30vw,15vh)}
+ body.qr-screen #qrcard .qb .ql{font-size:clamp(21px,5vw,36px)}
+ body.qr-screen #qrcard .scan-text p{font-size:clamp(13px,3.1vw,20px)}
+ body.qr-screen #bar .hint{font-size:5vw}
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -437,11 +495,11 @@ body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18p
 <div id="qrcard">
   <div class="qt">
     <div class="a">Drop</div><div class="a a2">your</div><div class="a a3">shot.</div>
-    <div class="qs"><strong>MAKE THE SCREEN YOURS.</strong><span>Scan to upload a photo or video, react, or sign the yearbook.</span></div>
+    <div class="qs"><strong>BE PART OF THE PARTY.</strong><span>Open your phone camera.<br>Point it at a code.<br>Tap the link.</span></div>
   </div>
   <div class="qq">
-    <div class="qb"><div class="tile qU"></div><div class="ql">1. Upload a photo or video</div></div>
-    <div class="qb b2"><div class="tile qR"></div><div class="ql">2. React + sign the yearbook</div></div>
+    <div class="qb"><div class="tile qU"></div><div class="scan-text"><span class="scan-number">01</span><div class="ql">POST A PHOTO</div><p>Or a video. It goes on this screen!</p></div></div>
+    <div class="qb b2"><div class="tile qR"></div><div class="scan-text"><span class="scan-number">02</span><div class="ql">SHOW SOME LOVE</div><p>React, send a gift, or leave a message.</p></div></div>
   </div>
 </div>
 
@@ -586,6 +644,7 @@ function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
 function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) {
+  if(on){hint.textContent="A SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
   qrcard.className = on ? "on" : "";
   // The QR interlude is not attributed to anyone. Keep event status/signatures
   // but hide the stale "Shot by" name and like total until media plays.
