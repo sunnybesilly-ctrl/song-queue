@@ -141,11 +141,11 @@ textarea.chat-input-ta::placeholder { color: rgba(255,255,255,0.22); font-weight
 .confirm-found-badge.not-found { background: rgba(204,17,17,0.12); border: 0.5px solid var(--red); color: var(--red-bright); }
 
 /* QUEUE NUMBER — matches the projector display */
-.queue-pos { display: none; text-align: center; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 22px 16px 20px; margin-bottom: 16px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.qp-label { font-family: 'Arial', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fbbf24; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-.qp-num { font-family: 'Arial', sans-serif; font-size: 96px; font-weight: 900; line-height: 1.05; color: #fbbf24; margin: 6px 0 4px; text-shadow: 3px 3px 6px rgba(0,0,0,0.5); }
+.queue-pos { display: none; text-align: center; background: var(--queue-color, #FFD700); border: 3px solid #000; border-radius: 10px; padding: 18px 16px 16px; margin-bottom: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.35); }
+.qp-label { font-family: 'Arial', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; color: #000; }
+.qp-num { font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; font-size: clamp(110px, 35vw, 168px); font-weight: 900; line-height: 1; letter-spacing: -2px; color: #000; margin: 6px 0 4px; }
 .qp-num.pop { animation: popIn 0.45s cubic-bezier(0.34,1.56,0.64,1); }
-.qp-sub { font-family: 'Arial', sans-serif; font-size: 18px; color: rgba(255,255,255,0.8); }
+.qp-sub { font-family: 'Arial', sans-serif; font-size: 18px; font-weight: 900; color: #000; }
 
 /* PRIMARY ACTIONS — right under the confirmation card */
 .action-stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
@@ -342,6 +342,34 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     </div>
   </div>
 
+  <button class="optional-toggle" id="optional-toggle" onclick="toggleOptional()">
+    🔒 OPTIONAL: SNAPCHAT OR A PRIVATE NOTE (SAVED WITH YOUR REQUEST)
+    <span class="arrow">▼</span>
+  </button>
+
+  <div class="optional-body" id="optional-body">
+
+    <div class="field-card private" style="margin-top:10px;">
+      <div class="field-label">YOUR SNAPCHAT <span class="private-tag">PRIVATE</span></div>
+      <div class="field-hint">
+        <a href="https://www.snapchat.com/add/eatitall" target="_blank">ADD @EATITALL ON SNAPCHAT</a>
+        &nbsp;— or type your handle below
+      </div>
+      <input class="field-input" id="f-snap" type="text" placeholder="@yoursnapchat (optional)"
+        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text">
+    </div>
+
+    <div class="field-card private">
+      <div class="field-label">COMMENT <span class="private-tag">PRIVATE</span></div>
+      <div class="field-hint">Any special notes for Sunny? (optional)</div>
+      <textarea class="field-input" id="f-comment" placeholder="Leave a note..." rows="3"></textarea>
+    </div>
+
+
+
+  </div>
+
+
   <div class="error-box" id="error-1" data-en="Please fill in your name, artist, and song title." data-es="Por favor llena tu nombre, artista y título de canción.">Please fill in your name, artist, and song title.</div>
   <button class="btn-primary" id="btn-next" onclick="goToStep2()" data-en="NEXT →" data-es="SIGUIENTE →">NEXT →</button>
 
@@ -400,34 +428,6 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
     <div class="chat-sent" id="chat-sent">✓ MESSAGE SENT — CHECK THE DISPLAY!</div>
   </div>
 
-  <button class="optional-toggle" id="optional-toggle" onclick="toggleOptional()">
-    🔒 ADD SNAPCHAT OR A NOTE FOR SUNNY
-    <span class="arrow">▼</span>
-  </button>
-
-  <div class="optional-body" id="optional-body">
-
-    <div class="field-card private" style="margin-top:10px;">
-      <div class="field-label">YOUR SNAPCHAT <span class="private-tag">PRIVATE</span></div>
-      <div class="field-hint">
-        <a href="https://www.snapchat.com/add/eatitall" target="_blank">ADD @EATITALL ON SNAPCHAT</a>
-        &nbsp;— or type your handle below
-      </div>
-      <input class="field-input" id="f-snap" type="text" placeholder="@yoursnapchat (optional)"
-        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" inputmode="text">
-    </div>
-
-    <div class="field-card private">
-      <div class="field-label">COMMENT <span class="private-tag">PRIVATE</span></div>
-      <div class="field-hint">Any special notes for Sunny? (optional)</div>
-      <textarea class="field-input" id="f-comment" placeholder="Leave a note..." rows="3"></textarea>
-    </div>
-
-    <div class="error-box" id="error-2">Submission failed. Check your connection and try again.</div>
-    <button class="btn-save" id="btn-save" onclick="submitOptional()">SAVE FOR SUNNY ✓</button>
-    <div class="save-done" id="save-done">✓ Saved — thanks!</div>
-
-  </div>
 
 </div>
 
@@ -557,6 +557,9 @@ function startPosTracking(name, song, baseCount) {
   const setNum = (text, subEn, subEs) => {
     box.style.display = 'block';
     num.textContent = text;
+    const slot = parseInt(text.replace(/[^0-9]/g, ''), 10);
+    const colors = ['#FFD700','#f472b6','#a78bfa','#34d399','#fb923c'];
+    box.style.setProperty('--queue-color', colors[(Math.max(1,slot || 1)-1) % colors.length]);
     sub.textContent = isES() ? subEs : subEn;
     if (text !== lastText) {
       num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop');
@@ -636,7 +639,7 @@ async function goToStep2() {
     'entry.1627059384': name,
     'entry.68806247':   finalArtist,
     'entry.1305392283': finalSong,
-    'entry.606492518':  '',
+    'entry.606492518':  [document.getElementById('f-snap').value.trim(), document.getElementById('f-comment').value.trim() ? 'NOTE: ' + document.getElementById('f-comment').value.trim() : ''].filter(Boolean).join(' | '),
     'entry.505222990':  ytVideoId || ''
   }).then(() => { submitted = true; }).catch(e => console.warn(e));
 
@@ -669,46 +672,6 @@ async function goToStep2() {
 function toggleOptional() {
   document.getElementById('optional-toggle').classList.toggle('open');
   document.getElementById('optional-body').classList.toggle('open');
-}
-
-async function submitOptional() {
-  if (optionalSaved) return;
-  const name    = document.getElementById('f-name').value.trim();
-  const artist  = document.getElementById('f-artist').value.trim();
-  const song    = document.getElementById('f-song').value.trim();
-  const snap    = document.getElementById('f-snap').value.trim();
-  const comment = document.getElementById('f-comment').value.trim();
-  const btn     = document.getElementById('btn-save');
-  const doneEl  = document.getElementById('save-done');
-
-  const finalArtist = ytFinalChannel || artist;
-  const finalSong   = ytFinalTitle   || song;
-
-  if (!snap && !comment) {
-    btn.style.display = 'none';
-    doneEl.classList.add('visible');
-    optionalSaved = true;
-    return;
-  }
-
-  btn.textContent = 'SAVING...';
-  btn.disabled = true;
-  try {
-    await postToGoogleForm(FORM_ACTION, {
-      'entry.1627059384': name,
-      'entry.68806247':   finalArtist,
-      'entry.1305392283': finalSong,
-      'entry.606492518':  snap,
-      'entry.505222990':  comment
-    });
-    btn.style.display = 'none';
-    doneEl.classList.add('visible');
-    optionalSaved = true;
-  } catch(e) {
-    document.getElementById('error-2').classList.add('visible');
-    btn.disabled = false;
-    btn.textContent = 'SAVE FOR SUNNY ✓';
-  }
 }
 
 async function sendChatMessage() {
@@ -1624,9 +1587,6 @@ function resetAll() {
   document.getElementById('error-2').classList.remove('visible');
   document.getElementById('optional-toggle').classList.remove('open');
   document.getElementById('optional-body').classList.remove('open');
-  const saveBtn = document.getElementById('btn-save');
-  saveBtn.style.display = ''; saveBtn.textContent = 'SAVE FOR SUNNY ✓'; saveBtn.disabled = false;
-  document.getElementById('save-done').classList.remove('visible');
   const chatBtn = document.getElementById('btn-chat');
   chatBtn.style.display = ''; chatBtn.textContent = 'SEND TO THE SCREEN 💬'; chatBtn.disabled = false;
   showPage(1);
