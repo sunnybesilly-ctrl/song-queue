@@ -524,7 +524,7 @@ document.addEventListener("pointerdown", function () {
 }, true);
 
 const AVC = ["#FFC21A", "#37FF76", "#FF8A1F", "#5CE1FF", "#FF6B8B", "#F4FF1A", "#B38CFF"];
-const RX = {}, rxT = [];
+const RX = {}, rxT = [], GIFT = {};
 let rxCtl = null;
 function who(d) { return String(d.name || d.who || d.user || d.by || "Guest").trim().slice(0, 16) || "Guest"; }
 function tms(d) { return d.t && d.t.seconds ? d.t.seconds * 1000 : 0; }
@@ -605,13 +605,15 @@ function placeRx(box, el) {
 function clearRx() { rxT.forEach(clearTimeout); rxT.length = 0; rxBox.innerHTML = ""; rxBox.classList.remove("docked"); rxCtl = null; }
 function showRx(el, m, instant) {
   clearRx();
-  const a = RX[m.id]; if (!a || !a.n || !el) return;
+  const reactions=RX[m.id], gifts=GIFT[m.id]||{};
+  const combined={n:(reactions?.n||0),c:{...(reactions?.c||{}),...gifts},ev:reactions?.ev||[]};
+  if (!Object.values(combined.c).some(n=>n>0) || !el) return;
   const box = h("div", "rbox"), rail = h("div", "rail"), feed = h("div", "feed");
   box.appendChild(rail); box.appendChild(feed);
-  const ch = chipsFor(a, rail, !!instant), tail = instant ? [] : a.ev.slice(-14);
+  const ch = chipsFor(combined, rail, !!instant), tail = instant ? [] : combined.ev.slice(-14);
   if (!instant) {
     const base = {};
-    Object.keys(a.c).forEach(function (k) { base[k] = a.c[k]; });
+    Object.keys(combined.c).forEach(function (k) { base[k] = combined.c[k]; });
     tail.forEach(function (e) { base[e.k] -= e.n; });
     Object.keys(ch).forEach(function (k) { if (base[k] > 0) chipSet(ch[k], base[k], false); });
   }
@@ -828,6 +830,7 @@ function reveal(w, m, isFresh, my) {
     timer = setTimeout(next, ms);
   }
   views[m.id] = (views[m.id] || 0) + 1;
+  setHearts(m.id,false);
   try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
   clearRx();
   if (views[m.id] > 1) {
@@ -1227,6 +1230,28 @@ onSnapshot(collection(db, "reactions"), function (s) {
   rInit = true;
   if (curItem && mode === "loop") setHearts(curItem.id, false);
 }, function (e) { console.warn(e); });
+
+
+let giftInit=false;
+onSnapshot(collection(db,"photo_gifts"),function(s){
+ Object.keys(GIFT).forEach(id=>delete GIFT[id]);
+ const active=s.docs.filter(d=>!!currentEventId && d.data().eventId===currentEventId);
+ for(const d of active){
+  const v=d.data();if(!v.mediaId||!ICON[v.kind])continue;
+  const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});
+  counts[v.kind]=(counts[v.kind]||0)+1;
+ }
+ if(giftInit){
+  for(const change of s.docChanges()){
+   if(change.type!=="added")continue;
+   const v=change.doc.data();
+   if(v.eventId!==currentEventId||!curItem||v.mediaId!==curItem.id||(views[curItem.id]||0)<2)continue;
+   rainInMargin(v.kind,1,true);
+  }
+ }
+ giftInit=true;
+ if(curItem && mode==="loop" && views[curItem.id]>1)showRx(cur.firstChild,curItem,true);
+},function(e){console.warn("Gifts unavailable until deployed:",e);});
 
 onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(40)), function (s) {
   commentSnapshot = s;
