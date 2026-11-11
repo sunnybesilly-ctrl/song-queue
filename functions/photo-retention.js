@@ -97,9 +97,14 @@ async function processJob(doc, cloud, drive) {
       return finish(doc.ref, "source-changed");
     }
     if (!driveId) {
-      driveId = await services.newDriveId(drive);
-      // Persist the ID before uploading. A timeout or restart reuses the same ID.
-      await doc.ref.update({ driveId });
+      const reservedId = await services.newDriveId(drive);
+      // Concurrent revisions and ambiguous retries must use the same Drive ID.
+      driveId = await doc.ref.firestore.runTransaction(async transaction => {
+        const latest = await transaction.get(doc.ref);
+        if (latest.data().driveId) return latest.data().driveId;
+        transaction.update(doc.ref, { driveId: reservedId });
+        return reservedId;
+      });
     }
     await services.uploadMaster(drive, driveId, asset, original.bytes);
     await services.verifyMaster(drive, driveId, asset, original.sha256);
