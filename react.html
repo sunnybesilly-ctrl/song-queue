@@ -171,13 +171,6 @@ body{
     <p class="sent">Reactions tapped: <b id="sent">0</b> · Gifts sent: <b id="giftsSent">0</b></p>
   </div>
 
-  <div class="step s3">
-    <div class="sh"><span class="num">3</span><span class="sl">Sign the yearbook</span><span class="sn">shows on the screen</span></div>
-    <input class="in" id="msg" type="text" maxlength="60" placeholder="Say something nice (or chaotic)" enterkeyhint="send">
-    <div class="go-wrap"><button class="go" id="sign" type="button">Sign it</button></div>
-    <p class="status" id="status" role="status" aria-live="polite"></p>
-  </div>
-
   <div class="step s4">
     <a class="go ghost" href="upload.html">Add your own shot</a>
   </div>
@@ -235,9 +228,9 @@ const LABEL = { heart: "Love it", bolt: "Electric", star: "Sunshine", lol: "Laug
 
 const $ = function (s) { return document.querySelector(s); };
 const rx = $("#rx"), sentEl = $("#sent"), nimg = $("#nimg"), nname = $("#nname");
-const nmIn = $("#nm"), msgIn = $("#msg"), signBtn = $("#sign"), statusEl = $("#status");
+const nmIn = $("#nm");
 
-let now = {}, sent = 0, pending = {}, flushT = null, lastSign = 0, walletBalance = null, giftBusy = false;
+let now = {}, sent = 0, pending = {}, flushT = null, walletBalance = null, giftBusy = false;
 try { nmIn.value = localStorage.getItem(NAME_KEY) || ""; } catch (e) {}
 
 function reactName() { return (nmIn.value.trim() || "Guest").slice(0, 24); }
@@ -485,31 +478,6 @@ KINDS.forEach(function (k, i) {
 });
 document.addEventListener("visibilitychange", function () { if (document.hidden && flushT) { clearTimeout(flushT); flush(); } });
 
-/* sign the yearbook */
-function say(msg, err) { statusEl.textContent = msg; statusEl.className = err ? "status err" : "status"; }
-async function sign() {
-  if (!hasPass()) return;
-  const session = generation;
-  const text = msgIn.value.trim().slice(0, 60);
-  if (!now.id) { say("Choose a memory before signing.", true); return; }
-  const name = nmIn.value.trim().slice(0, 24) || "A guest";
-  if (!text) { say("Write something first.", true); msgIn.focus(); return; }
-  if (Date.now() - lastSign < 6000) { say("Easy. One at a time.", true); return; }
-  lastSign = Date.now();
-  signBtn.disabled = true;
-  try {
-    try { localStorage.setItem(NAME_KEY, name); } catch (e) {}
-    await addDoc(collection(db, "comments"), { mediaId: now.id || "", name: name, text: text, uid: auth.currentUser.uid, eventId: access.eventId, t: serverTimestamp() });
-    if (session !== generation) return;
-    msgIn.value = "";
-    say("Signed. Watch the screen.", false);
-  } catch (e) {
-    console.warn(e); lastSign = 0;
-    say("Did not send. Check your signal and try again.", true);
-  } finally { signBtn.disabled = false; }
-}
-signBtn.addEventListener("click", sign);
-msgIn.addEventListener("keydown", function (e) { if (e.key === "Enter") sign(); });
 </script>
 </body>
 </html>
