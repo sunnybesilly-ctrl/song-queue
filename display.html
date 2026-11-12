@@ -964,7 +964,7 @@ function queueGiftDoc(v,id){
  if(seenGiftIds.has(id)||!ICON[v.kind]||!v.mediaId)return;
  if(!archivePlayback&&v.eventId!==currentEventId)return;
  seenGiftIds.add(id);
- if(curItem?.id===v.mediaId&&mode==="loop")showPendingGifts(v.mediaId);
+ if(curItem?.id===v.mediaId&&mode==="loop")showPendingGifts(v.mediaId,true);
  else{
    const q=pendingGiftMedia.get(v.mediaId)||[];
    q.push({kind:v.kind,name:v.name});pendingGiftMedia.set(v.mediaId,q.slice(-50));
@@ -994,7 +994,7 @@ function cascadeReaction(kind,amount=1){
 const displayedGiftVisits=new Map();
 const giftsShownSinceLoad=new Set();
 let spectacleSnapshotReady=false;
-function showPendingGifts(id){
+function showPendingGifts(id,live=false){
  if(!curItem||curItem.id!==id||mode!=="loop")return;
  const visit=views[id]||1, key=id+"|"+visit;
  const shown=displayedGiftVisits.get(key)||new Set();
@@ -1008,7 +1008,7 @@ function showPendingGifts(id){
  }
  const queued=pendingGiftMedia.get(id)||[];
  pendingGiftMedia.delete(id);
- const shouldReplay=!giftsShownSinceLoad.has(id)||visit%3===0||queued.length>0;
+ const shouldReplay=live||!giftsShownSinceLoad.has(id)||visit%3===0||queued.length>0;
  if(shouldReplay)for(const d of docs){
    if(shown.has(d.id))continue;
    shown.add(d.id);
@@ -1521,40 +1521,7 @@ function applyScreenPause(paused) {
     } else next();
   }
 }
-function beginDisplayListeners(){
-onSnapshot(doc(db,"display_control","spectacle_test"),snap=>{
- if(!snap.exists())return;
- const test=snap.data(),token=String(test.token||"");
- if(!token||seenTestToken===token||!ICON[test.kind])return;
- seenTestToken=token;
- const sent=test.requestedAt?.toMillis?.()||0;
- if(!sent||Date.now()-sent>120000)return;
- pendingTestSpectacle={kind:test.kind,name:String(test.name||"DJ Sunny").slice(0,60)};
- markScreenStatus("TEST SPECTACLE RECEIVED · "+test.kind);
- playPendingTestSpectacle();
-},e=>console.warn("TV effect test channel unavailable",e));
-
-onSnapshot(doc(db,"display_control","current"),function(snap){
-  const v=snap.exists()?snap.data():null;
-  lastControlDoc=v;
-  const wantPause=effectivePause(v);
-  if(wantPause) applyScreenPause(true);
-  const key=v&&v.active?v.mediaId+"|"+!!v.repeat+"|"+(v.changedAt&&v.changedAt.seconds||0)+"|"+(v.changedAt&&v.changedAt.nanoseconds||0):"";
-  if(key!==overrideKey){
-    const previousKey=overrideKey;
-    overrideKey=key;override=v;overridePlayed=false;
-    // Initial controls arriving after the first video starts must not tear
-    // down that video. Likewise, non-playback control updates are harmless.
-    const forceNewVideo=!!(v?.active&&v.mediaId&&v.mediaId!==curItem?.id);
-    const clearOldForced=!!(previousKey&&!v?.active&&mode==="loop"&&curItem?.id);
-    if(!wantPause &&
-       (forceNewVideo || (mode!=="loop"&&!curItem) || (clearOldForced&&curItem?.type!=="video"))){
-      screenPaused=false;mode="idle";next();
-    }
-  }
-  if(!wantPause) applyScreenPause(false);
-},function(e){console.warn("Display control unavailable:",e);});
-
+// Shared playback/effect state must be visible to media and animation helpers.
 let mediaRevision = 0, currentEventId = null, mediaSnapshot = null, reactionSnapshot = null, giftSnapshot = null, archivePlayback = false;
 let pendingMediaSignature = "", lastMediaSignature = "";
 function safeMediaError(error){return String(error?.code||error?.message||error||"Unknown error").replace(/^functions\//,"").slice(0,150);}
@@ -1622,6 +1589,41 @@ function resetForEventChange() {
   nmEl.textContent = "WAITING FOR EVENT MEDIA";
   hint.textContent = "New event started. Waiting for photos and videos.";
 }
+
+function beginDisplayListeners(){
+onSnapshot(doc(db,"display_control","spectacle_test"),snap=>{
+ if(!snap.exists())return;
+ const test=snap.data(),token=String(test.token||"");
+ if(!token||seenTestToken===token||!ICON[test.kind])return;
+ seenTestToken=token;
+ const sent=test.requestedAt?.toMillis?.()||0;
+ if(!sent||Date.now()-sent>120000)return;
+ pendingTestSpectacle={kind:test.kind,name:String(test.name||"DJ Sunny").slice(0,60)};
+ markScreenStatus("TEST SPECTACLE RECEIVED · "+test.kind);
+ playPendingTestSpectacle();
+},e=>console.warn("TV effect test channel unavailable",e));
+
+onSnapshot(doc(db,"display_control","current"),function(snap){
+  const v=snap.exists()?snap.data():null;
+  lastControlDoc=v;
+  const wantPause=effectivePause(v);
+  if(wantPause) applyScreenPause(true);
+  const key=v&&v.active?v.mediaId+"|"+!!v.repeat+"|"+(v.changedAt&&v.changedAt.seconds||0)+"|"+(v.changedAt&&v.changedAt.nanoseconds||0):"";
+  if(key!==overrideKey){
+    const previousKey=overrideKey;
+    overrideKey=key;override=v;overridePlayed=false;
+    // Initial controls arriving after the first video starts must not tear
+    // down that video. Likewise, non-playback control updates are harmless.
+    const forceNewVideo=!!(v?.active&&v.mediaId&&v.mediaId!==curItem?.id);
+    const clearOldForced=!!(previousKey&&!v?.active&&mode==="loop"&&curItem?.id);
+    if(!wantPause &&
+       (forceNewVideo || (mode!=="loop"&&!curItem) || (clearOldForced&&curItem?.type!=="video"))){
+      screenPaused=false;mode="idle";next();
+    }
+  }
+  if(!wantPause) applyScreenPause(false);
+},function(e){console.warn("Display control unavailable:",e);});
+
 onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
   const state = snap.exists() ? snap.data() : null;
   const nextId = state?.active ? state.eventId : null;
