@@ -1795,7 +1795,7 @@ async function processMediaSnapshot(snap) {
       if(revision!==mediaRevision||eventAtStart!==currentEventId)return;
       const valid=batch.filter(x=>photoLinks.resolve(playUrl(x)));
       valid.forEach(x=>{if(!items.some(y=>y.id===x.id))items.push(x);});
-      if(valid.length)recoverRecentGiftSpectacles();
+      if(valid.length){refreshArchiveGifts();updateGiftTally();recoverRecentGiftSpectacles();}
     }
   })();
   window.__djMediaReceived = true;
