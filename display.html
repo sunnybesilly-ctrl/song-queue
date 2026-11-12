@@ -1011,26 +1011,29 @@ function cascadeReaction(kind,amount=1){
  },i*170);
 }
 function showPendingGifts(id){
- // Firestore is the source of truth, not the transient arrival queue.
- // A gift sent while the projector was off must still get its full animation
- // when the associated memory plays. Replay every third visit so a guest can
- // actually see it, instead of silently marking an unseen animation as done.
- const queued=pendingGiftMedia.get(id)||[];
+ const q=pendingGiftMedia.get(id)||[];
  pendingGiftMedia.delete(id);
  const records=giftSnapshot?.docs.filter(d=>{
-   const v=d.data();
-   return v.mediaId===id && !!ICON[v.kind] &&
-     (archivePlayback||v.eventId===currentEventId);
+  const v=d.data();
+  return v.mediaId===id&&!!ICON[v.kind]&&(archivePlayback||v.eventId===currentEventId);
  }).sort((a,b)=>(a.data().t?.toMillis?.()||0)-(b.data().t?.toMillis?.()||0))||[];
  const visit=views[id]||1;
- if(records.length && (visit===1 || visit%3===0 || queued.length)){
-   const selected=records.slice(-16);
-   selected.forEach(d=>featureGift(d.data().kind,d.data().name));
-   console.info("Photo Wall: playing",selected.length,"confirmed spectacles for",id,"on visit",visit);
- }else if(queued.length){
-   queued.forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
+ markMediaEffectsStatus(id);
+ if(records.length&&(visit===1||visit%3===0||q.length)){
+  records.slice(-16).forEach(d=>featureGift(d.data().kind,d.data().name));
+  console.info("Spectacles queued",records.length,"for",id);
+ }else if(q.length){
+  q.forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
  }
 }
+function markMediaEffectsStatus(id){
+ const giftCount=giftSnapshot?.docs.filter(d=>d.data().mediaId===id&&(archivePlayback||d.data().eventId===currentEventId)).length||0;
+ const reactionCount=RX[id]?.n||0;
+ const eventHint=giftSnapshot?"SYNCED":"WAITING FOR GIFTS";
+ const media=find(id);
+ markScreenStatus("PLAYING "+String(media?.name||id).slice(0,22)+" · REACTIONS "+reactionCount+" · SPECTACLES "+giftCount+" · "+eventHint);
+}
+
 function featureGift(kind,name){
  if(!ICON[kind]||!curItem||mode!=="loop")return;
  giftQueue.push({kind,name:String(name||"A party guest").slice(0,60),id:curItem.id});
@@ -1377,38 +1380,26 @@ function reveal(w, m, isFresh, my) {
   }
 }
 
-function armVideo(v, my, m) {
-  const d = (isFinite(v.duration) && v.duration > 0) ? v.duration * 1000 : 60000;
-  // Short clips may loop to make them visible for a moment; longer videos
-  // always play once from beginning to end. The ended event controls advance.
-  const loops = d >= MIN_VIDEO_MS ? 1 : Math.min(6, Math.ceil(MIN_VIDEO_MS / d));
-  let plays = 0;
-  planned = d * loops + 3000;
-  v.onended = function () {
-    if (my !== tok) return;
-    try {
-      plays++;
-      if (override && override.active && m && override.mediaId === m.id) {
-        if (override.repeat) {
-          try { v.currentTime = 0; } catch (e) {}
-          const p = v.play(); if (p && p.catch) p.catch(function (e) { console.warn(e); });
-          return;
-        }
-        overridePlayed = true; clearTimeout(wd); next(); return;
-      }
-      if (plays < loops) {
-        try { v.currentTime = 0; } catch (e) {}
-        const p = v.play(); if (p && p.catch) p.catch(function () {});
-      } else {
-        clearTimeout(wd);
-        next();
-      }
-    } catch (err) {
-      console.error("Video ended handler:", err);
-      clearTimeout(wd);
-      next();
+function armVideo(v,my,m){
+ // Never automatically repeat short or trimmed clips. A video is played
+ // once to its actual end; only DJ Admin's explicit Repeat overrides this.
+ const length=Number.isFinite(v.duration)&&v.duration>0?v.duration:0;
+ planned=length?length*1000+3000:60000;
+ v.loop=false;
+ v.removeAttribute("loop");
+ v.onended=()=>{
+  if(my!==tok)return;
+  clearTimeout(wd);
+  if(override?.active&&override.mediaId===m.id){
+    if(override.repeat){
+      try{v.currentTime=0}catch(_){}
+      v.play().catch(e=>console.warn("Admin repeat:",e));
+      return;
     }
-  };
+    overridePlayed=true;
+  }
+  next();
+ };
 }
 
 function next() {
@@ -1850,7 +1841,7 @@ async function processMediaSnapshot(snap) {
   }
   if (seen) snap.docChanges().forEach(function (c) { if (c.type === "added" && list.some(m=>m.id===c.doc.id)) fresh.push(c.doc.id); });
   const first = !seen; seen = true;
-  if (curItem && mode === "loop") setHearts(curItem.id, curChanged);
+  if (curItem && mode === "loop") { setHearts(curItem.id, curChanged);markMediaEffectsStatus(curItem.id); }
   if (curItem && mode === "loop" && list.some(function (m) { return m.id === curItem.id && m.rotationPaused; })) {
     if (!screenPaused) { stopMedia(); next(); }
   }
@@ -1901,7 +1892,7 @@ onSnapshot(collection(db, "reactions"), function (s) {
     });
   });
   rInit = true;
-  if (curItem && mode === "loop") setHearts(curItem.id, false);
+  if (curItem && mode === "loop") { setHearts(curItem.id, false);markMediaEffectsStatus(curItem.id); }
 }, function (e) { console.warn(e); });
 
 
@@ -1909,6 +1900,7 @@ let giftInit=false;
 onSnapshot(collection(db,"photo_gifts"),function(s){
  giftSnapshot=s;
  refreshArchiveGifts();
+ if(curItem&&mode==="loop")markMediaEffectsStatus(curItem.id);
  updateGiftTally();
  if(!giftInit)recoverRecentGiftSpectacles();
  if(giftInit){
