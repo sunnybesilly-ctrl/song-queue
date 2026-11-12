@@ -198,7 +198,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 </div>
 
 <div id="app" hidden>
-  <p style="margin:12px 0 20px"><a href="event-archive.html" style="display:inline-block;background:#f4ff1a;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none">VIEW PAST EVENTS &amp; DOWNLOAD SUMMARIES</a> <a href="philips-tv.html" target="_blank" rel="noopener" style="display:inline-block;background:#37ff76;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none;margin-top:8px">OPEN PHILIPS TV DISPLAY</a></p>
+  <p style="margin:12px 0 20px"><a href="event-archive.html?v=20261111-35" style="display:inline-block;background:#f4ff1a;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none">VIEW PAST EVENTS &amp; DOWNLOAD SUMMARIES</a> <a href="philips-tv.html?v=20261111-35" target="_blank" rel="noopener" style="display:inline-block;background:#37ff76;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none;margin-top:8px">OPEN PHILIPS TV DISPLAY</a></p>
   <div class="dashboard-intro"><div><span class="eyebrow">LIVE EVENT · MANAGEMENT</span><h2>Tonight’s dashboard</h2><p>Keep the memories moving. You’re in control.</p></div><span class="live-indicator"><span class="live-dot"></span> CONTROL CENTER</span></div>
   <div class="top-panels">
   <div class="inject">
@@ -350,7 +350,7 @@ $("adminGiftButtons").addEventListener("click",async e=>{
 const galleryStateText=document.getElementById("galleryEventStatus");
 let galleryOperation=false,guestInviteUrl="";
 function renderGuestInvite(code){
- const url=new URL("react.html",location.href);
+ const url=new URL("react.html?v=20261111-35",location.href);
  url.search="";url.hash="invite="+encodeURIComponent(code);
  guestInviteUrl=url.href;
  const area=$("guestInviteQr");area.replaceChildren();
