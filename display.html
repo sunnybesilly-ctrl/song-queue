@@ -671,6 +671,10 @@ body.qr-screen #bar .who{display:none!important}
 #giftStage .gift-hero{z-index:2!important;visibility:visible!important}
 #giftStage .gift-core{position:relative;z-index:6!important}
 #giftStage .gift-symbol{background:radial-gradient(circle at 35% 25%,#ffffffb5,#f4ff1a75 35%,#40ffb54d 65%,transparent 90%)}
+
+#reactionCascade{position:fixed!important;left:0;right:0;top:0;
+ bottom:var(--bar);z-index:9998!important;overflow:hidden!important;pointer-events:none!important}
+#reactionCascade .cascade-icon{display:block!important;z-index:1}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1007,20 +1011,22 @@ function queueGiftDoc(v,id){
  }
 }
 function cascadeReaction(kind,amount=1){
- if(!curItem||mode!=="loop"||!ICON[kind]||PORT.matches||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
- const media=cur?.firstChild;if(!media)return;
- const r=mediaRect(media),gutter=cur.classList.contains("triptych")?r.sw/3:r.l;
- if(gutter<65)return;
- const id=curItem.id;
- for(let i=0;i<Math.min(5,Math.max(1,amount));i++)setTimeout(()=>{
+ if(!curItem||mode!=="loop"||!ICON[kind]||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+ const pane=document.getElementById("reactionCascade");
+ if(!pane)return;
+ const id=curItem.id, sideWidth=Math.max(68,pane.clientWidth*.145);
+ const quantity=Math.min(7,Math.max(1,amount));
+ for(let i=0;i<quantity;i++)setTimeout(()=>{
   if(curItem?.id!==id||mode!=="loop")return;
   const icon=h("span","cascade-icon");icon.innerHTML=ICON[kind];
-  icon.style.left=((i%2===0?0:r.sw-gutter)+12+Math.random()*Math.max(1,gutter-62))+"px";
-  icon.style.setProperty("--sway",(Math.random()*32-16)+"px");
-  document.getElementById("reactionCascade").append(icon);
-  setTimeout(()=>icon.remove(),3300);
- },i*170);
+  const right=i%2===1;
+  const x=right?pane.clientWidth-sideWidth+Math.random()*(sideWidth-46):Math.random()*(sideWidth-46);
+  icon.style.left=Math.max(3,x)+"px";
+  icon.style.setProperty("--sway",(Math.random()*35-18)+"px");
+  pane.appendChild(icon);setTimeout(()=>icon.remove(),3450);
+ },i*150);
 }
+
 // For each media appearance, use actual Firestore gift receipts, rather
 // than relying on transient listeners that might connect before the video.
 const displayedGiftVisits=new Map();
@@ -1399,9 +1405,18 @@ function reveal(w, m, isFresh, my) {
   // Gifts are animated only on arrival, not replayed with each media loop.
   try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
   clearRx();
-  if (views[m.id] > 1) {
-    const rxEl = w.firstChild;
-    rxT.push(setTimeout(function () { if (my === tok && cur === w) showRx(rxEl, m); }, Math.round(t.ms * 0.8)));
+  if(views[m.id]>1){
+    const rxEl=w.firstChild;
+    rxT.push(setTimeout(()=>{
+      if(my!==tok||cur!==w)return;
+      showRx(rxEl,m);
+      const hearts=Math.max(0,Number(m.likes)||0);
+      if(hearts>0)cascadeReaction("heart",Math.min(5,hearts));
+      else if((RX[m.id]?.n||0)>0){
+        const kinds=Object.keys(RX[m.id].c).filter(k=>RX[m.id].c[k]>0);
+        if(kinds.length)cascadeReaction(kinds[0],Math.min(5,RX[m.id].n));
+      }
+    },Math.min(1200,Math.round(t.ms*.8))));
   }
 }
 
@@ -1702,7 +1717,7 @@ function safeMediaError(error){return String(error?.code||error?.message||error|
 function mediaPlaybackSignature(snap){
   return [currentEventId||"",...snap.docs.map(d=>{const x=d.data();return d.id+"|"+(x.url||"")+"|"+(x.type||"")+"|"+(x.eventId||"")+"|"+!!x.rotationPaused;})].join("\n");
 }
-function refreshArchiveReactions(){if(!reactionSnapshot)return;const ids=new Set(items.map(x=>x.id));rebuildRx(reactionSnapshot.docs.filter(d=>ids.has(d.data().mediaId) && (archivePlayback||d.data().eventId===currentEventId)));}
+function refreshArchiveReactions(){if(!reactionSnapshot)return;const ids=new Set(items.map(x=>x.id));rebuildRx(reactionSnapshot.docs.filter(d=>ids.has(d.data().mediaId)));}
 function refreshArchiveGifts(){Object.keys(GIFT).forEach(id=>delete GIFT[id]);if(!giftSnapshot)return;const ids=new Set(items.map(x=>x.id));giftSnapshot.docs.forEach(d=>{const v=d.data();if(!ids.has(v.mediaId)||!ICON[v.kind])return;const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});counts[v.kind]=(counts[v.kind]||0)+1;});}
 const GIFT_LABELS={spark:"Starlight",comet:"Comet",galaxy:"Galaxy",supernova:"Supernova"};
 function updateGiftTally(){
@@ -1851,7 +1866,7 @@ async function processMediaSnapshot(snap) {
       if(revision!==mediaRevision||eventAtStart!==currentEventId)return;
       const valid=batch.filter(x=>photoLinks.resolve(playUrl(x)));
       valid.forEach(x=>{if(!items.some(y=>y.id===x.id))items.push(x);});
-      if(valid.length){refreshArchiveGifts();updateGiftTally();recoverRecentGiftSpectacles();}
+      if(valid.length){refreshArchiveReactions();refreshArchiveGifts();updateGiftTally();recoverRecentGiftSpectacles();if(curItem&&mode==="loop"){setHearts(curItem.id,false);showPendingGifts(curItem.id);}}
     }
   })();
   window.__djMediaReceived = true;
@@ -1882,7 +1897,11 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
     // Like-count changes still update the visible counter without re-signing.
     if(curItem&&mode==="loop"){
       const row=snap.docs.find(d=>d.id===curItem.id);
-      if(row){curItem.likes=row.data().likes||0;setHearts(curItem.id,false);}
+      if(row){
+        const before=Number(curItem.likes)||0,after=Number(row.data().likes)||0;
+        curItem.likes=after;setHearts(curItem.id,after>before);
+        if(after>before&&(views[curItem.id]||0)>1)cascadeReaction("heart",Math.min(6,after-before));
+      }
     }
     return;
   }
