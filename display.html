@@ -660,6 +660,17 @@ body.qr-screen #bar .who{display:none!important}
  max-width:58vw;padding:3px 8px;color:#e7ffbd;font:700 clamp(9px,1.25vh,14px)/1.2 system-ui;
  background:#061a1099;border:1px solid #9eff7760;border-radius:4px;pointer-events:none;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Guaranteed full-stage spectacle surface, above the hardware video layer. */
+#giftStage{
+ position:fixed!important;inset:0 0 var(--bar) 0!important;
+ width:100vw!important;height:auto!important;z-index:9999!important;
+ overflow:hidden!important;visibility:visible!important;
+ display:block!important;pointer-events:none!important;isolation:isolate;
+}
+#giftStage .gift-hero{z-index:2!important;visibility:visible!important}
+#giftStage .gift-core{position:relative;z-index:6!important}
+#giftStage .gift-symbol{background:radial-gradient(circle at 35% 25%,#ffffffb5,#f4ff1a75 35%,#40ffb54d 65%,transparent 90%)}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -987,7 +998,7 @@ function queueGiftDoc(v,id){
  if(seenGiftIds.has(id)||!ICON[v.kind]||!v.mediaId)return;
  if(!archivePlayback&&v.eventId!==currentEventId)return;
  seenGiftIds.add(id);
- if(curItem?.id===v.mediaId&&mode==="loop")featureGift(v.kind,v.name);
+ if(curItem?.id===v.mediaId&&mode==="loop")showPendingGifts(v.mediaId);
  else{
    const q=pendingGiftMedia.get(v.mediaId)||[];
    q.push({kind:v.kind,name:v.name});pendingGiftMedia.set(v.mediaId,q.slice(-50));
@@ -1010,22 +1021,34 @@ function cascadeReaction(kind,amount=1){
   setTimeout(()=>icon.remove(),3300);
  },i*170);
 }
+// For each media appearance, use actual Firestore gift receipts, rather
+// than relying on transient listeners that might connect before the video.
+const displayedGiftVisits=new Map();
+let spectacleSnapshotReady=false;
 function showPendingGifts(id){
- const q=pendingGiftMedia.get(id)||[];
- pendingGiftMedia.delete(id);
- const records=giftSnapshot?.docs.filter(d=>{
-  const v=d.data();
-  return v.mediaId===id&&!!ICON[v.kind]&&(archivePlayback||v.eventId===currentEventId);
- }).sort((a,b)=>(a.data().t?.toMillis?.()||0)-(b.data().t?.toMillis?.()||0))||[];
- const visit=views[id]||1;
- markMediaEffectsStatus(id);
- if(records.length&&(visit===1||visit%3===0||q.length)){
-  records.slice(-16).forEach(d=>featureGift(d.data().kind,d.data().name));
-  console.info("Spectacles queued",records.length,"for",id);
- }else if(q.length){
-  q.forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
+ if(!curItem||curItem.id!==id||mode!=="loop")return;
+ const visit=views[id]||1, key=id+"|"+visit;
+ const shown=displayedGiftVisits.get(key)||new Set();
+ const docs=giftSnapshot?.docs.filter(d=>{
+   const v=d.data();
+   return v.mediaId===id&&!!ICON[v.kind];
+ })||[];
+ if(!spectacleSnapshotReady){
+   markScreenStatus("GIFTS CONNECTING · MEDIA "+id.slice(0,8));
+   return;
  }
+ const queued=pendingGiftMedia.get(id)||[];
+ pendingGiftMedia.delete(id);
+ const shouldReplay=visit===1||visit%3===0||queued.length>0;
+ if(shouldReplay)for(const d of docs){
+   if(shown.has(d.id))continue;
+   shown.add(d.id);
+   featureGift(d.data().kind,d.data().name);
+ }
+ displayedGiftVisits.set(key,shown);
+ markScreenStatus("MEDIA "+id.slice(0,8)+" · SPECTACLES "+docs.length+(docs.length?" · EFFECTS READY":" · NO SAVED GIFTS"));
 }
+
 function markMediaEffectsStatus(id){
  const giftCount=giftSnapshot?.docs.filter(d=>d.data().mediaId===id&&(archivePlayback||d.data().eventId===currentEventId)).length||0;
  const reactionCount=RX[id]?.n||0;
@@ -1716,6 +1739,7 @@ function resetForEventChange() {
   if (wd) { clearTimeout(wd); wd = null; }
   stopMedia();
   lastPlaybackStartedAt=0;mediaLoadStartedAt=0;
+  displayedGiftVisits.clear();
   giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();seenGiftIds.clear();giftSpotlightIds.length=0;document.getElementById("giftStage").replaceChildren();document.getElementById("giftTally").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
   stage.replaceChildren();
   clearRx();
@@ -1899,7 +1923,9 @@ onSnapshot(collection(db, "reactions"), function (s) {
 let giftInit=false;
 onSnapshot(collection(db,"photo_gifts"),function(s){
  giftSnapshot=s;
+ spectacleSnapshotReady=true;
  refreshArchiveGifts();
+ if(curItem&&mode==="loop")showPendingGifts(curItem.id);
  if(curItem&&mode==="loop")markMediaEffectsStatus(curItem.id);
  updateGiftTally();
  if(!giftInit)recoverRecentGiftSpectacles();
