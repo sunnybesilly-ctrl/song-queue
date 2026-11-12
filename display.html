@@ -604,7 +604,7 @@ body.qr-screen #bar .who{display:none!important}
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
-<div id="rx"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
+<div id="rx"></div><div id="giftTally" aria-live="off" aria-label="Spectacles received"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
 
 <div id="qrcard">
   <div class="qt">
@@ -917,7 +917,7 @@ function queueGiftDoc(v,id){
  if(curItem?.id===v.mediaId&&mode==="loop")featureGift(v.kind,v.name);
  else{
    const q=pendingGiftMedia.get(v.mediaId)||[];
-   q.push({kind:v.kind,name:v.name});pendingGiftMedia.set(v.mediaId,q.slice(-3));
+   q.push({kind:v.kind,name:v.name});pendingGiftMedia.set(v.mediaId,q.slice(-50));
    if(items.some(m=>m.id===v.mediaId&&!m.rotationPaused)&&!giftSpotlightIds.includes(v.mediaId))
      giftSpotlightIds.push(v.mediaId);
  }
@@ -939,12 +939,12 @@ function cascadeReaction(kind,amount=1){
 }
 function showPendingGifts(id){
  const q=pendingGiftMedia.get(id)||[];pendingGiftMedia.delete(id);
- q.slice(-3).forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
+ q.forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
 }
 function featureGift(kind,name){
  if(!ICON[kind]||!curItem||mode!=="loop")return;
  giftQueue.push({kind,name:String(name||"A party guest").slice(0,60),id:curItem.id});
- if(giftQueue.length>4)giftQueue.shift();
+ // Never silently discard confirmed gifts because multiple guests sent at once.
  playGift();
 }
 function playGift(){
@@ -1267,6 +1267,7 @@ function reveal(w, m, isFresh, my) {
   views[m.id] = (views[m.id] || 0) + 1;
   showPendingGifts(m.id);
   setHearts(m.id,false);
+  updateGiftTally();
   // Gifts are animated only on arrival, not replayed with each media loop.
   try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
   clearRx();
@@ -1317,6 +1318,11 @@ function nextInner() {
   if (screenPaused) { if(!curItem)showPauseStatus();return; }
   clearTimeout(timer); clearTimeout(wd);
   if (mode === "yearbook") return;
+  // A spectacle takes priority over the slideshow clock. Run every confirmed
+  // gift on its chosen media before switching to the next photo or QR page.
+  if(mode==="loop"&&(giftPlaying||giftQueue.length)){
+    timer=setTimeout(next,500);return;
+  }
   if (override && override.active && (!overridePlayed || override.repeat)) {
     const forced=find(override.mediaId);
     if(forced && !forced.rotationPaused && forced.type==="video") {
@@ -1578,13 +1584,33 @@ function mediaPlaybackSignature(snap){
 }
 function refreshArchiveReactions(){if(!reactionSnapshot)return;const ids=new Set(items.map(x=>x.id));rebuildRx(reactionSnapshot.docs.filter(d=>ids.has(d.data().mediaId) && (archivePlayback||d.data().eventId===currentEventId)));}
 function refreshArchiveGifts(){Object.keys(GIFT).forEach(id=>delete GIFT[id]);if(!giftSnapshot)return;const ids=new Set(items.map(x=>x.id));giftSnapshot.docs.forEach(d=>{const v=d.data();if(!ids.has(v.mediaId)||!ICON[v.kind]||(!archivePlayback&&v.eventId!==currentEventId))return;const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});counts[v.kind]=(counts[v.kind]||0)+1;});}
+const GIFT_LABELS={spark:"Starlight",comet:"Comet",galaxy:"Galaxy",supernova:"Supernova"};
+function updateGiftTally(){
+  const node=document.getElementById("giftTally");
+  node.replaceChildren();
+  if(mode!=="loop"||!curItem)return;
+  const counts=GIFT[curItem.id]||{};
+  const kinds=Object.keys(GIFT_LABELS).filter(kind=>(counts[kind]||0)>0);
+  if(!kinds.length)return;
+  const total=kinds.reduce((sum,k)=>sum+counts[k],0);
+  const title=h("strong","gift-tally-header","✦ "+total+" SPECTACLE"+(total===1?"":"S"));
+  node.appendChild(title);
+  kinds.forEach(kind=>{
+    const badge=h("span","gift-tally-badge");
+    badge.title=GIFT_LABELS[kind]+" x "+counts[kind];
+    const symbol=h("span","gift-tally-symbol");
+    symbol.innerHTML=ICON[kind];
+    badge.appendChild(symbol);badge.appendChild(h("b","",String(counts[kind])));
+    node.appendChild(badge);
+  });
+}
 function recoverRecentGiftSpectacles(){
  if(!giftSnapshot||!items.length)return;
  const ids=new Set(items.map(x=>x.id));
  const recent=giftSnapshot.docs
   .filter(d=>{const v=d.data();return ids.has(v.mediaId)&&!!ICON[v.kind]&&(archivePlayback||v.eventId===currentEventId);})
   .sort((a,b)=>(b.data().t?.toMillis?.()||0)-(a.data().t?.toMillis?.()||0))
-  .slice(0,3).reverse();
+  .slice(0,50).reverse();
  recent.forEach(d=>queueGiftDoc(d.data(),d.id));
 }
 function resetForEventChange() {
@@ -1594,7 +1620,7 @@ function resetForEventChange() {
   if (timer) { clearTimeout(timer); timer = null; }
   if (wd) { clearTimeout(wd); wd = null; }
   stopMedia();
-  giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();seenGiftIds.clear();giftSpotlightIds.length=0;document.getElementById("giftStage").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
+  giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();seenGiftIds.clear();giftSpotlightIds.length=0;document.getElementById("giftStage").replaceChildren();document.getElementById("giftTally").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
   stage.replaceChildren();
   clearRx();
   fx.replaceChildren(); fxN = 0;
@@ -1707,7 +1733,7 @@ async function processMediaSnapshot(snap) {
   window.__djMediaReceived = true;
   const leavingArchive=archivePlayback&&!fallback&&!!curItem;
   archivePlayback=fallback;items=list;
-  refreshArchiveReactions();refreshArchiveGifts();recoverRecentGiftSpectacles();
+  refreshArchiveReactions();refreshArchiveGifts();updateGiftTally();recoverRecentGiftSpectacles();
   if (list.length && !cShowing) { hint.textContent = fallback ? "Playing earlier memories until this event receives new photos and videos." : "Tonight’s memories · live"; hint.hidden = false; }
   if(leavingArchive){stopMedia();mode="idle";pos=-1;}
   if (!list.length) {
@@ -1775,6 +1801,7 @@ let giftInit=false;
 onSnapshot(collection(db,"photo_gifts"),function(s){
  giftSnapshot=s;
  refreshArchiveGifts();
+ updateGiftTally();
  if(!giftInit)recoverRecentGiftSpectacles();
  if(giftInit){
   for(const change of s.docChanges()){
