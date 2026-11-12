@@ -675,6 +675,29 @@ body.qr-screen #bar .who{display:none!important}
 #reactionCascade{position:fixed!important;left:0;right:0;top:0;
  bottom:var(--bar);z-index:9998!important;overflow:hidden!important;pointer-events:none!important}
 #reactionCascade .cascade-icon{display:block!important;z-index:1}
+
+/* Spectacle live: deliberately simple, guaranteed visible CSS animation,
+   independent of the legacy gift-hero effects and any external libraries. */
+#giftStage{z-index:10000!important;position:fixed!important;inset:0 0 var(--bar) 0!important;pointer-events:none!important;overflow:hidden!important;display:block!important}
+.spectacle-live{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;isolation:isolate;animation:spectacle-in 5s both}
+.spectacle-wash{position:absolute;inset:-12%;background:radial-gradient(ellipse at center,#f4ff1a85 0%,#27ff9f63 36%,#a776ff42 62%,transparent 80%);mix-blend-mode:screen;animation:spectacle-wash 5s ease-in-out both}
+.spectacle-ring{position:absolute;width:50vmin;height:50vmin;max-height:70%;border:clamp(4px,1vh,12px) solid #efffc8d9;border-radius:50%;box-shadow:0 0 35px #ebff91,0 0 140px #65ffd7,inset 0 0 55px #b0ff6d;animation:spectacle-ring 5s ease-out both}
+.spectacle-shine{position:absolute;inset:-80%;background:repeating-conic-gradient(from -30deg,#fcffab44 0deg 4deg,transparent 5deg 17deg);animation:spectacle-rays 5s linear both}
+.spectacle-copy{z-index:2;position:relative;display:flex;flex-direction:column;gap:1vh;align-items:center;max-width:95vw;padding:2vh 4vw;text-align:center;filter:drop-shadow(0 0 14px #0a3018);animation:spectacle-copy 5s ease-in-out both}
+.spectacle-art{height:clamp(170px,38vh,420px);width:clamp(170px,38vh,420px);display:grid;place-items:center;filter:drop-shadow(0 0 30px #e7ff89)}
+.spectacle-art svg{height:100%;width:100%;stroke-width:4.5}
+.spectacle-name{font:900 clamp(44px,10vh,132px)/.86 var(--display);letter-spacing:.08em;color:#f4ff1a;text-shadow:0 5px 16px #001506,0 0 30px #f4ff1a}
+.spectacle-from{font:900 clamp(20px,4vh,54px)/1 var(--display);color:#fff;letter-spacing:.06em;text-shadow:0 3px 15px #001506,0 0 22px #f4ff1a}
+.spectacle-stars{position:absolute;inset:0;z-index:1}
+.spectacle-star{position:absolute;top:45%;left:var(--x);height:clamp(8px,2.5vh,25px);width:clamp(8px,2.5vh,25px);border-radius:50%;background:#ffffba;box-shadow:0 0 20px 7px #f4ff1a,0 0 45px #8bffce;animation:spectacle-star 4.1s var(--d) ease-out both}
+@keyframes spectacle-in{0%,100%{opacity:0}12%,80%{opacity:1}}
+@keyframes spectacle-wash{0%,100%{opacity:0;transform:scale(.2)}25%{opacity:.72;transform:scale(1)}72%{opacity:.53;transform:scale(1.2)}}
+@keyframes spectacle-ring{0%{opacity:0;transform:scale(.15)}26%{opacity:1}90%{opacity:.4}100%{opacity:0;transform:scale(4)}}
+@keyframes spectacle-rays{0%{opacity:0;transform:rotate(-55deg) scale(.35)}22%{opacity:.7}80%{opacity:.55}100%{opacity:0;transform:rotate(120deg) scale(1.35)}}
+@keyframes spectacle-copy{0%{opacity:0;transform:translateX(-40vw) scale(.5)}22%{opacity:1;transform:translateX(0) scale(1.15)}62%{opacity:1;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(25vw) scale(.8)}}
+@keyframes spectacle-star{0%{opacity:0;transform:translateY(15vh) scale(.2)}25%{opacity:1}100%{opacity:0;transform:translate(var(--drift),-45vh) scale(.6)}}
+@media (orientation:portrait){.spectacle-name{font-size:11vw}.spectacle-from{font-size:6vw}.spectacle-art{width:45vw;height:45vw}}
+@media(prefers-reduced-motion:reduce){.spectacle-shine,.spectacle-stars{display:none}.spectacle-copy{animation:spectacle-in 5s both}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1075,33 +1098,46 @@ function playGift(){
  if(giftPlaying||!giftQueue.length)return;
  const gift=giftQueue.shift();
  if(!curItem||curItem.id!==gift.id||mode!=="loop"){playGift();return;}
+ const overlay=document.getElementById("giftStage");
+ if(!overlay){console.error("Spectacle overlay missing");return;}
  giftPlaying=true;
- const stageGift=document.getElementById("giftStage");
- const root=h("div","gift-hero"),core=h("div","gift-core"),symbol=h("div","gift-symbol");
- symbol.innerHTML=ICON[gift.kind];
- core.appendChild(symbol);
- for(let i=0;i<3;i++)core.appendChild(h("i","gift-glint"));
- core.appendChild(h("span","gift-title",gift.kind==="spark"?"STARLIGHT":gift.kind.toUpperCase()));
- core.appendChild(h("span","gift-sender","FROM "+gift.name));
- root.dataset.kind=gift.kind;
- const veil=h("div","gift-veil");
- const rays=h("div","gift-rays");
- const shock=h("div","gift-shockwave");
- const stream=h("div","gift-stream");
- stream.textContent=(gift.kind==="spark"?"STARLIGHT":gift.kind.toUpperCase())+"  ✦  "+gift.name;
- root.append(veil,rays,shock,stream);
- const halo=h("div","gift-particles");
- for(let i=0;i<38;i++){
-   const star=h("i","gift-particle");
-   const angle=i*Math.PI*2/14,reach=18+Math.random()*23;
-   star.style.setProperty("--gx",(Math.cos(angle)*reach).toFixed(1)+"vw");
-   star.style.setProperty("--gy",(Math.sin(angle)*reach).toFixed(1)+"vh");
-   star.style.setProperty("--delay",(i%12*.075).toFixed(2)+"s");
-   halo.appendChild(star);
+ try{
+   const root=h("div","spectacle-live");
+   root.dataset.kind=gift.kind;
+   const wash=h("div","spectacle-wash");
+   const ring=h("div","spectacle-ring");
+   const shine=h("div","spectacle-shine");
+   const art=h("div","spectacle-art");
+   art.innerHTML=ICON[gift.kind];
+   const title=h("div","spectacle-name",GIFT_LABELS[gift.kind]||gift.kind);
+   const from=h("div","spectacle-from","FROM "+gift.name);
+   const copy=h("div","spectacle-copy");
+   copy.append(art,title,from);
+   const stars=h("div","spectacle-stars");
+   for(let i=0;i<32;i++){
+     const x=h("i","spectacle-star");
+     x.style.setProperty("--x",((i*37)%100)+"%");
+     x.style.setProperty("--d",((i*13)%19)/10+"s");
+     x.style.setProperty("--drift",((i%2?1:-1)*(20+i%8))+"vw");
+     stars.appendChild(x);
+   }
+   root.append(wash,ring,shine,stars,copy);
+   overlay.replaceChildren(root);
+   markScreenStatus("SPECTACLE ON SCREEN · "+(GIFT_LABELS[gift.kind]||gift.kind)+" · "+gift.name);
+   setTimeout(()=>{
+     root.remove();
+     giftPlaying=false;
+     if(curItem?.id===gift.id)markMediaEffectsStatus(gift.id);
+     playGift();
+   },5000);
+ }catch(e){
+   giftPlaying=false;
+   console.error("Spectacle animation failed",e);
+   markScreenStatus("SPECTACLE ERROR · "+(e?.message||e));
+   setTimeout(playGift,100);
  }
- root.append(halo,core);stageGift.replaceChildren(root);
- setTimeout(()=>{root.remove();giftPlaying=false;playGift()},4500);
 }
+
 function bubble(feed, ev) {
   const b = h("div", "bub"), av = h("div", "av", ini(ev.w)), nm = h("span", "bn", ev.w), ic = h("span", "bi");
   av.style.background = hue(ev.w); ic.innerHTML = ICON[ev.k];
