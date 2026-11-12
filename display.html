@@ -652,7 +652,7 @@ body.qr-screen #bar .who{display:none!important}
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
-<div id="rx"></div><div id="giftTally" aria-live="off" aria-label="Spectacles received"></div><div id="playbackStatus" role="status"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
+<div id="rx"></div><div id="giftTally" aria-live="off" aria-label="Spectacles received"></div><div id="playbackStatus" hidden aria-hidden="true"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
 
 <div id="qrcard">
   <div class="qt">
@@ -735,37 +735,33 @@ const QR_HOLD_MS = 18000;
 const MIN_VIDEO_MS = 8000;   
 const RELOAD_MS = 50 * 60000; 
 
-function face(inner) { return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#FFD43B" stroke="#7a4a00" stroke-width="1.3"/>' + inner + '</svg>'; }
-const ICON = {
-  heart: '<svg viewBox="0 0 24 24"><path fill="#FF4058" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
-  bolt: '<svg viewBox="0 0 24 24"><polygon fill="#FFE600" stroke="#7a4a00" stroke-width="1" stroke-linejoin="round" points="13,2 4,14 11,14 10,22 20,9 13,9"/></svg>',
-  star: '<svg viewBox="0 0 24 24"><g stroke="#FF8A1F" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></g><circle cx="12" cy="12" r="5" fill="#FFC21A" stroke="#7a4a00" stroke-width="1.2"/></svg>',
-  lol: face('<path d="M6.3 10.2c.9-1.9 2.7-1.9 3.6 0M14.1 10.2c.9-1.9 2.7-1.9 3.6 0" fill="none" stroke="#3a2200" stroke-width="1.4" stroke-linecap="round"/><path d="M6.6 13.4h10.8c0 3.7-2.4 6-5.4 6s-5.4-2.3-5.4-6z" fill="#3a2200"/><path d="M9.2 17.6c1.6-1.2 4-1.2 5.6 0-.8 1.2-2 1.7-2.8 1.7s-2-.5-2.8-1.7z" fill="#ff6b6b"/>'),
-  wow: face('<ellipse cx="8.3" cy="9.6" rx="1.5" ry="2" fill="#3a2200"/><ellipse cx="15.7" cy="9.6" rx="1.5" ry="2" fill="#3a2200"/><path d="M6.4 6.6c.9-.8 2.4-.9 3.4-.3M14.2 6.3c1-.6 2.5-.5 3.4.3" fill="none" stroke="#3a2200" stroke-width="1.1" stroke-linecap="round"/><ellipse cx="12" cy="16.6" rx="2.6" ry="3.3" fill="#3a2200"/>'),
-  cool: face('<path d="M3.4 8.6h17.2v2.4c0 2.1-1.4 3.4-3.3 3.4-1.9 0-3.2-1.4-3.5-3.1h-3.6c-.3 1.7-1.6 3.1-3.5 3.1-1.9 0-3.3-1.3-3.3-3.4z" fill="#1b1300"/><path d="M7.6 17.2c2.6 2.3 6.2 2.3 8.8 0" fill="none" stroke="#3a2200" stroke-width="1.5" stroke-linecap="round"/>'),
-  sad: face('<circle cx="8.4" cy="10" r="1.3" fill="#3a2200"/><circle cx="15.6" cy="10" r="1.3" fill="#3a2200"/><path d="M6.8 7.4l3-.9M17.2 7.4l-3-.9" fill="none" stroke="#3a2200" stroke-width="1.2" stroke-linecap="round"/><path d="M8.6 18c1.9-2.4 5-2.4 6.8 0" fill="none" stroke="#3a2200" stroke-width="1.5" stroke-linecap="round"/><path d="M7.3 12.6c-1 1.5-1.3 2.5-.5 3.1.8.6 1.8 0 1.6-1.1-.1-.8-.6-1.4-1.1-2z" fill="#5CE1FF"/>'),
-  down: '<svg viewBox="0 0 24 24"><path fill="#8FA3D6" stroke="#1b2540" stroke-width=".9" stroke-linejoin="round" d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>'
-};
-
-
-/* Consistent neon line-art replaces the cartoon face reaction illustrations. */
-function neonIcon(body,color="#F4FF1A"){
- return '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke="'+color+'" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">'+body+'</g></svg>';
+/* Glossy sunny artwork shared by counters, cascades, and spectacles.
+   Inline SVG keeps the finish consistent across projector operating systems. */
+let iconSerial=0;
+function polishedIcon(body,top="#FFF6B0",bottom="#FFAA16"){
+ const id="sunny-icon-"+(++iconSerial);
+ return '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="'+id+'" cx="32%" cy="20%" r="85%"><stop stop-color="'+top+'"/><stop offset=".48" stop-color="'+bottom+'"/><stop offset="1" stop-color="#C66C12"/></radialGradient></defs><g stroke-linecap="round" stroke-linejoin="round">'+body.replaceAll("GLOSS",'url(#'+id+')')+'</g></svg>';
 }
-Object.assign(ICON,{
- heart:neonIcon('<path d="M32 55 10 33C-5 15 16 0 32 19 48 0 69 15 54 33Z" fill="#FF4D8D55"/>',"#FF5D94"),
- bolt:neonIcon('<path d="M37 5 14 35h17l-4 24 24-32H34Z" fill="#F4FF1A33"/>'),
- star:neonIcon('<circle cx="32" cy="32" r="11"/><path d="M32 3v13m0 32v13M3 32h13m32 0h13M11 11l9 9m24 24 9 9M53 11l-9 9M20 44l-9 9"/>',"#FFCA36"),
- lol:neonIcon('<circle cx="32" cy="32" r="25"/><path d="M19 25q6-6 12 0m3 0q6-6 12 0M18 37q14 21 28 0Z"/>',"#F9CE53"),
- wow:neonIcon('<circle cx="32" cy="32" r="25"/><circle cx="24" cy="25" r="2" fill="#D9A8FF"/><circle cx="40" cy="25" r="2" fill="#D9A8FF"/><ellipse cx="32" cy="42" rx="7" ry="10"/>',"#CBA9FF"),
- cool:neonIcon('<circle cx="32" cy="32" r="25"/><path d="M13 24h17l2 8h-7q-8 0-12-8m19 0h19q-3 8-12 8h-5zM23 44q9 6 18 0"/>',"#65FEE0"),
- sad:neonIcon('<circle cx="32" cy="32" r="25"/><path d="M21 26h5m13 0h5M23 45q9-11 18 0M19 29l-4 10"/>',"#8AC7FF"),
- down:neonIcon('<path d="M28 12h20v25H33l4 17-8 4-14-25V12Z"/><path d="M11 12v25"/>',"#F2A3C7"),
- spark:neonIcon('<path d="M32 4l8 20 20 8-20 8-8 20-8-20-20-8 20-8Z"/>',"#F4FF1A"),
- comet:neonIcon('<path d="M3 57C24 44 28 31 34 21M7 37l23-13"/><circle cx="45" cy="19" r="12"/>',"#80FFB0"),
- galaxy:neonIcon('<ellipse cx="32" cy="32" rx="29" ry="12" transform="rotate(-30 32 32)"/><ellipse cx="32" cy="32" rx="23" ry="17" transform="rotate(30 32 32)"/><circle cx="32" cy="32" r="7" fill="#BDA0FF"/>',"#CDB1FF"),
- supernova:neonIcon('<circle cx="32" cy="32" r="13"/><path d="M32 2v14m0 32v14M2 32h14m32 0h14M10 10l11 11m22 22 11 11M54 10 43 21M21 43 10 54"/>',"#F4FF1A")
-});
+function sunnyFace(features){
+ return polishedIcon('<circle cx="32" cy="32" r="26" fill="GLOSS"/><path d="M17 17q10-9 23-5" stroke="#fff" stroke-opacity=".65" stroke-width="3"/>'+features);
+}
+const eye='<g fill="#573015"><ellipse cx="23" cy="27" rx="2.4" ry="3.3"/><ellipse cx="41" cy="27" rx="2.4" ry="3.3"/></g>';
+const smile='<path d="M22 39q10 12 20 0" stroke="#573015" stroke-width="3"/>';
+const rays='<path d="M32 3v7m0 44v7M3 32h7m44 0h7M11 11l5 5m32 32 5 5M53 11l-5 5M16 48l-5 5" stroke="#FFD86B" stroke-width="3"/>';
+const ICON={
+ heart:polishedIcon('<path d="M32 56 10 35C-4 20 13 4 26 15l6 6 6-6C51 4 68 20 54 35Z" fill="GLOSS"/><path d="M12 24q0-9 10-7" stroke="#fff" stroke-opacity=".8" stroke-width="3"/>',"#FFD7E3","#FF4979"),
+ bolt:polishedIcon('<path d="m37 4-23 32h17l-4 24 24-34H35Z" fill="GLOSS"/><path d="m33 15-12 17h9" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>'),
+ star:polishedIcon(rays+'<circle cx="32" cy="32" r="17" fill="GLOSS"/><path d="M22 23q6-6 14-4" stroke="#fff" stroke-opacity=".7" stroke-width="2.5"/>'),
+ lol:sunnyFace('<path d="M17 27q6-8 12 0m6 0q6-8 12 0" stroke="#573015" stroke-width="3"/><path d="M19 37h26q-2 17-13 17T19 37" fill="#573015"/><path d="M25 48q7-6 14 0" stroke="#FF8795" stroke-width="5"/>'),
+ wow:sunnyFace(eye+'<ellipse cx="32" cy="44" rx="6" ry="8" fill="#573015"/>'),
+ cool:sunnyFace('<path d="M12 23h17l3 3 3-3h17l-3 12H36l-4-7-4 7H15Z" fill="#253647"/><path d="m18 26 6 1m16-1 6 1" stroke="#A5E8FF" stroke-width="2"/>'+smile),
+ sad:sunnyFace(eye+'<path d="M23 47q9-10 18 0" stroke="#573015" stroke-width="3"/><path d="M17 32q-9 11-1 13 8-1 1-13" fill="#75D9FF"/>'),
+ down:polishedIcon('<path d="M26 12h21v25H34l3 15q0 6-7 5L15 34V15Z" fill="GLOSS"/><rect x="7" y="12" width="7" height="25" rx="3" fill="#FFE8A2"/><path d="M30 17h12" stroke="#fff" stroke-opacity=".65" stroke-width="2.5"/>'),
+ spark:polishedIcon('<path d="m30 5 7 18 19 7-19 7-7 20-7-20-18-7 18-7Z" fill="GLOSS"/><path d="m50 3 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#FFF2B2"/><path d="m29 15-3 11-11 4" stroke="#fff" stroke-opacity=".75" stroke-width="2"/>'),
+ comet:polishedIcon('<path d="M5 57 24 17l24 23Z" fill="GLOSS" opacity=".8"/><path d="m7 47 20-24M17 53l19-22" stroke="#FFF0A0" stroke-width="3"/><circle cx="42" cy="22" r="17" fill="GLOSS"/><path d="M33 15q5-5 12-3" stroke="#fff" stroke-opacity=".8" stroke-width="2.5"/>'),
+ galaxy:polishedIcon('<ellipse cx="32" cy="32" rx="29" ry="12" transform="rotate(-30 32 32)" stroke="#FFD98A" stroke-width="4"/><circle cx="32" cy="32" r="14" fill="GLOSS"/><path d="M7 42q24 4 49-22" stroke="#FFF2C7" stroke-width="3"/><circle cx="52" cy="47" r="2" fill="#FFF3CB"/><circle cx="12" cy="13" r="3" fill="#FFF3CB"/>'),
+ supernova:polishedIcon(rays+'<circle cx="32" cy="32" r="19" fill="GLOSS"/><path d="M21 22q8-8 17-4" stroke="#fff" stroke-opacity=".8" stroke-width="3"/><path d="M25 37q7 8 14 0" stroke="#92500E" stroke-width="2.5"/><circle cx="25" cy="29" r="2" fill="#92500E"/><circle cx="39" cy="29" r="2" fill="#92500E"/>')
+};
 
 const $ = function (s) { return document.querySelector(s); };
 const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
@@ -796,7 +792,7 @@ function markScreenStatus(msg){
  window.__photoWallStatus=msg;
  console.info("[Photo Wall]",msg);
  const el=document.getElementById("playbackStatus");
- if(el)el.textContent=msg;
+ if(el){el.textContent="";el.hidden=true;}
 }            
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
@@ -811,7 +807,7 @@ function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
 function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) {
-  if(on){hint.textContent="A SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
+  if(on){hint.textContent="ALWAYS SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
   qrcard.className = on ? "on" : "";
   // Hide media-specific attribution on the dedicated QR scan screen.
   document.body.classList.toggle("qr-screen", !!on);
