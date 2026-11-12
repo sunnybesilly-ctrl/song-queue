@@ -252,7 +252,6 @@ function lock(reason = "") {
   browseVersion++; $("#memoryGrid").replaceChildren(); $("#browseStatus").textContent = "Loading memories…"; $("#emptyMediaAction").hidden = true;
   access = null; now = {}; sent = 0; sentEl.textContent = "0";
   nimg.removeAttribute("src"); nimg.hidden = true; nname.textContent = "Choose a photo or video";
-  msgIn.value = ""; say("", false);
   $("#private").hidden = true; $("#gate").hidden = false; gateMessage(reason);
 }
 function hasPass() {
