@@ -65,6 +65,20 @@ service cloud.firestore {
    allow update: if false;
    allow delete: if admin();
   }
+  // Live event comments: each note belongs to exactly one media item and event.
+  match /photo_comments/{id} {
+   allow read: if admin() || (admitted() &&
+     resource.data.eventId == get(/databases/$(database)/documents/gallery_state/current).data.eventId);
+   allow create: if admitted() &&
+     request.resource.data.keys().hasOnly(['mediaId','eventId','name','uid','text','t']) &&
+     validGuestEntry(request.resource.data) &&
+     request.resource.data.mediaId != '' &&
+     request.resource.data.text is string &&
+     request.resource.data.text.size() >= 1 &&
+     request.resource.data.text.size() <= 160;
+   allow update: if false;
+   allow delete: if admin();
+  }
   // Retired signing feature: old notes remain available only in DJ archive.
   match /comments/{id} {
    allow read, delete: if admin();
