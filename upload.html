@@ -309,7 +309,6 @@ function clearPreview() {
   imageEdit.hidden = true;
   editVideo.removeAttribute("src");
   editImage.removeAttribute("src");
-  videoDuration = 0;
   selectedIsVideo = false;
   drop.classList.remove("has");
 }
@@ -361,7 +360,7 @@ fileIn.addEventListener("change", () => {
     $("#editorHelp").textContent = "Choose a shape for the screen. Your original upload stays untouched.";
   }
   if (isV && f.size > MAX_VIDEO_MB * 1048576) {
-    fail("That video is " + fmtSize(f.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Trim it or pick a shorter one.");
+    fail("That video is " + fmtSize(f.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Choose a smaller or shorter video.");
   }
 });
 
@@ -465,7 +464,7 @@ form.addEventListener("submit", async (e) => {
   const isImage = file.type.indexOf("image/") === 0;
   if (!isVideo && !isImage) return fail("That file type can't play on the screen. Pick a photo or a video.");
   if (isVideo && file.size > MAX_VIDEO_MB * 1048576) {
-    return fail("That video is " + fmtSize(file.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Trim it or pick a shorter one.");
+    return fail("That video is " + fmtSize(file.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Choose a smaller or shorter video.");
   }
 
   setBusy(true);
