@@ -656,6 +656,10 @@ body.qr-screen #bar .who{display:none!important}
 @media(orientation:portrait){#giftTally{top:7vh;right:2vw;max-width:92vw}.gift-stream{font-size:7vw}.gift-symbol{width:55vw!important;height:55vw!important}}
 @media(prefers-reduced-motion:reduce){.gift-rays,.gift-shockwave,.gift-stream{animation:none;opacity:.3}
  .gift-hero{animation:giftMainSweep 4.5s ease-out both}}
+#playbackStatus{position:absolute;z-index:35;right:1vw;bottom:calc(var(--bar) + .5vh);
+ max-width:58vw;padding:3px 8px;color:#e7ffbd;font:700 clamp(9px,1.25vh,14px)/1.2 system-ui;
+ background:#061a1099;border:1px solid #9eff7760;border-radius:4px;pointer-events:none;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -666,7 +670,7 @@ body.qr-screen #bar .who{display:none!important}
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
-<div id="rx"></div><div id="giftTally" aria-live="off" aria-label="Spectacles received"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
+<div id="rx"></div><div id="giftTally" aria-live="off" aria-label="Spectacles received"></div><div id="playbackStatus" role="status"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
 
 <div id="qrcard">
   <div class="qt">
@@ -806,7 +810,14 @@ function showPauseStatus(){
   cmt.hidden=true;hint.hidden=false;
   hint.textContent="Resume the screen in your DJ Admin Control Room.";
 }
-let mode = "boot";            
+let mode = "boot";
+let lastPlaybackStartedAt=0,mediaLoadStartedAt=0,lastRecoveryAt=0;
+function markScreenStatus(msg){
+ window.__photoWallStatus=msg;
+ console.info("[Photo Wall]",msg);
+ const el=document.getElementById("playbackStatus");
+ if(el)el.textContent=msg;
+}            
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
 let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null, needTap = null;
@@ -1226,6 +1237,7 @@ function videoFail(m, isFresh, why) {
 }
 
 function show(m, isFresh, gesture) {
+  mediaLoadStartedAt=Date.now();markScreenStatus("LOADING "+(m.type||"media")+" · "+(m.id||"").slice(0,8));
   const my = ++tok;
   clearTimeout(timer); clearTimeout(wd);
   mode = "loop";
@@ -1311,6 +1323,8 @@ function show(m, isFresh, gesture) {
 }
 
 function reveal(w, m, isFresh, my) {
+  lastPlaybackStartedAt=Date.now();mediaLoadStartedAt=0;
+  markScreenStatus("PLAYING: "+(m.name||"Guest")+" · "+(m.type||"media"));
   const old = cur;
   cur = w; curItem = m; lastId = m.id; revealAt = Date.now();
   if (qrcard.className === "on") showQR(false);
@@ -1424,7 +1438,7 @@ function nextInner() {
   show(p.m, p.fresh);
 }
 function qrInterlude() {
-  mode = "qr"; tok++; lastQR = Date.now();
+  mode = "qr"; tok++; lastQR = Date.now();markScreenStatus("SCAN BREAK · resumes in 18 seconds");
   stopMedia();clearMediaSignature(); showQR(true);
   timer = setTimeout(function () {
     showQR(false);
@@ -1432,7 +1446,7 @@ function qrInterlude() {
   }, QR_HOLD_MS);
 }
 function goIdle(retry) {
-  mode = "idle"; tok++; lastQR = Date.now();
+  mode = "idle"; tok++; lastQR = Date.now();markScreenStatus("IDLE · "+items.length+" media ready");
   stopMedia();clearMediaSignature(); showQR(true); setBarIdle();
   if (retry) timer = setTimeout(next, 5000);
 }
@@ -1777,6 +1791,7 @@ async function processMediaSnapshot(snap) {
     return false;
   };
   if(!curItem && list.length){
+    markScreenStatus("SIGNING LINKS · "+list.length+" media record(s)");
     nmEl.textContent="LOADING EVENT MEDIA";
     if(!cShowing){
       hint.textContent="Connecting to the first photo or video…";
@@ -1792,6 +1807,7 @@ async function processMediaSnapshot(snap) {
   }
   if(revision!==mediaRevision||eventAtStart!==currentEventId)return;
   if(!ready.length&&list.length){
+    markScreenStatus("SECURE LINK ERROR · "+safeMediaError(firstError));
     nmEl.textContent="MEDIA LINK ERROR";
     cmt.hidden=true;hint.hidden=false;
     hint.textContent="Secure playback unavailable: "+safeMediaError(firstError)+". Check the deployed signing function.";
@@ -1819,6 +1835,7 @@ async function processMediaSnapshot(snap) {
   window.__djMediaReceived = true;
   const leavingArchive=archivePlayback&&!fallback&&!!curItem;
   archivePlayback=fallback;items=list;
+  markScreenStatus(items.length?("READY · "+items.length+" media item(s)"+(fallback?" · earlier event":"")):"NO PLAYABLE MEDIA");
   refreshArchiveReactions();refreshArchiveGifts();updateGiftTally();recoverRecentGiftSpectacles();
   if (list.length && !cShowing) { hint.textContent = fallback ? "Playing earlier memories until this event receives new photos and videos." : "Tonight’s memories · live"; hint.hidden = false; }
   if(leavingArchive){stopMedia();mode="idle";pos=-1;}
@@ -1833,7 +1850,7 @@ async function processMediaSnapshot(snap) {
     if (!screenPaused) { stopMedia(); next(); }
   }
   if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
-  if (mode === "boot" || mode === "idle") next();
+  if (mode === "boot" || mode === "idle" || (mode==="qr"&&!lastPlaybackStartedAt&&items.length)) next();
   if(screenPaused && !curItem && list.length)showPauseStatus();
 }
 onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), function (snap) {
@@ -1921,6 +1938,37 @@ onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(100)), 
   }
 },function(e){console.warn("Signatures unavailable:",e);});
 }
+
+/* Independent playback recovery for QR screens and stale signed links. */
+setInterval(()=>{
+ if(!displayAuth.currentUser||document.hidden)return;
+ if(screenPaused){markScreenStatus("SCREEN PAUSED · resume from Admin");return;}
+ const now=Date.now();
+ if(!items.length){
+   if(mediaSnapshot&&now-lastRecoveryAt>24000){
+     lastRecoveryAt=now;
+     markScreenStatus("NO PLAYABLE MEDIA · retrying secure links");
+     void processMediaSnapshot(mediaSnapshot).catch(e=>markScreenStatus("MEDIA ERROR · "+safeMediaError(e)));
+   }
+   return;
+ }
+ if(mode==="qr"&&!lastPlaybackStartedAt&&now-lastQR>3500){
+   markScreenStatus("STARTING FIRST MEDIA");
+   clearTimeout(timer);mode="idle";next();return;
+ }
+ if(mode==="qr"&&now-lastQR>QR_HOLD_MS+5500){
+   markScreenStatus("QR TIMEOUT · RESUMING");
+   clearTimeout(timer);mode="idle";next();return;
+ }
+ if(mode==="idle"&&now-lastRecoveryAt>8000){
+   lastRecoveryAt=now;markScreenStatus("IDLE RECOVERY · STARTING MEDIA");
+   next();return;
+ }
+ if(mode==="loop"&&!curItem&&mediaLoadStartedAt&&now-mediaLoadStartedAt>19000){
+   markScreenStatus("MEDIA LOAD STALLED · SKIPPING");
+   mediaLoadStartedAt=0;tok++;clearTimeout(wd);next();return;
+ }
+},5000);
 const loginCover=document.createElement("div");
 loginCover.id="projectorLogin";
 loginCover.style.cssText="position:fixed;inset:0;z-index:2147483647;background:#06140b;color:#eeff12;display:flex;align-items:center;justify-content:center;font:18px system-ui;padding:20px";
