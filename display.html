@@ -1024,6 +1024,7 @@ function cascadeReaction(kind,amount=1){
 // For each media appearance, use actual Firestore gift receipts, rather
 // than relying on transient listeners that might connect before the video.
 const displayedGiftVisits=new Map();
+const giftsShownSinceLoad=new Set();
 let spectacleSnapshotReady=false;
 function showPendingGifts(id){
  if(!curItem||curItem.id!==id||mode!=="loop")return;
@@ -1039,13 +1040,14 @@ function showPendingGifts(id){
  }
  const queued=pendingGiftMedia.get(id)||[];
  pendingGiftMedia.delete(id);
- const shouldReplay=visit===1||visit%3===0||queued.length>0;
+ const shouldReplay=!giftsShownSinceLoad.has(id)||visit%3===0||queued.length>0;
  if(shouldReplay)for(const d of docs){
    if(shown.has(d.id))continue;
    shown.add(d.id);
    featureGift(d.data().kind,d.data().name);
  }
  displayedGiftVisits.set(key,shown);
+ if(shown.size)giftsShownSinceLoad.add(id);
  markScreenStatus("MEDIA "+id.slice(0,8)+" · SPECTACLES "+docs.length+(docs.length?" · EFFECTS READY":" · NO SAVED GIFTS"));
 }
 
@@ -1739,7 +1741,7 @@ function resetForEventChange() {
   if (wd) { clearTimeout(wd); wd = null; }
   stopMedia();
   lastPlaybackStartedAt=0;mediaLoadStartedAt=0;
-  displayedGiftVisits.clear();
+  displayedGiftVisits.clear();giftsShownSinceLoad.clear();
   giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();seenGiftIds.clear();giftSpotlightIds.length=0;document.getElementById("giftStage").replaceChildren();document.getElementById("giftTally").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
   stage.replaceChildren();
   clearRx();
