@@ -104,11 +104,7 @@ body{font-family:var(--body);color:var(--bone)}
 @keyframes blink{50%{opacity:.45}}
 .say{flex:1;min-width:0;display:flex;align-items:center;padding:0 2vw;overflow:hidden}
 .hint{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:3.8vh;line-height:.98;color:var(--lime)}
-.cmt{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
-.cmt.pop{animation:cin .45s cubic-bezier(.2,.9,.2,1) both}
 @keyframes cin{0%{opacity:0;transform:translateY(5vh)}100%{opacity:1;transform:none}}
-.cmt b{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.8vh;letter-spacing:.08em;color:var(--acid)}
-.cmt span{font-weight:700;font-size:3.6vh;line-height:1.05;color:var(--bone);max-height:7.6vh;overflow:hidden}
 .qrs{flex:0 0 auto;display:flex;align-items:center;padding:0 1.2vw}
 .q{margin-left:1.2vw;text-align:center}
 .q .tile{width:9.6vh;height:9.6vh}
@@ -186,8 +182,6 @@ body{font-family:var(--body);color:var(--bone)}
   .q i{font-size:2.3vw;letter-spacing:.06em;line-height:1.15;white-space:normal}
   .say{grid-column:1/-1;grid-row:2;padding:0 4vw;border-top:2px solid var(--line)}
   .hint{font-size:5.2vw;line-height:1.02}
-  .cmt b{font-size:3.6vw}
-  .cmt span{font-size:4.5vw;line-height:1.1;max-height:none;overflow-wrap:anywhere}
 
   #qrcard{flex-direction:column;justify-content:center;align-items:stretch;padding:0 7vw}
   .qt .a{font-size:min(30vw,calc(var(--dv)*12.5))}
@@ -215,11 +209,6 @@ body{font-family:var(--body);color:var(--bone)}
   .cap .s{font-size:4.4vw}
   .t2{font-size:min(14vw,calc(var(--dv)*8));padding-top:0;grid-column:1/-1}
   
-  .pg.sig{display:flex !important; flex-direction:column; justify-content:center;}
-  .sig-grid{grid-template-columns:1fr;gap:1.2vh;padding-top:1vh;}
-  .sig-card{padding:1.5vh 4vw;}
-  .sig-text{font-size:4vw;}
-  .sig-name{font-size:3.2vw;}
 
   .pg.cls{display:flex}
   .grid{flex:0 0 auto}
@@ -238,8 +227,6 @@ body{font-family:var(--body);color:var(--bone)}
  .tv-safe .hr{font-size:2.5vh;margin-top:.7vh}
  .tv-safe .say{height:100%;padding:1vh 1.7vw;align-items:center}
  .tv-safe .hint{font-size:clamp(19px,3.15vh,34px);line-height:1.12;overflow-wrap:anywhere}
- .tv-safe .cmt span{font-size:clamp(17px,2.7vh,30px);line-height:1.14;max-height:12vh;overflow-wrap:anywhere}
- .tv-safe .cmt b{font-size:2.35vh}
  .tv-safe .qrs{height:100%;padding:0 .5vw;align-items:center;gap:.9vw}
  .tv-safe .q{margin:0;min-width:0}
  .tv-safe .q .tile{width:8.3vh;height:8.3vh;margin:auto}
@@ -475,9 +462,6 @@ body.qr-screen #qrcard .scan-text p{font-size:clamp(15px,2.4vh,30px);line-height
  border:0;overflow:hidden;
 }
 #bar .hint,.tv-safe #bar .hint{display:none}
-#bar .cmt{margin-left:min(38vw,650px);padding-left:1.1vw;min-width:0}
-#bar .cmt b{font-size:clamp(12px,1.8vh,21px)}
-#bar .cmt span{font-size:clamp(14px,2.2vh,27px);max-height:5vh;overflow:hidden}
 #brand,.tv-safe #brand{
  display:flex!important;position:absolute;left:2vw;top:auto;bottom:1vh;
  z-index:20;max-width:35vw;gap:clamp(5px,.7vw,13px);padding:0;border:0;
@@ -533,7 +517,6 @@ body.qr-screen #bar .who{display:none!important}
  #brand .brand-copy span{font-size:1.85vw}
  #bar .who .nm{display:none}
  #bar .who .hr{font-size:5vw}
- #bar .say .cmt{display:none}
  #rx.docked{top:1vh;right:2vw;max-width:92vw}
 }
 @media(prefers-reduced-motion:reduce){.gift-hero{animation:giftVoyagePro 2.6s ease-out both}.gift-hero:before,.gift-hero:after{animation:none}}
