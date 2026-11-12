@@ -263,11 +263,6 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
   <button id="clearRx" type="button">Wipe reactions only</button>
   <button id="clearAll" type="button">Wipe everything</button>
 
-  <div class="sigs">
-    <h2>Signatures</h2>
-    <div id="sigList"></div>
-  </div>
-
   <div class="library-head"><div><span class="eyebrow">CONTENT LIBRARY</span><h2>Media &amp; rotation</h2><p>Pause individual memories, manage playback, and keep the gallery curated.</p></div></div>
   <div id="grid"></div>
 </div>
@@ -524,11 +519,11 @@ $("injectBtn").addEventListener("click", async () => {
   btn.disabled = false;
 });
 
-/* ---- wipe: photos, videos, reactions and signatures ---- */
+/* ---- wipe active media and reactions; legacy notes remain private in the archive ---- */
 $("clearAll").addEventListener("click", async () => {
-  if (!confirm("WIPE EVERYTHING? Photos, videos, reactions and signatures. The screen will reset.")) return;
+  if (!confirm("WIPE MEDIA AND REACTIONS? The screen will reset. Historical notes and gift records remain in your private Event Archive.")) return;
   try {
-    await Promise.all(["media_queue", "reactions", "comments"].map(async (name) => {
+    await Promise.all(["media_queue", "reactions"].map(async (name) => {
       const s = await getDocs(collection(db, name));
       await Promise.all(s.docs.map((d) => deleteDoc(d.ref)));
     }));
@@ -700,21 +695,7 @@ function startApp() {
   }, (e) => console.warn(e));
   onSnapshot(collection(db, "reactions"), (snap) => { rxDocs = snap.docs; $("rxCount").textContent = rxSum(rxDocs).n; renderGrid(); }, (e) => console.warn(e));
 
-  onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(40)), (snap) => {
-    const list = $("sigList");
-    list.innerHTML = "";
-    if (snap.empty) { list.appendChild(h("p", "empty", "No signatures yet.")); }
-    snap.forEach((d) => {
-      const c = d.data();
-      const row = h("div", "sig"), t = h("div", "t");
-      t.appendChild(h("b", "", c.name || "A guest"));
-      t.appendChild(document.createTextNode(c.text || ""));
-      const del = h("button", "", "DELETE");
-      del.addEventListener("click", async () => { try { await deleteDoc(d.ref); } catch (e) { alert(e.message); } });
-      row.appendChild(t); row.appendChild(del);
-      list.appendChild(row);
-    });
-  }, (e) => console.warn(e));
+
 }
 
 /* ---- download everything ---- */
