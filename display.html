@@ -1050,7 +1050,7 @@ function showPendingGifts(id){
 }
 
 function markMediaEffectsStatus(id){
- const giftCount=giftSnapshot?.docs.filter(d=>d.data().mediaId===id&&(archivePlayback||d.data().eventId===currentEventId)).length||0;
+ const giftCount=giftSnapshot?.docs.filter(d=>d.data().mediaId===id).length||0;
  const reactionCount=RX[id]?.n||0;
  const eventHint=giftSnapshot?"SYNCED":"WAITING FOR GIFTS";
  const media=find(id);
@@ -1701,7 +1701,7 @@ function mediaPlaybackSignature(snap){
   return [currentEventId||"",...snap.docs.map(d=>{const x=d.data();return d.id+"|"+(x.url||"")+"|"+(x.type||"")+"|"+(x.eventId||"")+"|"+!!x.rotationPaused;})].join("\n");
 }
 function refreshArchiveReactions(){if(!reactionSnapshot)return;const ids=new Set(items.map(x=>x.id));rebuildRx(reactionSnapshot.docs.filter(d=>ids.has(d.data().mediaId) && (archivePlayback||d.data().eventId===currentEventId)));}
-function refreshArchiveGifts(){Object.keys(GIFT).forEach(id=>delete GIFT[id]);if(!giftSnapshot)return;const ids=new Set(items.map(x=>x.id));giftSnapshot.docs.forEach(d=>{const v=d.data();if(!ids.has(v.mediaId)||!ICON[v.kind]||(!archivePlayback&&v.eventId!==currentEventId))return;const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});counts[v.kind]=(counts[v.kind]||0)+1;});}
+function refreshArchiveGifts(){Object.keys(GIFT).forEach(id=>delete GIFT[id]);if(!giftSnapshot)return;const ids=new Set(items.map(x=>x.id));giftSnapshot.docs.forEach(d=>{const v=d.data();if(!ids.has(v.mediaId)||!ICON[v.kind])return;const counts=GIFT[v.mediaId]||(GIFT[v.mediaId]={});counts[v.kind]=(counts[v.kind]||0)+1;});}
 const GIFT_LABELS={spark:"Starlight",comet:"Comet",galaxy:"Galaxy",supernova:"Supernova"};
 function updateGiftTally(){
   const node=document.getElementById("giftTally");
