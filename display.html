@@ -680,6 +680,7 @@ body.qr-screen #bar .who{display:none!important}
 .spectacle-live[data-kind="comet"] .spectacle-art{position:fixed;left:38%;top:34%;height:clamp(140px,32vh,360px);width:clamp(140px,32vh,360px);z-index:8;animation:cometShoot 4.7s cubic-bezier(.12,.48,.28,.95) both}
 .spectacle-live[data-kind="comet"] .spectacle-art::before{content:"";position:absolute;right:55%;top:55%;width:75vw;height:15%;border-radius:50%;background:linear-gradient(90deg,transparent,#5efcdb30 25%,#a5ffe9b0 80%,#ffffe1e8);filter:blur(11px);transform:translateY(-50%) rotate(-22deg);transform-origin:right center}
 @keyframes cometShoot{0%{opacity:0;transform:translate(-105vw,48vh) rotate(-25deg) scale(.45)}15%{opacity:1}60%{opacity:1;transform:translate(5vw,-6vh) rotate(-25deg) scale(1.12)}100%{opacity:0;transform:translate(110vw,-55vh) rotate(-25deg) scale(.58)}}
+.spectacle-live[data-kind="galaxy"] .spectacle-star{left:var(--x);top:var(--y);width:var(--size);height:var(--size);box-shadow:0 0 18px #dcc6ff,0 0 39px #9cfff4}
 .spectacle-live[data-kind="galaxy"] .spectacle-wash{background:radial-gradient(ellipse at 50% 45%,#fff7a3aa,#b8a4ff88 18%,#6642b87d 43%,#154b6566 70%,transparent 93%);animation:galaxyBloom 5s ease-in-out both}
 .spectacle-live[data-kind="galaxy"] .spectacle-ring{width:80vmin;height:80vmin;border-color:#e0c4ffad;box-shadow:0 0 75px #b9a1ff,0 0 180px #94ffd380}
 .spectacle-live[data-kind="galaxy"] .spectacle-orbit{position:absolute;left:50%;top:50%;z-index:1;width:80vmin;height:28vmin;border:4px solid #d5bdffb0;border-radius:50%;box-shadow:0 0 40px #a884ff;animation:galaxyOrbit 5s linear both}
@@ -862,7 +863,7 @@ function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
 function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) {
-  if(on){hint.textContent="ALWAYS SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
+  if(on){hint.textContent="AN ALWAYS SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
   qrcard.className = on ? "on" : "";
   // Hide media-specific attribution on the dedicated QR scan screen.
   document.body.classList.toggle("qr-screen", !!on);
