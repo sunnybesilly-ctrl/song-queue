@@ -642,6 +642,34 @@ body.qr-screen #bar .who{display:none!important}
 @keyframes spectacle-star{0%{opacity:0;transform:translateY(15vh) scale(.2)}25%{opacity:1}100%{opacity:0;transform:translate(var(--drift),-45vh) scale(.6)}}
 @media (orientation:portrait){.spectacle-name{font-size:11vw}.spectacle-from{font-size:6vw}.spectacle-art{width:45vw;height:45vw}}
 @media(prefers-reduced-motion:reduce){.spectacle-shine,.spectacle-stars{display:none}.spectacle-copy{animation:spectacle-in 5s both}}
+
+/* Sunny TV footer: bigger attribution below yellow rule, and larger cascading light trails. */
+:root{--bar:10.5vh}
+@media(orientation:landscape){html.tv-safe{--bar:10.5vh}}
+#bar,.tv-safe #bar{grid-template-columns:minmax(0,37%) minmax(0,63%);padding:.7vh 2vw;gap:.8vw}
+#bar .who,.tv-safe #bar .who{grid-column:2;justify-content:flex-end;gap:clamp(5px,.8vw,16px);overflow:hidden;white-space:nowrap}
+#bar .who .posted-by{flex:none;font:800 clamp(15px,2.6vh,29px)/1 var(--body);color:#c1efd1}
+#bar .who .posted-by[hidden]{display:none!important}
+#bar .who .nm,.tv-safe #bar .who .nm{display:block;flex:0 1 auto;max-width:52%;font:900 clamp(22px,3.9vh,44px)/1 var(--display);color:var(--acid);text-transform:none;letter-spacing:.015em;overflow:hidden;text-overflow:ellipsis}
+#bar .who .hr,.tv-safe #bar .who .hr{font-size:clamp(21px,3.9vh,42px);margin-left:.5vw;gap:.5vw}
+#bar .who .hr svg{width:clamp(22px,3.8vh,40px);height:clamp(22px,3.8vh,40px)}
+#brand,.tv-safe #brand{left:2vw;bottom:1.3vh;max-width:37vw}
+#brand .brand-copy strong{font-size:clamp(24px,3.75vh,44px);letter-spacing:.025em}
+#brand .brand-copy span{font-size:clamp(10px,1.65vh,19px)}
+@media(orientation:portrait){
+ :root{--bar:12vh}
+ #bar,.tv-safe #bar{grid-template-columns:minmax(0,38%) minmax(0,62%)}
+ #brand,.tv-safe #brand{max-width:36vw}
+ #brand .brand-copy strong{font-size:clamp(13px,3.2vw,25px);white-space:normal;line-height:.9}
+ #brand .brand-copy span{font-size:clamp(8px,1.75vw,13px);white-space:normal}
+ #bar .who .posted-by{font-size:clamp(10px,2.7vw,16px)}
+ #bar .who .nm,.tv-safe #bar .who .nm{font-size:clamp(14px,4vw,30px);max-width:49%}
+ #bar .who .hr{font-size:clamp(14px,4vw,28px)}
+ #bar .who .hr svg{width:4vw;height:4vw}
+}
+#reactionCascade .cascade-icon{width:clamp(37px,7.8vh,87px);height:clamp(37px,7.8vh,87px);filter:drop-shadow(0 0 9px #faff9c9c) drop-shadow(0 7px 5px #0008)}
+#reactionCascade .cascade-icon::before{content:"";position:absolute;z-index:-1;left:45%;top:-80%;width:12%;height:78%;border-radius:90%;background:linear-gradient(transparent,#fcffa52b,#fcffc2bb);filter:blur(5px)}
+#reactionCascade .cascade-icon svg{width:100%;height:100%}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -669,7 +697,7 @@ body.qr-screen #bar .who{display:none!important}
 
 <div id="bar">
   <div class="who">
-    <div class="lab">Shot by</div>
+    <span class="posted-by" id="postedBy">Posted by:</span>
     <div class="nm" id="nm">Nobody yet</div>
     <div class="hr"><span id="hi"></span><b id="hn">0</b></div>
     <div class="new" id="newb">Just dropped</div>
@@ -679,7 +707,7 @@ body.qr-screen #bar .who{display:none!important}
   </div>
 </div>
 
-<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>ALWAYS SUNNY</strong><span>NEVERPARTLYCLOUDY PRODUCTION</span></span></div>
+<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>An Always Sunny</strong><span>NEVERPARTLYCLOUDY PRODUCTION</span></span></div>
 <div id="vbadge"></div>
 <div id="toast"></div>
 
@@ -768,7 +796,7 @@ const $$ = function (s) { return Array.prototype.slice.call(document.querySelect
 const PORT = window.matchMedia("(orientation: portrait)");
 const rxBox = $("#rx");
 const stage = $("#stage"), flashEl = $("#flash"), qrcard = $("#qrcard"), fx = $("#fx"), toastEl = $("#toast");
-const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint");
+const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint"), postedBy=$("#postedBy");
 $("#hi").innerHTML = ICON.heart;
 
 let items = [], pos = -1, fresh = [], seen = false;
@@ -781,7 +809,7 @@ function effectivePause(v){
   // A pause left from an earlier event must not block a freshly started event.
   return !(activeEventStartedMs && changed && changed < activeEventStartedMs);
 }
-function showPauseStatus(){
+function showPauseStatus(){ postedBy.hidden=true;
   nmEl.textContent="SCREEN PAUSED";
   hint.hidden=false;
   hint.textContent="Resume the screen in your DJ Admin Control Room.";
@@ -972,13 +1000,13 @@ function cascadeReaction(kind,amount=1){
  if(!curItem||mode!=="loop"||!ICON[kind]||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
  const pane=document.getElementById("reactionCascade");
  if(!pane)return;
- const id=curItem.id, sideWidth=Math.max(68,pane.clientWidth*.145);
- const quantity=Math.min(7,Math.max(1,amount));
+ const id=curItem.id, sideWidth=Math.max(110,pane.clientWidth*.17);
+ const quantity=Math.min(9,Math.max(1,amount));
  for(let i=0;i<quantity;i++)setTimeout(()=>{
   if(curItem?.id!==id||mode!=="loop")return;
   const icon=h("span","cascade-icon");icon.innerHTML=ICON[kind];
   const right=i%2===1;
-  const x=right?pane.clientWidth-sideWidth+Math.random()*(sideWidth-46):Math.random()*(sideWidth-46);
+  const x=right?pane.clientWidth-sideWidth+Math.random()*(sideWidth-80):Math.random()*(sideWidth-80);
   icon.style.left=Math.max(3,x)+"px";
   icon.style.setProperty("--sway",(Math.random()*35-18)+"px");
   pane.appendChild(icon);setTimeout(()=>icon.remove(),3450);
@@ -1161,12 +1189,12 @@ function setHearts(id, bumpIt) {
 }
 function setBar(m, isFresh) {
   hint.textContent = "Tonight’s memories · live"; hint.hidden = false;
-  nmEl.textContent = m.name || "Somebody";
+  postedBy.hidden=false; nmEl.textContent = m.name || "Somebody";
   nmEl.className = "nm"; void nmEl.offsetWidth; nmEl.className = "nm slam";
   newb.style.display = isFresh ? "block" : "none";
   setHearts(m.id, false);
 }
-function setBarIdle() {
+function setBarIdle() { postedBy.hidden=true;
   nmEl.textContent = !window.__djMediaReceived ? "CONNECTING..." : items.length ? "MEDIA FAILED TO LOAD" : "NO MEDIA FOUND";
   nmEl.className = "nm"; hnEl.textContent = "0"; newb.style.display = "none";
 }
