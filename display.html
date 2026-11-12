@@ -698,6 +698,31 @@ body.qr-screen #bar .who{display:none!important}
 .spectacle-landing{position:absolute;z-index:3;width:clamp(12px,2.4vh,28px);height:clamp(12px,2.4vh,28px);border-radius:50%;background:radial-gradient(circle,#fff,#fff592 35%,transparent 75%);filter:drop-shadow(0 0 13px #fff7a7);pointer-events:none;animation:sunnyLanding 1.8s ease-out both}
 @keyframes sunnyLanding{0%{opacity:0;transform:translateY(-23vh) scale(.2)}40%{opacity:.9;transform:translateY(0) scale(1.5)}75%{opacity:.7;transform:scale(1.2)}100%{opacity:0;transform:scale(.2)}}
 @media(prefers-reduced-motion:reduce){.spectacle-live[data-kind="spark"] .spectacle-star,.spectacle-live[data-kind="comet"] .spectacle-art,.spectacle-live[data-kind="galaxy"] .spectacle-orbit,.spectacle-live[data-kind="supernova"] .spectacle-wash,#stage.sunny-quake,.spectacle-landing{animation:none!important}.spectacle-landing{display:none}}
+
+/* Editorial on-air composition: pure black canvas, clean type, reserved yellow. */
+html,body{background:#000000}
+#stage{background:#000000}
+#stage .mi{background:#00000000}
+.w{background:#00000000}
+.w.triptych{background:#000000}
+#bar,.tv-safe #bar{background:#000000;border-top:2px solid #f4ff1a;box-shadow:none}
+#brand,.tv-safe #brand{background:none;box-shadow:none;text-shadow:none;border:0}
+#brand .brand-symbol{filter:none;text-shadow:none}
+#rx.docked,.tv-safe #rx.docked{background:#000000ad;border:1px solid #ffffff20;box-shadow:none}
+#giftTally{background:#000000b8;border:1px solid #ffffff28;box-shadow:none}
+#giftTally .gift-tally-badge{background:#141414;border:1px solid #ffffff2b}
+#mediaComments{position:fixed;z-index:9;inset:12vh 0 calc(var(--bar) + 1vh);pointer-events:none;overflow:hidden}
+.media-comment{position:absolute;display:flex;flex-direction:column;gap:.55vh;max-width:21vw;width:max-content;min-width:10vw;padding:1.2vh 1vw;background:#000000bb;border-left:2px solid #f4ff1a;border-radius:0;box-shadow:none;font-family:var(--body);animation:commentAppear .45s ease-out both}
+.media-comment.left{left:1.3vw}
+.media-comment.right{right:1.3vw}
+.media-comment:nth-child(-n+2){top:28%}
+.media-comment:nth-child(n+3){top:59%}
+.comment-author{font-size:clamp(14px,2.1vh,24px);line-height:1;color:#f4ff1a;font-weight:800;overflow-wrap:anywhere}
+.comment-body{font-size:clamp(14px,2.25vh,26px);line-height:1.22;color:#ffffff;overflow-wrap:anywhere;font-weight:650}
+@keyframes commentAppear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+body.qr-screen #mediaComments{display:none}
+@media(orientation:portrait){.media-comment{max-width:31vw;padding:7px}.comment-author{font-size:12px}.comment-body{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.media-comment{animation:none}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -721,7 +746,7 @@ body.qr-screen #bar .who{display:none!important}
   </div>
 </div>
 
-<div id="fx"></div>
+<div id="fx"></div><div id="mediaComments" aria-live="off" aria-label="Comments on the current memory"></div>
 
 <div id="bar">
   <div class="who">
@@ -863,6 +888,7 @@ function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
 function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) {
+  if(on)document.getElementById("mediaComments").replaceChildren();
   if(on){hint.textContent="AN ALWAYS SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
   qrcard.className = on ? "on" : "";
   // Hide media-specific attribution on the dedicated QR scan screen.
@@ -1278,7 +1304,7 @@ function drop(w) {
   }
   if (w.parentNode) w.parentNode.removeChild(w);
 }
-function stopMedia() { Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); document.getElementById("reactionCascade").replaceChildren();cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; clearRx(); }
+function stopMedia() { document.getElementById("mediaComments").replaceChildren(); Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); document.getElementById("reactionCascade").replaceChildren();cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; clearRx(); }
 
 function usable(m) {
   if (!isBad(m)) return m;
@@ -1448,6 +1474,7 @@ function reveal(w, m, isFresh, my) {
   playPendingTestSpectacle();
   setHearts(m.id,false);
   updateGiftTally();
+  renderMediaComments();
   // Gifts are animated only on arrival, not replayed with each media loop.
   try {sessionStorage.setItem("photowall_views_"+currentEventId,JSON.stringify(views));}catch(_){}
   clearRx();
@@ -1827,6 +1854,26 @@ onSnapshot(query(collection(db, "media_queue"), orderBy("timestamp", "asc")), fu
 });
 
 let rInit = false;
+// Comments are event-scoped and rendered only beside their own currently playing media.
+let livePhotoComments=[];
+function renderMediaComments(){
+ const rail=document.getElementById("mediaComments");
+ rail.replaceChildren();
+ if(mode!=="loop"||!curItem||!currentEventId)return;
+ const notes=livePhotoComments.filter(d=>d.eventId===currentEventId&&d.mediaId===curItem.id)
+   .sort((a,b)=>(b.t?.seconds||0)-(a.t?.seconds||0)).slice(0,4);
+ notes.forEach((note,i)=>{
+  const card=h("div","media-comment");
+  card.classList.add(i%2?"right":"left");
+  const label=h("strong","comment-author",String(note.name||"Guest").slice(0,24));
+  const body=h("span","comment-body",String(note.text||"").slice(0,160));
+  card.append(label,body);rail.appendChild(card);
+ });
+}
+onSnapshot(collection(db,"photo_comments"), snap=>{
+ livePhotoComments=snap.docs.map(d=>d.data());
+ renderMediaComments();
+},err=>console.warn("Per-media comments unavailable:",err));
 onSnapshot(collection(db, "reactions"), function (s) {
   reactionSnapshot = s;
   refreshArchiveReactions();
