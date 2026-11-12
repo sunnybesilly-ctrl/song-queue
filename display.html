@@ -1091,7 +1091,11 @@ function markMediaEffectsStatus(id){
  const reactionCount=RX[id]?.n||0;
  const eventHint=giftSnapshot?"SYNCED":"WAITING FOR GIFTS";
  const media=find(id);
- markScreenStatus("PLAYING "+String(media?.name||id).slice(0,22)+" · REACTIONS "+reactionCount+" · SPECTACLES "+giftCount+" · "+eventHint);
+ const video=curItem?.id===id&&cur?.firstChild?.tagName==="VIDEO"?cur.firstChild:null;
+ const length=video&&Number.isFinite(video.duration)?video.duration:0;
+ const trim=media?.trimStart||media?.trimEnd?" · SAVED TRIM "+Number(media.trimStart||0).toFixed(1)+"–"+(media.trimEnd||"end"):"";
+ const timing=video?(" · VIDEO "+(length?length.toFixed(1)+"s":"loading")+trim):"";
+ markScreenStatus("PLAYING "+String(media?.name||id).slice(0,22)+" · REACTIONS "+reactionCount+" · SPECTACLES "+giftCount+timing+" · "+eventHint);
 }
 
 function featureGift(kind,name){
