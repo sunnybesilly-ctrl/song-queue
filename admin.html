@@ -172,6 +172,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 .guest-invite-actions button{border:1px solid #bdff91;border-radius:9px;min-height:46px;background:#0c291b;color:#e8ffcb;font-weight:900;padding:9px 12px;cursor:pointer}
 .guest-invite-note{font-size:12px;color:#b3d2bb;line-height:1.5}
 @media(max-width:460px){.guest-invite-card{flex-direction:column;text-align:center}.guest-invite-actions{justify-content:center}#guestInviteQr{width:min(65vw,240px)}}
+.spectacle-confirmed{padding:12px 15px;border:1px solid #7cdb9e66;border-radius:12px;margin-top:14px;background:#041b0dc9;color:#efffd4;font-size:14px;font-weight:800;line-height:1.5}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -245,6 +246,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
       <button type="button" data-kind="supernova">☀<strong>SUPERNOVA</strong></button>
     </div>
     <p id="adminGiftStatus" role="status" aria-live="polite">Choose a memory, sender name, and spectacle.</p>
+    <div id="adminGiftCount" class="spectacle-confirmed">Confirmed saved spectacles: checking Firebase…</div>
   </section>
   <div class="stats">
     <div class="stat">PHOTOS <span id="photoCount">0</span></div>
@@ -295,7 +297,15 @@ const galleryCall=(name)=>httpsCallable(galleryFn,name);
 const createUpload = galleryCall("createPhotoWallUpload");
 const photoLinks = createAdminPhotoLinks(galleryCall("signAdminPhotoWallUrls"));
 const galleryMsg=document.getElementById("galleryCodeStatus");
-let adminGiftEvent=null,adminGiftBusy=false;
+let adminGiftEvent=null,adminGiftBusy=false,adminGiftRecords=[];
+function refreshAdminGiftCount(){
+ const id=$("adminGiftMedia").value;
+ const rows=adminGiftRecords.filter(x=>x.eventId===adminGiftEvent&&(!id||x.mediaId===id));
+ const names={spark:"Starlight",comet:"Comet",galaxy:"Galaxy",supernova:"Supernova"};
+ const parts=Object.entries(names).map(([k,n])=>n+": "+rows.filter(x=>x.kind===k).length);
+ $("adminGiftCount").textContent=(id?"Selected media":"Active event")+" · "+rows.length+" confirmed spectacle"+(rows.length===1?"":"s")+" saved in Firebase · "+parts.join(" · ");
+}
+$("adminGiftMedia").addEventListener("change",refreshAdminGiftCount);
 const adminGiftSender=galleryCall("sendAdminPhotoGift");
 const giftLabels={spark:"Starlight",comet:"Comet",galaxy:"Galaxy",supernova:"Supernova"};
 function updateAdminGiftList(){
@@ -311,6 +321,7 @@ function updateAdminGiftList(){
   menu.appendChild(o);
  });
  if([...menu.options].some(o=>o.value===old))menu.value=old;
+ refreshAdminGiftCount();
 }
 $("adminGiftButtons").addEventListener("click",async e=>{
  const btn=e.target.closest("button[data-kind]");if(!btn||adminGiftBusy)return;
@@ -647,6 +658,10 @@ function renderGrid() {
 }
 
 function startApp() {
+  onSnapshot(collection(db,"photo_gifts"),s=>{
+    adminGiftRecords=s.docs.map(d=>({id:d.id,...d.data()}));
+    refreshAdminGiftCount();
+  },e=>{$("adminGiftCount").textContent="Gift record check failed: "+(e.message||e)});
   onSnapshot(overrideRef,(snap)=>{
     displayOverride=snap.exists()?snap.data():null;
     $("overrideStatus").textContent=displayOverride&&displayOverride.paused?"Screen paused":displayOverride&&displayOverride.active?(displayOverride.repeat?"Repeating selected video":"Playing selected video once"):"Normal slideshow";
