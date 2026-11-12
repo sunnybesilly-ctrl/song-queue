@@ -35,12 +35,7 @@ h2{font-family:var(--display);font-weight:900;text-transform:uppercase;color:var
 #download-all:disabled{background:var(--line);border-color:var(--line);color:var(--dim);cursor:default}
 #clearAll{display:block;width:100%;max-width:420px;margin:0 auto;padding:12px;background:transparent;border:2px solid var(--alarm);color:var(--alarm);font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:26px;border-radius:0;cursor:pointer}
 #clearAll:hover{background:var(--alarm);color:#fff}
-.sigs{max-width:640px;margin:30px auto 0}
-.sig{display:flex;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
-.sig .t{flex:1;min-width:0;font-size:15px;word-break:break-word}
-.sig .t b{color:var(--acid);margin-right:8px}
-.sig button,.del{background:var(--alarm);color:#fff;border:0;border-radius:0;padding:7px 12px;font-weight:700;cursor:pointer}
-.sig button{margin-left:10px}
+.del{background:var(--alarm);color:#fff;border:0;border-radius:0;padding:7px 12px;font-weight:700;cursor:pointer}
 .empty{color:var(--dim);text-align:center;grid-column:1/-1}
 #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-top:26px}
 .card{position:relative;border:1px solid var(--line);background:#0a140c;display:flex;flex-direction:column}
@@ -106,8 +101,6 @@ body>.brand{text-align:left;margin:0 0 32px;font-size:14px}
 #download-all{background:var(--lime);border-color:var(--lime)}
 #clearRx{border-color:#c7b464;color:#f0d57b}
 #clearAll{border-color:#a94d59;color:#ff8b97}
-.sigs{max-width:none;margin:20px 0 30px;padding:22px;border:1px solid #315741;border-radius:18px;background:#0d1b13}
-.sigs h2{font-size:29px}
 .library-head{margin:28px 0 6px}
 #grid{grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:18px;margin-top:18px}
 .card{border:1px solid #315741;border-radius:17px;overflow:hidden;background:#0d1a12;box-shadow:0 10px 26px #0003;transition:transform .15s,border-color .15s}
@@ -261,7 +254,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 
   <button id="download-all" type="button" onclick="downloadAll()">📥 DOWNLOAD ALL MEDIA</button>
   <button id="clearRx" type="button">Wipe reactions only</button>
-  <button id="clearAll" type="button">Wipe everything</button>
+  <button id="clearAll" type="button">Wipe media &amp; reactions</button>
 
   <div class="library-head"><div><span class="eyebrow">CONTENT LIBRARY</span><h2>Media &amp; rotation</h2><p>Pause individual memories, manage playback, and keep the gallery curated.</p></div></div>
   <div id="grid"></div>
