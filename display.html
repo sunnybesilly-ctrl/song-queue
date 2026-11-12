@@ -1776,8 +1776,16 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
   if(wantPause) applyScreenPause(true);
   const key=v&&v.active?v.mediaId+"|"+!!v.repeat+"|"+(v.changedAt&&v.changedAt.seconds||0)+"|"+(v.changedAt&&v.changedAt.nanoseconds||0):"";
   if(key!==overrideKey){
-    overrideKey=key; override=v; overridePlayed=false;
-    if(!wantPause && mode!=="yearbook"){ screenPaused=false; mode="idle"; next(); }
+    const previousKey=overrideKey;
+    overrideKey=key;override=v;overridePlayed=false;
+    // Initial controls arriving after the first video starts must not tear
+    // down that video. Likewise, non-playback control updates are harmless.
+    const forceNewVideo=!!(v?.active&&v.mediaId&&v.mediaId!==curItem?.id);
+    const clearOldForced=!!(previousKey&&!v?.active&&mode==="loop"&&curItem?.id);
+    if(!wantPause&&mode!=="yearbook" &&
+       (forceNewVideo || (mode!=="loop"&&!curItem) || (clearOldForced&&curItem?.type!=="video"))){
+      screenPaused=false;mode="idle";next();
+    }
   }
   if(!wantPause) applyScreenPause(false);
 },function(e){console.warn("Display control unavailable:",e);});
