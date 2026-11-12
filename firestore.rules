@@ -14,10 +14,8 @@ service cloud.firestore {
      get(/databases/$(database)/documents/gallery_access/$(request.auth.uid)).data.expiresAt > request.time &&
      get(/databases/$(database)/documents/gallery_state/current).data.active == true;
   }
-  // Guest reactions/comments belong to a verified six-hour event pass.
-  // Reactions: mediaId, name, uid, eventId, c (eight bounded counters), t.
-  // Comments: mediaId, name, uid, eventId, text (1..60 characters), t.
-  // Guests can create entries; only the DJ can read all events or delete entries.
+  // Guest reactions require a verified six-hour event pass.
+  // Historical guest messages are read-only admin archive data.
   function validGuestEntry(data) {
    return data.keys().hasAll(['mediaId', 'name', 'uid', 'eventId', 't']) &&
      data.uid == request.auth.uid &&
@@ -41,11 +39,6 @@ service cloud.firestore {
      validCount(data.c, 'star') && validCount(data.c, 'lol') &&
      validCount(data.c, 'wow') && validCount(data.c, 'cool') &&
      validCount(data.c, 'sad') && validCount(data.c, 'down');
-  }
-  function validComment(data) {
-   return validGuestEntry(data) &&
-     data.keys().hasOnly(['mediaId', 'name', 'uid', 'eventId', 'text', 't']) &&
-     data.text is string && data.text.size() > 0 && data.text.size() <= 60;
   }
   match /media_queue/{id} {
    allow read: if admin() || (admitted() && resource.data.get('eventId', null) ==
@@ -72,12 +65,10 @@ service cloud.firestore {
    allow update: if false;
    allow delete: if admin();
   }
+  // Retired signing feature: old notes remain available only in DJ archive.
   match /comments/{id} {
-   allow read: if admin() || (admitted() && resource.data.eventId ==
-     get(/databases/$(database)/documents/gallery_state/current).data.eventId);
-   allow create: if admitted() && validComment(request.resource.data);
-   allow update: if false;
-   allow delete: if admin();
+   allow read, delete: if admin();
+   allow create, update: if false;
   }
   match /state/{id} {
    allow read: if admin() || admitted();
