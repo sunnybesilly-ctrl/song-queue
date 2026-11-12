@@ -1000,8 +1000,25 @@ function cascadeReaction(kind,amount=1){
  },i*170);
 }
 function showPendingGifts(id){
- const q=pendingGiftMedia.get(id)||[];pendingGiftMedia.delete(id);
- q.forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
+ // Firestore is the source of truth, not the transient arrival queue.
+ // A gift sent while the projector was off must still get its full animation
+ // when the associated memory plays. Replay every third visit so a guest can
+ // actually see it, instead of silently marking an unseen animation as done.
+ const queued=pendingGiftMedia.get(id)||[];
+ pendingGiftMedia.delete(id);
+ const records=giftSnapshot?.docs.filter(d=>{
+   const v=d.data();
+   return v.mediaId===id && !!ICON[v.kind] &&
+     (archivePlayback||v.eventId===currentEventId);
+ }).sort((a,b)=>(a.data().t?.toMillis?.()||0)-(b.data().t?.toMillis?.()||0))||[];
+ const visit=views[id]||1;
+ if(records.length && (visit===1 || visit%3===0 || queued.length)){
+   const selected=records.slice(-16);
+   selected.forEach(d=>featureGift(d.data().kind,d.data().name));
+   console.info("Photo Wall: playing",selected.length,"confirmed spectacles for",id,"on visit",visit);
+ }else if(queued.length){
+   queued.forEach(g=>featureGift(typeof g==="string"?g:g.kind,typeof g==="string"?"":g.name));
+ }
 }
 function featureGift(kind,name){
  if(!ICON[kind]||!curItem||mode!=="loop")return;
@@ -1333,6 +1350,7 @@ function reveal(w, m, isFresh, my) {
     timer = setTimeout(next, ms);
   }
   views[m.id] = (views[m.id] || 0) + 1;
+  // Confirmed spectacles replay on first appearance, then periodically.
   showPendingGifts(m.id);
   setHearts(m.id,false);
   updateGiftTally();
@@ -1881,7 +1899,11 @@ onSnapshot(collection(db,"photo_gifts"),function(s){
  giftInit=true;
  recoverRecentGiftSpectacles();
  if(curItem && mode==="loop" && views[curItem.id]>1)showRx(cur.firstChild,curItem,true);
-},function(e){console.warn("Gifts unavailable until deployed:",e);});
+},function(e){
+ console.error("Photo Wall gifts listener failed:",e);
+ const badge=document.getElementById("giftTally");
+ badge.replaceChildren(h("strong","gift-tally-header","SPECTACLES NOT SYNCED: "+(e.code||e.message||"unknown")));
+});
 
 onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(100)), function(s){
   commentSnapshot=s;
