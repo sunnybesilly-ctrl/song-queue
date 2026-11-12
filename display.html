@@ -670,6 +670,33 @@ body.qr-screen #bar .who{display:none!important}
 #reactionCascade .cascade-icon{width:clamp(37px,7.8vh,87px);height:clamp(37px,7.8vh,87px);filter:drop-shadow(0 0 9px #faff9c9c) drop-shadow(0 7px 5px #0008)}
 #reactionCascade .cascade-icon::before{content:"";position:absolute;z-index:-1;left:45%;top:-80%;width:12%;height:78%;border-radius:90%;background:linear-gradient(transparent,#fcffa52b,#fcffc2bb);filter:blur(5px)}
 #reactionCascade .cascade-icon svg{width:100%;height:100%}
+
+/* Distinct high-value sunny gift choreography, built on the existing live spectacle. */
+.spectacle-live[data-kind="spark"] .spectacle-wash{background:radial-gradient(ellipse,#e6ffef36,transparent 73%)}
+.spectacle-live[data-kind="spark"] .spectacle-star{left:var(--x);top:var(--y);width:var(--size);height:var(--size);border-radius:2px;background:#fffdd6;box-shadow:0 0 14px #fffab7,0 0 38px #a0ffe5;animation:starlightTwinkle var(--twinkle) ease-in-out var(--d) infinite alternate}
+@keyframes starlightTwinkle{0%{opacity:.07;transform:rotate(45deg) scale(.25)}45%{opacity:1;transform:rotate(45deg) scale(1.5)}100%{opacity:.15;transform:rotate(90deg) scale(.5)}}
+.spectacle-live[data-kind="comet"] .spectacle-wash{background:linear-gradient(135deg,transparent,#a9ffed27 45%,transparent)}
+.spectacle-live[data-kind="comet"] .spectacle-ring,.spectacle-live[data-kind="comet"] .spectacle-shine{display:none}
+.spectacle-live[data-kind="comet"] .spectacle-art{position:fixed;left:38%;top:34%;height:clamp(140px,32vh,360px);width:clamp(140px,32vh,360px);z-index:8;animation:cometShoot 4.7s cubic-bezier(.12,.48,.28,.95) both}
+.spectacle-live[data-kind="comet"] .spectacle-art::before{content:"";position:absolute;right:55%;top:55%;width:75vw;height:15%;border-radius:50%;background:linear-gradient(90deg,transparent,#5efcdb30 25%,#a5ffe9b0 80%,#ffffe1e8);filter:blur(11px);transform:translateY(-50%) rotate(-22deg);transform-origin:right center}
+@keyframes cometShoot{0%{opacity:0;transform:translate(-105vw,48vh) rotate(-25deg) scale(.45)}15%{opacity:1}60%{opacity:1;transform:translate(5vw,-6vh) rotate(-25deg) scale(1.12)}100%{opacity:0;transform:translate(110vw,-55vh) rotate(-25deg) scale(.58)}}
+.spectacle-live[data-kind="galaxy"] .spectacle-wash{background:radial-gradient(ellipse at 50% 45%,#fff7a3aa,#b8a4ff88 18%,#6642b87d 43%,#154b6566 70%,transparent 93%);animation:galaxyBloom 5s ease-in-out both}
+.spectacle-live[data-kind="galaxy"] .spectacle-ring{width:80vmin;height:80vmin;border-color:#e0c4ffad;box-shadow:0 0 75px #b9a1ff,0 0 180px #94ffd380}
+.spectacle-live[data-kind="galaxy"] .spectacle-orbit{position:absolute;left:50%;top:50%;z-index:1;width:80vmin;height:28vmin;border:4px solid #d5bdffb0;border-radius:50%;box-shadow:0 0 40px #a884ff;animation:galaxyOrbit 5s linear both}
+.spectacle-live[data-kind="galaxy"] .spectacle-orbit:nth-of-type(2){width:90vmin;height:36vmin;border-color:#a6fff3b0;animation-direction:reverse}
+.spectacle-live[data-kind="galaxy"] .spectacle-orbit:nth-of-type(3){width:100vmin;height:43vmin;border-color:#ffe5a6b0;animation-delay:-.35s}
+@keyframes galaxyBloom{0%,100%{opacity:0;transform:scale(.25)}25%{opacity:.9;transform:scale(.95)}65%{opacity:1;transform:scale(1.25)}}
+@keyframes galaxyOrbit{0%{opacity:0;transform:translate(-50%,-50%) rotate(-45deg) scale(.4)}20%{opacity:.9}75%{opacity:.8}100%{opacity:0;transform:translate(-50%,-50%) rotate(320deg) scale(1.75)}}
+.spectacle-live[data-kind="supernova"] .spectacle-wash{inset:-35%;background:radial-gradient(circle,#fffce9e8 0%,#fff66eb8 14%,#f4ff1a97 35%,#78ffb76b 65%,transparent 85%);animation:supernovaBurst 5s both}
+.spectacle-live[data-kind="supernova"] .spectacle-ring{width:78vmin;height:78vmin;border-color:#fff8dd;animation:supernovaShock 5s both}
+.spectacle-live[data-kind="supernova"] .spectacle-shine{background:repeating-conic-gradient(#fff7b58c 0 5deg,transparent 5deg 14deg)}
+@keyframes supernovaBurst{0%,100%{opacity:0;transform:scale(.1)}19%{opacity:1;transform:scale(.8)}37%{opacity:.8;transform:scale(1.8)}75%{opacity:.48;transform:scale(2.5)}}
+@keyframes supernovaShock{0%{opacity:0;transform:scale(.1)}18%{opacity:1}70%{opacity:.45}100%{opacity:0;transform:scale(5)}}
+#stage.sunny-quake{animation:sunnyQuake 780ms ease-in-out both;transform-origin:center}
+@keyframes sunnyQuake{0%,100%{transform:none}12%{transform:translate(-5px,3px) scale(1.02)}25%{transform:translate(5px,-4px) scale(1.025)}38%{transform:translate(-4px,-3px) scale(1.02)}52%{transform:translate(4px,3px) scale(1.02)}68%{transform:translate(-2px,2px) scale(1.01)}82%{transform:translate(2px,-1px) scale(1.006)}}
+.spectacle-landing{position:absolute;z-index:3;width:clamp(12px,2.4vh,28px);height:clamp(12px,2.4vh,28px);border-radius:50%;background:radial-gradient(circle,#fff,#fff592 35%,transparent 75%);filter:drop-shadow(0 0 13px #fff7a7);pointer-events:none;animation:sunnyLanding 1.8s ease-out both}
+@keyframes sunnyLanding{0%{opacity:0;transform:translateY(-23vh) scale(.2)}40%{opacity:.9;transform:translateY(0) scale(1.5)}75%{opacity:.7;transform:scale(1.2)}100%{opacity:0;transform:scale(.2)}}
+@media(prefers-reduced-motion:reduce){.spectacle-live[data-kind="spark"] .spectacle-star,.spectacle-live[data-kind="comet"] .spectacle-art,.spectacle-live[data-kind="galaxy"] .spectacle-orbit,.spectacle-live[data-kind="supernova"] .spectacle-wash,#stage.sunny-quake,.spectacle-landing{animation:none!important}.spectacle-landing{display:none}}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1081,14 +1108,29 @@ function playGift(){
    const copy=h("div","spectacle-copy");
    copy.append(art,title,from);
    const stars=h("div","spectacle-stars");
-   for(let i=0;i<32;i++){
+   for(let i=0;i<(gift.kind==="spark"?80:gift.kind==="galaxy"?100:48);i++){
      const x=h("i","spectacle-star");
-     x.style.setProperty("--x",((i*37)%100)+"%");
+     x.style.setProperty("--x",((i*37+Math.random()*16)%100)+"%");
+     x.style.setProperty("--y",((i*23+Math.random()*26)%100)+"%");
+     x.style.setProperty("--size",(6+Math.random()*18)+"px");
+     x.style.setProperty("--twinkle",(0.4+Math.random()*1.1)+"s");
      x.style.setProperty("--d",((i*13)%19)/10+"s");
      x.style.setProperty("--drift",((i%2?1:-1)*(20+i%8))+"vw");
      stars.appendChild(x);
    }
    root.append(wash,ring,shine,stars,copy);
+   if(gift.kind==="galaxy"){for(let i=0;i<3;i++)root.appendChild(h("div","spectacle-orbit"));}
+   if(gift.kind==="supernova"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
+     stage.classList.remove("sunny-quake");void stage.offsetWidth;stage.classList.add("sunny-quake");
+     setTimeout(()=>stage.classList.remove("sunny-quake"),850);
+   }
+   if((gift.kind==="spark"||gift.kind==="galaxy")&&cur?.querySelector(".mi")){
+     const box=mediaRect(cur.querySelector(".mi"));
+     [[.15,.78],[.85,.72],[.2,.23],[.79,.21]].forEach(([x,y],i)=>{
+       const glint=h("span","spectacle-landing");glint.style.left=(box.l+box.w*x)+"px";glint.style.top=(box.t+box.h*y)+"px";
+       glint.style.animationDelay=(.25+i*.3)+"s";root.appendChild(glint);
+     });
+   }
    overlay.replaceChildren(root);
    markScreenStatus("SPECTACLE ON SCREEN · "+(GIFT_LABELS[gift.kind]||gift.kind)+" · "+gift.name);
    setTimeout(()=>{
