@@ -1412,7 +1412,11 @@ function armVideo(v, my, m) {
 }
 
 function next() {
-  try { nextInner(); } catch (e) { console.error(e); clearTimeout(timer); timer = setTimeout(next, 4000); }
+  try { nextInner(); } catch (e) {
+    console.error("Photo Wall playback error",e);
+    markScreenStatus("PLAYBACK ERROR · "+(e?.message||e||"unknown"));
+    clearTimeout(timer);timer=setTimeout(next,4000);
+  }
 }
 function nextInner() {
   if (screenPaused) { if(!curItem)showPauseStatus();return; }
@@ -1720,6 +1724,7 @@ function resetForEventChange() {
   if (timer) { clearTimeout(timer); timer = null; }
   if (wd) { clearTimeout(wd); wd = null; }
   stopMedia();
+  lastPlaybackStartedAt=0;mediaLoadStartedAt=0;
   giftQueue.length=0;giftPlaying=false;pendingGiftMedia.clear();seenGiftIds.clear();giftSpotlightIds.length=0;document.getElementById("giftStage").replaceChildren();document.getElementById("giftTally").replaceChildren();document.getElementById("reactionCascade").replaceChildren();
   stage.replaceChildren();
   clearRx();
