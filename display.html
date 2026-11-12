@@ -1937,8 +1937,6 @@ onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(100)), 
       showSignatureFor(x.mediaId,{name:String(x.name||"Guest").slice(0,24),text:String(x.text).slice(0,70)});
   }
 },function(e){console.warn("Signatures unavailable:",e);});
-}
-
 /* Independent playback recovery for QR screens and stale signed links. */
 setInterval(()=>{
  if(!displayAuth.currentUser||document.hidden)return;
@@ -1969,6 +1967,8 @@ setInterval(()=>{
    mediaLoadStartedAt=0;tok++;clearTimeout(wd);next();return;
  }
 },5000);
+}
+
 const loginCover=document.createElement("div");
 loginCover.id="projectorLogin";
 loginCover.style.cssText="position:fixed;inset:0;z-index:2147483647;background:#06140b;color:#eeff12;display:flex;align-items:center;justify-content:center;font:18px system-ui;padding:20px";
