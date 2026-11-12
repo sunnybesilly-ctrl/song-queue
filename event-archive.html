@@ -4,7 +4,7 @@
 <style>
 :root{color-scheme:dark;--acid:#f4ff1a;--lime:#37ff76;--dim:#a3cbb1;--line:#285e3a}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 100% 0,#153e21,#020b06 60%);color:#eaffeb;font:16px system-ui,sans-serif;min-height:100vh}
-main{max-width:1180px;margin:auto;padding:24px 18px 80px}h1{font-size:clamp(48px,10vw,88px);line-height:.95;margin:20px 0;color:var(--acid);letter-spacing:-.055em;text-transform:uppercase}h2{font-size:25px;margin:0 0 12px}p,.sub{color:var(--dim);line-height:1.5}a{color:var(--lime)}nav{display:flex;gap:15px;flex-wrap:wrap}section{margin-top:24px}input,select,button{font:inherit;border-radius:10px}input,select{padding:12px;border:1px solid var(--line);background:#06170b;color:white;max-width:100%}button{padding:12px 18px;color:#061207;background:var(--acid);font-weight:800;border:0;cursor:pointer}button:disabled{opacity:.45;cursor:wait}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:20px 0}.panel{background:#0a1f11;border:1px solid var(--line);border-radius:16px;padding:20px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:20px 0}.stat{background:#0b2815;padding:16px;border:1px solid var(--line);border-radius:12px}.stat strong{font-size:28px;color:var(--acid);display:block}.stat span{color:var(--dim);font-size:13px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.card{background:#0b2012;border:1px solid var(--line);border-radius:14px;overflow:hidden}.card img,.card video{width:100%;height:210px;object-fit:contain;background:#000;display:block}.card .body{padding:14px}.card h3{margin:0 0 5px;color:var(--acid)}.card p{margin:5px 0;overflow-wrap:anywhere}.reaction{margin:8px 0;color:#ffde5a}.notes{background:#08180c;padding:12px;border-left:3px solid var(--lime);margin-top:12px}.notes p{margin:6px 0}.dl{display:inline-block;margin-top:8px}.muted{color:var(--dim)}[hidden]{display:none!important}
+main{max-width:1180px;margin:auto;padding:24px 18px 80px}h1{font-size:clamp(48px,10vw,88px);line-height:.95;margin:20px 0;color:var(--acid);letter-spacing:-.055em;text-transform:uppercase}h2{font-size:25px;margin:0 0 12px}p,.sub{color:var(--dim);line-height:1.5}a{color:var(--lime)}nav{display:flex;gap:15px;flex-wrap:wrap}section{margin-top:24px}input,select,button{font:inherit;border-radius:10px}input,select{padding:12px;border:1px solid var(--line);background:#06170b;color:white;max-width:100%}button{padding:12px 18px;color:#061207;background:var(--acid);font-weight:800;border:0;cursor:pointer}button:disabled{opacity:.45;cursor:wait}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:20px 0}.panel{background:#0a1f11;border:1px solid var(--line);border-radius:16px;padding:20px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:20px 0}.stat{background:#0b2815;padding:16px;border:1px solid var(--line);border-radius:12px}.stat strong{font-size:28px;color:var(--acid);display:block}.stat span{color:var(--dim);font-size:13px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}.card{background:#0b2012;border:1px solid var(--line);border-radius:14px;overflow:hidden}.card img,.card video{width:100%;height:210px;object-fit:contain;background:#000;display:block}.card .body{padding:14px}.card h3{margin:0 0 5px;color:var(--acid)}.card p{margin:5px 0;overflow-wrap:anywhere}.reaction{margin:8px 0;color:#ffde5a}.notes{background:#08180c;padding:12px;border-left:3px solid var(--lime);margin-top:12px}.notes p{margin:6px 0}.dl{display:inline-block;margin-top:8px}.muted{color:var(--dim)}[hidden]{display:none!important}details.legacy-notes{margin-top:24px}details.legacy-notes>summary{cursor:pointer;color:var(--dim);font-weight:800;padding:5px 0}details.legacy-notes[open]>summary{color:var(--acid)}.legacy-count{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:20px;background:#21442d;color:#eef7e7;font-size:13px}
 </style><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Archive">
@@ -12,13 +12,17 @@ main{max-width:1180px;margin:auto;padding:24px 18px 80px}h1{font-size:clamp(48px
 <link rel="icon" type="image/png" href="icons/archive.png?v=20261111-18">
 </head><body><main>
 <nav><a href="admin.html">← Control room</a><a href="display.html">Photo wall</a></nav>
-<h1>Event archive</h1><p>Private history of event media, reactions, and yearbook signatures. Only your verified DJ account can open this page.</p>
+<h1>Event archive</h1><p>Private history of event photos, videos, reactions, and gifts. Only your verified DJ account can open this page.</p>
 <section class="panel" id="login"><h2>Admin sign-in</h2><div class="bar"><input id="email" type="email" placeholder="Verified DJ email" autocomplete="username"><input id="password" type="password" placeholder="Password" autocomplete="current-password"><button id="signIn">Open archive</button></div><p id="loginStatus" role="status"></p></section>
 <section id="app" hidden><div class="bar"><label for="events">Event</label><select id="events"></select><button id="refresh">Refresh</button><button id="exportCsv">Download CSV</button><button id="exportJson">Download full JSON</button><button id="signOut">Sign out</button></div>
-<p id="status" role="status" class="sub">Loading history…</p><div class="stats"><div class="stat"><strong id="photos">0</strong><span>PHOTOS</span></div><div class="stat"><strong id="videos">0</strong><span>VIDEOS</span></div><div class="stat"><strong id="count">0</strong><span>REACTION TAPS</span></div><div class="stat"><strong id="signatures">0</strong><span>SIGNATURES</span></div><div class="stat"><strong id="giftCount">0</strong><span>GIFTS SENT</span></div><div class="stat"><strong id="creditsSpent">0</strong><span>GIFT CREDITS</span></div></div>
-<div class="panel"><h2>Event summary</h2><div id="summary" class="sub"></div><p class="sub">Exports include reaction and signature records; individual original files can be opened from their cards while still available from the media provider. Save downloaded exports to Google Drive for your own records. This page does not automatically back up files.</p></div>
+<p id="status" role="status" class="sub">Loading history…</p><div class="stats"><div class="stat"><strong id="photos">0</strong><span>PHOTOS</span></div><div class="stat"><strong id="videos">0</strong><span>VIDEOS</span></div><div class="stat"><strong id="count">0</strong><span>REACTION TAPS</span></div><div class="stat"><strong id="giftCount">0</strong><span>GIFTS SENT</span></div><div class="stat"><strong id="creditsSpent">0</strong><span>GIFT CREDITS</span></div></div>
+<div class="panel"><h2>Event summary</h2><div id="summary" class="sub"></div><p class="sub">Exports include reaction, gift, and historical note records; original media can be opened from their cards while still available from the media provider. Save downloaded exports to Google Drive for your own records. This page does not automatically back up files.</p></div>
 <section><h2>Photos and videos</h2><div id="cards" class="cards"></div></section>
-<section class="panel"><h2>Yearbook signatures</h2><div id="notes"></div></section>
+<details class="panel legacy-notes" id="legacy-notes">
+  <summary>Legacy notes from earlier test events <span id="legacyCount" class="legacy-count">0</span></summary>
+  <p class="sub">The old signing feature has been retired. These historical notes remain viewable and exportable here; there is no guest signing or TV yearbook mode.</p>
+  <div id="notes"></div>
+</details>
 </section></main>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -29,6 +33,7 @@ import {createAdminPhotoLinks} from "./photo-links.js";
 const config={apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-photo-wall.firebaseapp.com",projectId:"dj-photo-wall",storageBucket:"dj-photo-wall.firebasestorage.app",messagingSenderId:"187308843014",appId:"1:187308843014:web:a4dbf9c17011767890a387"};
 const app=initializeApp(config),db=getFirestore(app),auth=getAuth(app);
 const links=createAdminPhotoLinks(httpsCallable(getFunctions(app,"us-central1"),"signAdminPhotoWallUrls"));
+if(location.hash==="#legacy-notes")document.getElementById("legacy-notes").open=true;
 const $=id=>document.getElementById(id), kinds={heart:"❤️",bolt:"⚡",star:"☀️",lol:"😂",wow:"😮",cool:"😎",sad:"😭",down:"👎"};
 let all={media:[],reactions:[],comments:[],gifts:[]},state=null,current="";let loadVersion=0;
 const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
@@ -57,7 +62,7 @@ function render(){
  if(!current)return;
  const media=rows("media").sort((a,b)=>(a.timestamp?.seconds||0)-(b.timestamp?.seconds||0)),rx=rows("reactions"),comments=rows("comments"),gifts=rows("gifts");
  $("photos").textContent=media.filter(x=>x.type==="image").length;$("videos").textContent=media.filter(x=>x.type==="video").length;
- $("count").textContent=totalReaction();$("signatures").textContent=comments.length;$("giftCount").textContent=gifts.length;$("creditsSpent").textContent=gifts.reduce((n,g)=>n+(Number(g.cost)||0),0);
+ $("count").textContent=totalReaction();$("legacyCount").textContent=comments.length;$("giftCount").textContent=gifts.length;$("creditsSpent").textContent=gifts.reduce((n,g)=>n+(Number(g.cost)||0),0);
  const most=media.map(m=>({m,count:rx.filter(r=>r.mediaId===m.id).reduce((n,r)=>n+countReaction(r),0)})).sort((a,b)=>b.count-a.count);
  $("summary").textContent=media.length?media.length+" memories · "+rx.length+" reaction submissions · "+(most[0]?.count||0)+" taps on the most-reacted memory.":"No media stored for this event.";
  const grid=$("cards");grid.replaceChildren();
@@ -72,14 +77,12 @@ function render(){
   body.append(heading,date,summary,giftSummary);
   if(url){const a=el("a","dl","Open / save media");a.href=url;a.target="_blank";a.rel="noopener noreferrer";body.append(a)}
   else body.append(el("p","muted","Media preview unavailable or original no longer hosted."));
-  const notes=comments.filter(n=>n.mediaId===m.id);
-  if(notes.length){const wrap=el("div","notes");for(const n of notes)wrap.append(el("p","",(n.name||"Guest")+": "+(n.text||"")));body.append(wrap)}
   card.append(mediaEl,body);grid.append(card);
  }
  if(!media.length)grid.append(el("p","muted","No memories recorded for this event."));
  const list=$("notes");list.replaceChildren();
  for(const n of comments){const p=el("p","notes");p.textContent=(n.name||"Guest")+": "+(n.text||"");list.append(p)}
- if(!comments.length)list.append(el("p","muted","No yearbook signatures."));
+ if(!comments.length)list.append(el("p","muted","No legacy notes for this event."));
 }
 async function selectEvent(id){
  current=id;$("status").textContent="Preparing private media previews…";render();
