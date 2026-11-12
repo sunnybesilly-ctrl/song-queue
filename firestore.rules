@@ -43,7 +43,11 @@ service cloud.firestore {
   match /media_queue/{id} {
    allow read: if admin() || (admitted() && resource.data.get('eventId', null) ==
      get(/databases/$(database)/documents/gallery_state/current).data.eventId);
-   allow create: if request.resource.data.get('v', 0) != 3 || (
+   allow create: if request.resource.data.get('v', 0) == 3 && (
+     request.resource.data.keys().hasOnly(['v','eventId','name','url','publicId','type','timestamp','likes','rx','rxTotal','uid']) &&
+     request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 24 &&
+     request.resource.data.likes == 0 &&
+     request.resource.data.get('rx', {}) == {} && request.resource.data.get('rxTotal', 0) == 0 &&
      request.resource.data.publicId == id &&
      exists(/databases/$(database)/documents/photo_wall_uploads/$(id)) &&
      get(/databases/$(database)/documents/photo_wall_uploads/$(id)).data.expiresAt > request.time &&
@@ -55,7 +59,11 @@ service cloud.firestore {
        id + '[.][a-zA-Z0-9]+$') &&
      request.resource.data.timestamp == request.time
    );
-   allow update: if admin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+   allow update: if admin() || (admitted() &&
+     resource.data.get('eventId', null) == get(/databases/$(database)/documents/gallery_state/current).data.eventId &&
+     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']) &&
+     request.resource.data.likes is int &&
+     request.resource.data.likes == resource.data.get('likes', 0) + 1);
    allow delete: if admin();
   }
   match /reactions/{id} {

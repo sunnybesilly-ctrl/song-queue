@@ -84,7 +84,7 @@ exports.sendPhotoGift = onCall(OPT, async req => {
  const kind = String((req.data && req.data.kind) || "");
  const mediaId = String((req.data && req.data.mediaId) || "");
  const name = String((req.data && req.data.name) || "Guest").trim().slice(0,24) || "Guest";
- if (!Object.prototype.hasOwnProperty.call(GIFT_COSTS,kind) || !/^[a-zA-Z0-9_/-]{1,200}$/.test(mediaId))
+ if (!Object.prototype.hasOwnProperty.call(GIFT_COSTS,kind) || !/^[a-zA-Z0-9_-]{1,200}$/.test(mediaId))
    throw new HttpsError("invalid-argument","Choose an available gift and photo or video.");
  const cost = GIFT_COSTS[kind];
  const walletRef = db.doc("guest_wallets/"+req.auth.uid);
@@ -117,7 +117,7 @@ exports.sendAdminPhotoGift = onCall(OPT, async req => {
  const rawName=String(req.data?.name||"").trim();
  if(!Object.prototype.hasOwnProperty.call(GIFT_COSTS,kind))
    throw new HttpsError("invalid-argument","Select an available spectacle.");
- if(!/^[a-zA-Z0-9_/-]{1,200}$/.test(mediaId))
+ if(!/^[a-zA-Z0-9_-]{1,200}$/.test(mediaId))
    throw new HttpsError("invalid-argument","Select a photo or video from this event.");
  if(!rawName||rawName.length>60||/[\u0000-\u001f\u007f]/.test(rawName))
    throw new HttpsError("invalid-argument","Choose a display name (1–60 characters).");

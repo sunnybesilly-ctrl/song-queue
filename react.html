@@ -499,16 +499,22 @@ KINDS.forEach(function (k, i) {
   const cancelHold=()=>{clearTimeout(holdTimer);holdTimer=null;b.classList.remove("holding")};
   b.addEventListener("pointerdown",e=>{
     if(e.pointerType==="mouse"&&e.button!==0)return;
+    cancelHold();
+    if(!hasPass()||!now.id)return;
+    const heldMediaId=now.id,heldSession=generation;
     originX=e.clientX;originY=e.clientY;
     b.classList.add("holding");
     holdTimer=setTimeout(()=>{
-      cancelHold();tap(k,b);
+      cancelHold();
+      if(heldSession!==generation||heldMediaId!==now.id||document.hidden)return;
+      tap(k,b);
       b.classList.add("confirmed");
       setTimeout(()=>b.classList.remove("confirmed"),400);
     },500);
   });
   b.addEventListener("pointermove",e=>{if(Math.hypot(e.clientX-originX,e.clientY-originY)>14)cancelHold()});
   ["pointerup","pointercancel","pointerleave","contextmenu"].forEach(ev=>b.addEventListener(ev,cancelHold));
+  window.addEventListener("blur",cancelHold);
   b.addEventListener("click",e=>{if(e.detail===0&&confirm("Send "+LABEL[k]+" reaction?"))tap(k,b)});
   rx.appendChild(b);
 });

@@ -20,13 +20,14 @@ import {getAuth,onAuthStateChanged,signInAnonymously,signOut} from "https://www.
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 const app=initializeApp({apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-photo-wall.firebaseapp.com",projectId:"dj-photo-wall",storageBucket:"dj-photo-wall.firebasestorage.app",messagingSenderId:"187308843014",appId:"1:187308843014:web:a4dbf9c17011767890a387"}),db=getFirestore(app),auth=getAuth(app),fn=getFunctions(app,"us-central1");
 const $=s=>document.querySelector(s);
-let loading=false,redeeming=false,session=0,stopWatching,expiryTimer;
+let loading=false,redeeming=false,session=0,stopWatching,stopAccess,expiryTimer;
 const guestMedia = httpsCallable(fn, "getGuestPhotoWallMedia");
 function closeGallery(reason) {
  session++;
  clearTimeout(expiryTimer);
  stopWatching?.();
  stopWatching = undefined;
+ stopAccess?.();stopAccess=undefined;
  $("#gallery").replaceChildren();
  $("#private").hidden=true;
  $("#gate").hidden=false;
@@ -54,11 +55,16 @@ async function showGallery(){
   if(access.expiresAt.toMillis() <= Date.now()) throw Error("Your gallery pass has expired.");
   clearTimeout(expiryTimer);
   stopWatching?.();
+  stopAccess?.();
   expiryTimer = setTimeout(() => closeGallery("Your gallery pass has expired."), access.expiresAt.toMillis()-Date.now());
   stopWatching = onSnapshot(doc(db,"gallery_state","current"), update=>{
    const current = update.data();
    if(!current?.active || current.eventId !== access.eventId) closeGallery("The gallery is closed.");
-  });
+  },()=>closeGallery("Could not verify event access. Please reopen the gallery."));
+  stopAccess=onSnapshot(doc(db,"gallery_access",auth.currentUser.uid),update=>{
+   const current=update.data();
+   if(!current||current.eventId!==access.eventId||current.expiresAt?.toMillis()!==access.expiresAt.toMillis())closeGallery("Your pass has changed. Enter a fresh code to return.");
+  },()=>closeGallery("Could not verify your pass. Please reopen the gallery."));
   $("#gate").hidden=true;$("#private").hidden=false;
   $("#timeLeft").textContent="Guest access expires at "+new Date(access.expiresAt.toMillis()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
   const grid=$("#gallery");grid.replaceChildren();
@@ -68,16 +74,17 @@ async function showGallery(){
    const d=row.data(),card=document.createElement("article");card.className="card";
    const media=document.createElement(d.type==="video"?"video":"img");media.src=mediaLinks.preview;if(d.type==="video"){media.controls=true;media.preload="metadata";media.playsInline=true}else media.alt="Party memory";
    const info=document.createElement("div");info.className="info";
-   const who=document.createElement("div");who.className="who";who.textContent=d.name||"Guest";
+   const who=document.createElement("div");who.className="who";who.textContent="Posted by: "+(d.name||"Guest");
    const link=document.createElement("a");link.href=mediaLinks.download;link.target="_blank";link.rel="noopener";link.textContent="Open / save original";
-   const like=document.createElement("button");like.className="like";like.textContent="♥ "+(d.likes||0);like.onclick=async()=>{like.disabled=true;try{await updateDoc(doc(db,"media_queue",row.id),{likes:increment(1)});like.textContent="♥ "+((d.likes||0)+1)}catch(e){alert(e.message)}finally{like.disabled=false}};
+   let likeCount=Number.isInteger(d.likes)?d.likes:0;
+   const like=document.createElement("button");like.className="like";like.textContent="♥ "+likeCount;like.onclick=async()=>{like.disabled=true;try{await updateDoc(doc(db,"media_queue",row.id),{likes:increment(1)});like.textContent="♥ "+(++likeCount)}catch(e){alert(e.message)}finally{like.disabled=false}};
    info.append(who,link,document.createElement("br"),like);card.append(media,info);grid.append(card);
   }
   $("#galleryStatus").textContent=links.size ? "" : "No private photos or videos have been uploaded for this event yet.";
  }catch(e){if(attempt === session) closeGallery(e.message||"Could not open gallery.");}finally{loading=false}
 }
 $("#codeForm").onsubmit=async e=>{
- e.preventDefault();const code=$("#code").value.trim();if(!/^[0-9]{8}$/.test(code)){message("Enter all eight digits.");return}
+ e.preventDefault();if(redeeming)return;const code=$("#code").value.trim();if(!/^[0-9]{8}$/.test(code)){message("Enter all eight digits.");return}
  redeeming=true;$("#unlock").disabled=true;message("Checking your invitation…");
  try{
   if(!auth.currentUser)await signInAnonymously(auth);

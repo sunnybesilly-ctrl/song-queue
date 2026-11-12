@@ -532,7 +532,7 @@ function dlUrl(m, tag) {
 }
 /* ---- inject media (same MP4 / JPEG conversion as the guest page) ---- */
 $("injectBtn").addEventListener("click", async () => {
-  const name = $("adminName").value.trim() || "DJ Drop";
+  const name = ($("adminName").value.trim() || "DJ Drop").slice(0,24);
   const file = $("adminFile").files[0];
   const btn = $("injectBtn"), status = $("injectStatus");
   if (!file) { alert("Select a file first!"); return; }
