@@ -308,7 +308,7 @@ body{font-family:var(--body);color:var(--bone)}
 }
 
 /* Hide media-specific attribution on QR / idle screens while retaining
-   the event status and live yearbook message area. */
+   the event status in the compact footer. */
 body.qr-screen #bar .who { display:none !important }
 body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18px,3vw,54px) }
 @media(orientation:portrait){
@@ -1638,7 +1638,6 @@ function resetForEventChange() {
   mode = "idle";
   nmEl.textContent = "WAITING FOR EVENT MEDIA";
   hint.textContent = "New event started. Waiting for photos and videos.";
-  refreshMediaSignatures();
 }
 onSnapshot(doc(db, "gallery_state", "current"), function (snap) {
   const state = snap.exists() ? snap.data() : null;
