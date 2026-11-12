@@ -728,6 +728,23 @@ body.qr-screen #mediaComments{display:none}
 .sunny-face-halo{position:absolute;z-index:4;height:clamp(9px,2.3vh,26px);border:clamp(2px,.38vh,4px) solid #ffe269;border-radius:50%;transform:translate(-50%,-50%) rotate(-8deg);box-shadow:0 0 8px #f4ff1a,0 0 21px #f4ff1a55;opacity:0;animation:haloGlimmer 3.5s ease-out both;pointer-events:none}
 @keyframes haloGlimmer{0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(-8deg)}22%{opacity:.88;transform:translate(-50%,-50%) scale(1.07) rotate(-8deg)}78%{opacity:.7}100%{opacity:0;transform:translate(-50%,-50%) scale(1.12) rotate(-8deg)}}
 @media(prefers-reduced-motion:reduce){.sunny-face-halo{display:none}}
+
+/* NOT a generic glass dashboard: this is a clean black-and-sun editorial stage.
+   Distinctive oversized typography, hairline rules, matte blocks, scarce glow. */
+#qrcard,body.qr-screen #qrcard{background:#000000}
+#qrcard::before{display:none}
+#qrcard .qb,#qrcard .qb.b2,body.qr-screen #qrcard .qb,body.qr-screen #qrcard .qb.b2{
+ background:#0a0e0b;border:1px solid #3a493c;border-radius:2px;box-shadow:none;
+}
+#qrcard.on .qb{animation:none}
+#qrcard .qt .a,body.qr-screen #qrcard .qt .a{text-shadow:none;letter-spacing:-.055em}
+#qrcard .qb .tile,#qrcard .qb.b2 .tile{box-shadow:none}
+#qrcard .qb .ql{letter-spacing:.025em}
+#bar .posted-by{letter-spacing:0}
+.gift-tally-header{text-shadow:none}
+.gift-tally-badge{border-radius:3px}
+.spectacle-name{text-shadow:0 2px 12px #000;font-weight:900}
+.spectacle-from{text-shadow:0 2px 8px #000}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
