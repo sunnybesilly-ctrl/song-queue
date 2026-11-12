@@ -124,7 +124,26 @@ body{
 @media (prefers-reduced-motion:reduce){
   .title span{animation:none;opacity:1}
 }
-.memory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.memory-card{padding:0;background:#061a0d;border:2px solid var(--line);color:var(--bone);text-align:left;cursor:pointer;min-width:0;overflow:hidden;font:inherit}.memory-card.selected{border-color:var(--acid);box-shadow:0 0 0 2px rgba(244,255,26,.28)}.memory-card img,.memory-card video{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#010904}.memory-card strong{display:block;padding:10px;overflow-wrap:anywhere}.memory-card small{display:block;padding:0 10px 10px;color:var(--dim)}.memory-card:focus-visible{outline:3px solid var(--lime)}.memory-grid:empty{display:none}.rx button:disabled{opacity:.35;cursor:not-allowed}.gift-zone{margin-top:20px;padding:16px;background:linear-gradient(145deg,#12371f,#031108);border:1px solid #3b8049;border-radius:16px}.gift-header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;color:#f4ff1a;font-weight:800}.gift-header span{font-size:14px}.gift-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.gift-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:15px 8px;background:linear-gradient(145deg,#163b22,#06160c);color:#efffee;border:1px solid #397747;border-radius:14px;font:inherit;cursor:pointer}.gift-btn svg{width:55px;height:55px;filter:drop-shadow(0 0 8px #f4ff1a66)}.gift-btn strong{color:#f4ff1a}.gift-btn small{color:#9bd9ac}.gift-btn:disabled{opacity:.4;cursor:not-allowed}.rb{border-radius:15px;background:linear-gradient(145deg,#173c24,#031109)}@media(min-width:480px){.gift-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}</style>
+.memory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.memory-card{padding:0;background:#061a0d;border:2px solid var(--line);color:var(--bone);text-align:left;cursor:pointer;min-width:0;overflow:hidden;font:inherit}.memory-card.selected{border-color:var(--acid);box-shadow:0 0 0 2px rgba(244,255,26,.28)}.memory-card img,.memory-card video{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#010904}.memory-card strong{display:block;padding:10px;overflow-wrap:anywhere}.memory-card small{display:block;padding:0 10px 10px;color:var(--dim)}.memory-card:focus-visible{outline:3px solid var(--lime)}.memory-grid:empty{display:none}.rx button:disabled{opacity:.35;cursor:not-allowed}.gift-zone{margin-top:20px;padding:16px;background:linear-gradient(145deg,#12371f,#031108);border:1px solid #3b8049;border-radius:16px}.gift-header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;color:#f4ff1a;font-weight:800}.gift-header span{font-size:14px}.gift-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.gift-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:15px 8px;background:linear-gradient(145deg,#163b22,#06160c);color:#efffee;border:1px solid #397747;border-radius:14px;font:inherit;cursor:pointer}.gift-btn svg{width:55px;height:55px;filter:drop-shadow(0 0 8px #f4ff1a66)}.gift-btn strong{color:#f4ff1a}.gift-btn small{color:#9bd9ac}.gift-btn:disabled{opacity:.4;cursor:not-allowed}.rb{border-radius:15px;background:linear-gradient(145deg,#173c24,#031109)}@media(min-width:480px){.gift-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* Restrained gallery language, deliberate controls, no accidental sends. */
+.reaction-help{font-size:14px;color:#d3ead8;margin:7px 0 14px;line-height:1.45}
+.rx{gap:14px;margin:12px 0}
+.rx .rb,.rx .rb.big,.rx .rb.sm{margin:0;border:1px solid #46584b;border-radius:12px;background:#0b110d;box-shadow:none;position:relative;overflow:hidden}
+.rx .rb.big{height:125px}
+.rx .rb.sm{min-height:96px}
+.rx .rb:active{transform:none;box-shadow:none}
+.rx .rb.holding{border-color:#f4ff1a}
+.rx .rb.holding:after{content:"";position:absolute;bottom:0;left:0;right:0;height:4px;background:#f4ff1a;transform-origin:left;animation:holdReaction .5s linear both}
+.rx .rb.confirmed{border-color:#37ff76;background:#142419}
+@keyframes holdReaction{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.comment-input{border-radius:10px;resize:vertical;min-height:100px;font-size:17px;font-weight:500;letter-spacing:normal}
+.comment-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.comment-row span{font-size:13px;color:#92b79b}
+.comment-send{background:#f4ff1a;color:#101610;border:0;border-radius:10px;padding:14px 20px;font:800 16px var(--body);cursor:pointer}
+.comment-send:disabled{opacity:.5}
+.gift-zone{background:#0b150f;border-radius:12px;box-shadow:none}
+.gift-btn{background:#0b150f;box-shadow:none;border-radius:12px}
+</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="React + Gift">
@@ -167,16 +186,17 @@ body{
 
   <div class="step s2">
     <div class="sh"><span class="num">2</span><span class="sl">Hit it</span><span class="sn">react to your selected memory</span></div>
-    <div class="rx" id="rx"></div><div class="gift-zone"><div class="gift-header"><strong>Send a spectacle</strong><span id="creditStatus">Credits loading…</span></div><div id="giftGrid" class="gift-grid"></div><p id="giftStatus" class="status" aria-live="polite">Select a memory to send a gift.</p></div>
+    <p class="reaction-help">Press and hold a reaction for half a second to send. A quick tap does nothing.</p><div class="rx" id="rx"></div><div class="gift-zone"><div class="gift-header"><strong>Send a spectacle</strong><span id="creditStatus">Credits loading…</span></div><div id="giftGrid" class="gift-grid"></div><p id="giftStatus" class="status" aria-live="polite">Select a memory to send a gift.</p></div>
     <p class="sent">Reactions tapped: <b id="sent">0</b> · Gifts sent: <b id="giftsSent">0</b></p>
   </div>
 
+  <div class="step s3"><div class="sh"><span class="num">3</span><label class="sl" for="commentText">Leave a comment</label><span class="sn">shown beside this memory</span></div><textarea class="in comment-input" id="commentText" maxlength="160" rows="3" placeholder="Say something about this memory…"></textarea><div class="comment-row"><span id="commentLength">0 / 160</span><button id="sendComment" type="button" class="comment-send">Post comment</button></div><p id="commentStatus" class="status" role="status"></p></div>
   <div class="step s4">
     <a class="go ghost" href="upload.html?v=20261111-36">Add your own shot</a>
   </div>
 
   </section>
-  <p class="brand">-A Sunny <b>neverpartlycloudy</b> production</p>
+  <p class="brand">An Always Sunny <b>neverpartlycloudy</b> production</p>
 </main>
 
 <script type="module">
@@ -471,9 +491,39 @@ KINDS.forEach(function (k, i) {
   const b = document.createElement("button");
   b.type = "button"; b.className = "rb " + (i === 0 ? "big" : "sm");
   b.setAttribute("aria-label", LABEL[k]); b.innerHTML = ICON[k];
-  b.addEventListener("pointerdown", function (e) { e.preventDefault(); tap(k, b); });
-  b.addEventListener("click", function (e) { if (e.detail === 0) tap(k, b); });
+  let holdTimer=null,originX=0,originY=0;
+  const cancelHold=()=>{clearTimeout(holdTimer);holdTimer=null;b.classList.remove("holding")};
+  b.addEventListener("pointerdown",e=>{
+    if(e.pointerType==="mouse"&&e.button!==0)return;
+    originX=e.clientX;originY=e.clientY;
+    b.classList.add("holding");
+    holdTimer=setTimeout(()=>{
+      cancelHold();tap(k,b);
+      b.classList.add("confirmed");
+      setTimeout(()=>b.classList.remove("confirmed"),400);
+    },500);
+  });
+  b.addEventListener("pointermove",e=>{if(Math.hypot(e.clientX-originX,e.clientY-originY)>14)cancelHold()});
+  ["pointerup","pointercancel","pointerleave","contextmenu"].forEach(ev=>b.addEventListener(ev,cancelHold));
+  b.addEventListener("click",e=>{if(e.detail===0&&confirm("Send "+LABEL[k]+" reaction?"))tap(k,b)});
   rx.appendChild(b);
+});
+const commentText=$("#commentText"),commentStatus=$("#commentStatus"),commentButton=$("#sendComment");
+commentText.addEventListener("input",()=>{$("#commentLength").textContent=commentText.value.length+" / 160"});
+let commentBusy=false;
+commentButton.addEventListener("click",async()=>{
+  if(commentBusy)return;
+  const text=commentText.value.trim(),mediaId=now.id||"";
+  if(!hasPass()){commentStatus.textContent="Enter your event code first.";return}
+  if(!mediaId){commentStatus.textContent="Select a photo or video first.";return}
+  if(!text){commentStatus.textContent="Write a comment first.";return}
+  commentBusy=true;commentButton.disabled=true;commentStatus.textContent="Posting…";
+  try{
+    await addDoc(collection(db,"photo_comments"),{mediaId,eventId:access.eventId,name:reactName(),uid:auth.currentUser.uid,text,t:serverTimestamp()});
+    commentText.value="";$("#commentLength").textContent="0 / 160";
+    commentStatus.textContent="Posted to this memory. It will appear beside this photo or video.";
+  }catch(e){commentStatus.textContent="Could not post: "+(e.message||"Try again.")}
+  finally{commentBusy=false;commentButton.disabled=false}
 });
 document.addEventListener("visibilitychange", function () { if (document.hidden && flushT) { clearTimeout(flushT); flush(); } });
 
