@@ -1457,27 +1457,36 @@ function reveal(w, m, isFresh, my) {
 }
 
 function armVideo(v,my,m){
- // Never automatically repeat short or trimmed clips. A video is played
- // once to its actual end; only DJ Admin's explicit Repeat overrides this.
- const length=Number.isFinite(v.duration)&&v.duration>0?v.duration:0;
- planned=length?length*1000+3000:60000;
- v.loop=false;
- v.removeAttribute("loop");
+ // Actual media ending controls advance. Short clips replay only enough to
+ // remain on screen for MIN_VIDEO_MS. Longer clips always finish normally.
+ let plays=0,playedSeconds=0;
+ const initial=Number.isFinite(v.duration)&&v.duration>0?v.duration:0;
+ planned=initial?Math.max(initial*1000,MIN_VIDEO_MS)+3000:60000;
+ v.loop=false;v.removeAttribute("loop");
  v.onended=()=>{
   if(my!==tok)return;
-  clearTimeout(wd);
-  if(override?.active&&override.mediaId===m.id){
+  try{
+   plays++;
+   const actual=Number.isFinite(v.duration)&&v.duration>0?v.duration:0;
+   playedSeconds+=actual;
+   if(override?.active&&override.mediaId===m.id){
     if(override.repeat){
-      try{v.currentTime=0}catch(_){}
-      v.play().catch(e=>console.warn("Admin repeat:",e));
+      v.currentTime=0;
+      v.play().catch(e=>console.warn("Admin repeat unavailable",e));
       return;
     }
     overridePlayed=true;
-  }
-  next();
+   }else if(actual>0 && actual*1000<MIN_VIDEO_MS &&
+       playedSeconds*1000<MIN_VIDEO_MS && plays<3){
+    // A true short clip gets a modest repeat; an 11s clip never repeats.
+    v.currentTime=0;
+    v.play().catch(e=>{console.warn("Short clip replay unavailable",e);next()});
+    return;
+   }
+   clearTimeout(wd);next();
+  }catch(e){console.warn("Video completion issue",e);clearTimeout(wd);next();}
  };
 }
-
 function next() {
   try { nextInner(); } catch (e) {
     console.error("Photo Wall playback error",e);
