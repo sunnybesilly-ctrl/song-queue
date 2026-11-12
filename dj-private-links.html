@@ -52,6 +52,7 @@ h1{font-family:'Bebas Neue',Impact,sans-serif;font-weight:400;font-size:clamp(46
 #djPrivateGate .status{min-height:22px;color:#ff9696;margin-top:12px}
 #djPrivateApp[hidden]{display:none!important}
 .private-note{font:500 13px/1.35 Barlow,Arial,sans-serif;color:#a9c6b3;margin:4px 0 18px}
+.app-heading{display:flex;align-items:center;gap:12px;margin-bottom:8px}.app-icon{display:block;width:52px;height:52px;flex:none;object-fit:contain;border-radius:12px}.app-heading .nm{margin:0}
 </style>
 
 
@@ -61,8 +62,8 @@ h1{font-family:'Bebas Neue',Impact,sans-serif;font-weight:400;font-size:clamp(46
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DJ HQ">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/dj-private.png?v=20261111-18">
-<link rel="icon" type="image/png" href="icons/dj-private.png?v=20261111-18">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/dj-private.png?v=20261111-links2">
+<link rel="icon" type="image/png" href="icons/dj-private.png?v=20261111-links2">
 </head>
 <body>
 <section id="djPrivateGate"><h2>DJ EYES ONLY</h2><p>Sign in with your verified Photo Wall administrator account to open the control directory.</p><form id="djPrivateForm"><input id="djEmail" type="email" autocomplete="username" placeholder="Admin email" required><input id="djPassword" type="password" autocomplete="current-password" placeholder="Password" required><button type="submit">UNLOCK DJ LINKS</button></form><p class="status" id="djPrivateStatus" role="status">Checking sign-in…</p></section>
@@ -2384,27 +2385,29 @@ var qrcode = function() {
 </script>
 <script>
 const BASE='https://sunnybesilly-ctrl.github.io/song-queue/';
+const APP_ICONS={"admin.html":"icons/photo-admin.png","event-archive.html":"icons/archive.png","philips-tv.html":"icons/photo-tv.png","display.html":"icons/photo-screen.png","dj-console.html":"icons/dj-console.png","live-display-lite.html":"icon-lite.png","live-display-neon-final.html":"icon-live.png","hub.html":"icons/guest-links.png","dj-links.html":"icons/dj-private.png","dj-private-links.html":"icons/dj-private.png","upload.html":"icons/upload.png","react.html":"icons/react.png","gallery.html":"icons/gallery.png","song_request_form.html":"icon-request.png","party_chat_form.html":"icon-chat.png","index.html":"icon-request.png"};
+function appIcon(url){try{const u=new URL(url);if(u.origin!==new URL(BASE).origin)return "";const icon=APP_ICONS[u.pathname.split("/").pop()];return icon?`<img class="app-icon" src="${BASE+icon}?v=20261111-links2" alt="" width="52" height="52">`:""}catch(_){return ""}}
 const G=[
  {t:'PHOTO WALL · ADMIN',items:[
-  {n:'Photo Control Room',u:BASE+'admin.html?v=20261111-18',c:'#f4ff1a',d:'Manage events, uploads, playback and gifts'},
-  {n:'Event Archive',u:BASE+'event-archive.html?v=20261111-18',c:'#b6a0ff',d:'Saved event history and exports'}
+  {n:'Photo Control Room',u:BASE+'admin.html?v=20261111-links2',c:'#f4ff1a',d:'Manage events, uploads, playback and gifts'},
+  {n:'Event Archive',u:BASE+'event-archive.html?v=20261111-links2',c:'#b6a0ff',d:'Saved event history and exports'}
  ]},
  {t:'PHOTO WALL · SCREENS',items:[
-  {n:'Philips TV Wall',u:BASE+'philips-tv.html?v=20261111-18',c:'#37ff76',d:'Overscan-safe display for the Philips / Roku'},
-  {n:'Full Photo Wall',u:BASE+'display.html?v=20261111-18',c:'#77ffcb',d:'Full-size photo and video presentation'}
+  {n:'Philips TV Wall',u:BASE+'philips-tv.html?v=20261111-links2',c:'#37ff76',d:'Overscan-safe display for the Philips / Roku'},
+  {n:'Full Photo Wall',u:BASE+'display.html?v=20261111-links2',c:'#77ffcb',d:'Full-size photo and video presentation'}
  ]},
  {t:'MUSIC BOOTH',items:[
-  {n:'DJ Console',u:BASE+'dj-console.html?v=20261111-18',c:'#f5c542',d:'Music queue control'},
-  {n:'DJ Lite Display',u:BASE+'live-display-lite.html?v=20261111-18',c:'#37ff76',d:'Lightweight music queue screen'},
-  {n:'DJ Live Display',u:BASE+'live-display-neon-final.html?v=20261111-18',c:'#f5c542',d:'Full music queue screen'}
+  {n:'DJ Console',u:BASE+'dj-console.html?v=20261111-links2',c:'#f5c542',d:'Music queue control'},
+  {n:'DJ Lite Display',u:BASE+'live-display-lite.html?v=20261111-links2',c:'#37ff76',d:'Lightweight music queue screen'},
+  {n:'DJ Live Display',u:BASE+'live-display-neon-final.html?v=20261111-links2',c:'#f5c542',d:'Full music queue screen'}
  ]},
  {t:'SHAREABLE GUEST LINKS',items:[
-  {n:'Guest QR Directory',u:BASE+'hub.html?v=20261111-18',c:'#f4ff1a',d:'Share this guest directory; no admin controls'},
-  {n:'Song Request',u:BASE+'song_request_form.html?v=20261111c',c:'#f5c542',d:'Guest song request form'},
-  {n:'Party Chat',u:BASE+'party_chat_form.html?v=20261111-18',c:'#f472b6',d:'Guest message form'},
-  {n:'Upload a Memory',u:BASE+'upload.html?v=20261111-18',c:'#f4ff1a',d:'Photo and video upload'},
-  {n:'Reactions + Gifts',u:BASE+'react.html?v=20261111-18',c:'#f472b6',d:'Event code required'},
-  {n:'Party Album',u:BASE+'gallery.html?v=20261111-18',c:'#37ff76',d:'Event code required'}
+  {n:'Guest QR Directory',u:BASE+'hub.html?v=20261111-links2',c:'#f4ff1a',d:'Share this guest directory; no admin controls'},
+  {n:'Song Request',u:BASE+'song_request_form.html?v=20261111-links2',c:'#f5c542',d:'Guest song request form'},
+  {n:'Party Chat',u:BASE+'party_chat_form.html?v=20261111-links2',c:'#f472b6',d:'Guest message form'},
+  {n:'Upload a Memory',u:BASE+'upload.html?v=20261111-links2',c:'#f4ff1a',d:'Photo and video upload'},
+  {n:'Reactions + Gifts',u:BASE+'react.html?v=20261111-links2',c:'#f472b6',d:'Event code required'},
+  {n:'Party Album',u:BASE+'gallery.html?v=20261111-links2',c:'#37ff76',d:'Event code required'}
  ]}
 ];
 const KEY='djprivatehub.custom',$=s=>document.querySelector(s);
@@ -2436,7 +2439,7 @@ $('#big').onclick=()=>$('#big').classList.remove('on');
 let k=0;
 function row(it,idx){
   const el=document.createElement('div');el.className='row';el.style.setProperty('--c',it.c||'#fff');el.style.setProperty('--i',k++);
-  el.innerHTML=`<button class="qr" aria-label="Enlarge QR for ${esc(it.n)}">${svg(it.u)}</button><div><div class="nm">${esc(it.n)}</div>${it.d?`<div class="ds">${esc(it.d)}</div>`:''}<div class="ul">${esc(it.u)}</div><div class="bt"><button data-a="copy">COPY</button>${navigator.share?'<button data-a="share">SHARE</button>':''}<button data-a="png">SAVE QR</button><a href="${esc(it.u)}" target="_blank" rel="noopener">OPEN</a>${idx>=0?'<button data-a="rm">REMOVE</button>':''}</div></div>`;
+  el.innerHTML=`<button class="qr" aria-label="Enlarge QR for ${esc(it.n)}">${svg(it.u)}</button><div><div class="app-heading">${appIcon(it.u)}<div class="nm">${esc(it.n)}</div></div>${it.d?`<div class="ds">${esc(it.d)}</div>`:''}<div class="ul">${esc(it.u)}</div><div class="bt"><button data-a="copy">COPY</button>${navigator.share?'<button data-a="share">SHARE</button>':''}<button data-a="png">SAVE QR</button><a href="${esc(it.u)}" target="_blank" rel="noopener">OPEN</a>${idx>=0?'<button data-a="rm">REMOVE</button>':''}</div></div>`;
   el.querySelector('.qr').onclick=()=>big(it);
   el.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.a;

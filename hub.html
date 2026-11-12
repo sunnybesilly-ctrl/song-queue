@@ -43,6 +43,7 @@ h1{font-family:'Bebas Neue',Impact,sans-serif;font-weight:400;font-size:clamp(46
 #big .hint{font-family:Barlow,sans-serif;font-size:12px;color:var(--dim)}
 @media (prefers-reduced-motion:reduce){.row{animation:none;opacity:1;transform:none}#big .tile{animation:none}}
 @media (max-width:380px){.row{grid-template-columns:96px 1fr}.qr{width:96px;height:96px}}
+.app-heading{display:flex;align-items:center;gap:12px;margin-bottom:8px}.app-icon{display:block;width:52px;height:52px;flex:none;object-fit:contain;border-radius:12px}.app-heading .nm{margin:0}
 </style>
 
 
@@ -52,8 +53,8 @@ h1{font-family:'Bebas Neue',Impact,sans-serif;font-weight:400;font-size:clamp(46
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DJ Links">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/guest-links.png?v=20261111-18">
-<link rel="icon" type="image/png" href="icons/guest-links.png?v=20261111-18">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/guest-links.png?v=20261111-links2">
+<link rel="icon" type="image/png" href="icons/guest-links.png?v=20261111-links2">
 </head>
 <body>
 <div class="wrap">
@@ -2374,22 +2375,24 @@ var qrcode = function() {
 </script>
 <script>
 const BASE='https://sunnybesilly-ctrl.github.io/song-queue/';
+const APP_ICONS={"admin.html":"icons/photo-admin.png","event-archive.html":"icons/archive.png","philips-tv.html":"icons/photo-tv.png","display.html":"icons/photo-screen.png","dj-console.html":"icons/dj-console.png","live-display-lite.html":"icon-lite.png","live-display-neon-final.html":"icon-live.png","hub.html":"icons/guest-links.png","dj-links.html":"icons/dj-private.png","dj-private-links.html":"icons/dj-private.png","upload.html":"icons/upload.png","react.html":"icons/react.png","gallery.html":"icons/gallery.png","song_request_form.html":"icon-request.png","party_chat_form.html":"icon-chat.png","index.html":"icon-request.png"};
+function appIcon(url){try{const u=new URL(url);if(u.origin!==new URL(BASE).origin)return "";const icon=APP_ICONS[u.pathname.split("/").pop()];return icon?`<img class="app-icon" src="${BASE+icon}?v=20261111-links2" alt="" width="52" height="52">`:""}catch(_){return ""}}
 const G=[
  {t:'PHOTO WALL',items:[
-  {n:'Drop Your Shot',u:BASE+'upload.html?v=20261111-36',c:'#f4ff1a',d:'Upload a photo or video to the live wall'},
-  {n:'Reactions + Gifts',u:BASE+'react.html?v=20261111-36',c:'#f472b6',d:'React to photos and videos, send gifts, and show some love'},
-  {n:'Party Album',u:BASE+'gallery.html?v=20261111-36',c:'#37ff76',d:'Private gallery — event access code required'}
+  {n:'Drop Your Shot',u:BASE+'upload.html?v=20261111-links2',c:'#f4ff1a',d:'Upload a photo or video to the live wall'},
+  {n:'Reactions + Gifts',u:BASE+'react.html?v=20261111-links2',c:'#f472b6',d:'React to photos and videos, send gifts, and show some love'},
+  {n:'Party Album',u:BASE+'gallery.html?v=20261111-links2',c:'#37ff76',d:'Private gallery — event access code required'}
  ]},
  {t:'SONGS & CHAT',items:[
-  {n:'Song Request',u:BASE+'song_request_form.html?v=20261111c',c:'#f5c518',d:'Request a song for the DJ'},
-  {n:'Party Chat',u:BASE+'party_chat_form.html?v=20261111-18',c:'#f472b6',d:'Send a message to the party screen'}
+  {n:'Song Request',u:BASE+'song_request_form.html?v=20261111-links2',c:'#f5c518',d:'Request a song for the DJ'},
+  {n:'Party Chat',u:BASE+'party_chat_form.html?v=20261111-links2',c:'#f472b6',d:'Send a message to the party screen'}
  ]},
  {t:'FOLLOW + SUPPORT',items:[
   {n:'Cash App',u:'https://cash.app/$SunnyAubade',c:'#ff4058',d:'VIP payments'},
   {n:'Snapchat',u:'https://www.snapchat.com/add/eatitall',c:'#ffffff',d:'Connect with DJ Sunny'}
  ]},
  {t:'MORE',items:[
-  {n:'Guest Links Home',u:BASE+'hub.html?v=20261111-18',c:'#f5c518',d:'This guest-friendly link collection'}
+  {n:'Guest Links Home',u:BASE+'hub.html?v=20261111-links2',c:'#f5c518',d:'This guest-friendly link collection'}
  ]}
 ];
 const KEY='djhub.custom',$=s=>document.querySelector(s);
@@ -2421,7 +2424,7 @@ $('#big').onclick=()=>$('#big').classList.remove('on');
 let k=0;
 function row(it,idx){
   const el=document.createElement('div');el.className='row';el.style.setProperty('--c',it.c||'#fff');el.style.setProperty('--i',k++);
-  el.innerHTML=`<button class="qr" aria-label="Enlarge QR for ${esc(it.n)}">${svg(it.u)}</button><div><div class="nm">${esc(it.n)}</div>${it.d?`<div class="ds">${esc(it.d)}</div>`:''}<div class="ul">${esc(it.u)}</div><div class="bt"><button data-a="copy">COPY</button>${navigator.share?'<button data-a="share">SHARE</button>':''}<button data-a="png">SAVE QR</button><a href="${esc(it.u)}" target="_blank" rel="noopener">OPEN</a>${idx>=0?'<button data-a="rm">REMOVE</button>':''}</div></div>`;
+  el.innerHTML=`<button class="qr" aria-label="Enlarge QR for ${esc(it.n)}">${svg(it.u)}</button><div><div class="app-heading">${appIcon(it.u)}<div class="nm">${esc(it.n)}</div></div>${it.d?`<div class="ds">${esc(it.d)}</div>`:''}<div class="ul">${esc(it.u)}</div><div class="bt"><button data-a="copy">COPY</button>${navigator.share?'<button data-a="share">SHARE</button>':''}<button data-a="png">SAVE QR</button><a href="${esc(it.u)}" target="_blank" rel="noopener">OPEN</a>${idx>=0?'<button data-a="rm">REMOVE</button>':''}</div></div>`;
   el.querySelector('.qr').onclick=()=>big(it);
   el.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.a;
