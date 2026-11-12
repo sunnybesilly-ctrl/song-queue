@@ -169,6 +169,15 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 .spectacle-test-btn{display:block;width:100%;min-height:56px;margin-top:15px;background:linear-gradient(130deg,#f4ff1a,#88ffaf);border:1px solid #eaffd1;color:#082417;font:900 24px var(--display);letter-spacing:.05em;border-radius:12px;cursor:pointer}
 .spectacle-test-btn:disabled{opacity:.5;cursor:wait}
 .spectacle-test-help{font:600 13px/1.3 var(--body);color:#c2e8c7;margin:8px 0}
+
+#moderationComments{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.moderation-item{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px;background:#080f0a;border:1px solid #354c39;border-radius:9px}
+.moderation-info{display:flex;flex-direction:column;gap:4px;min-width:0;overflow-wrap:anywhere}
+.moderation-info strong{color:#f4ff1a;font-size:15px}
+.moderation-info span{font-size:15px;line-height:1.3}
+.moderation-info small{font-size:12px;color:#8dad91}
+.moderation-delete{flex:none;background:transparent;color:#ff9c9c;border:1px solid #8a4d50;border-radius:8px;padding:10px 13px;cursor:pointer;font:700 13px var(--body)}
+.moderation-delete:disabled{opacity:.45}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -265,7 +274,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
   <button id="clearAll" type="button">Wipe media &amp; reactions</button>
 
   <div class="library-head"><div><span class="eyebrow">CONTENT LIBRARY</span><h2>Media &amp; rotation</h2><p>Pause individual memories, manage playback, and keep the gallery curated.</p></div></div>
-  <div id="grid"></div>
+  <section id="commentModeration" class="inject" style="margin:24px 0">
+<h3>On-air comments</h3><p class="l">Remove a guest comment without interrupting the current slideshow.</p>
+<div id="moderationComments" aria-live="polite">Loading comments…</div></section>
+<div id="grid"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
@@ -705,6 +717,28 @@ function renderGrid() {
 }
 
 function startApp() {
+ onSnapshot(collection(db,"photo_comments"),snap=>{
+   const panel=$("moderationComments");panel.replaceChildren();
+   const docs=snap.docs.slice().sort((a,b)=>(b.data().t?.seconds||0)-(a.data().t?.seconds||0)).slice(0,30);
+   if(!docs.length){panel.appendChild(h("p","l","No on-air comments yet."));return;}
+   docs.forEach(row=>{
+     const d=row.data(),line=h("div","moderation-item"),info=h("div","moderation-info");
+     info.appendChild(h("strong","",String(d.name||"Guest").slice(0,24)));
+     info.appendChild(h("span","",String(d.text||"").slice(0,160)));
+     const entry=mediaDocs.find(m=>m.id===d.mediaId);
+     info.appendChild(h("small","",entry?"On: "+String(entry.data().name||"Memory").slice(0,24):"Media "+String(d.mediaId||"").slice(0,12)));
+     const remove=h("button","moderation-delete","Remove");
+     remove.type="button";
+     remove.onclick=async()=>{
+       if(!confirm("Remove this guest comment from the screen?"))return;
+       remove.disabled=true;
+       try{await deleteDoc(doc(db,"photo_comments",row.id))}
+       catch(e){alert("Could not remove: "+(e.message||e));remove.disabled=false}
+     };
+     line.append(info,remove);panel.appendChild(line);
+   });
+ },e=>{$("moderationComments").textContent="Could not load comments: "+(e.message||e)});
+
   onSnapshot(collection(db,"photo_gifts"),s=>{
     adminGiftRecords=s.docs.map(d=>({id:d.id,...d.data()}));
     refreshAdminGiftCount();
