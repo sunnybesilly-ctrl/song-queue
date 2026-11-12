@@ -117,34 +117,6 @@ body{font-family:var(--body);color:var(--bone)}
 #toast{position:absolute;top:2vh;right:2vw;z-index:20;background:var(--acid);color:#061207;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:3.4vh;padding:.6vh 1.6vh;opacity:0;transition:opacity .25s}
 #toast.on{opacity:1}
 
-#yb{position:absolute;left:0;top:0;right:0;bottom:0;z-index:9;display:none;overflow:hidden;
-  background:radial-gradient(120% 90% at 85% 10%,#0e2a17 0%,transparent 60%),radial-gradient(90% 70% at 10% 100%,#2a0a0a 0%,transparent 55%),#050a07}
-#yb.on{display:block}
-.pg{position:absolute;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;padding:0 6vw;animation:pgIn .7s cubic-bezier(.2,.8,.2,1) both}
-@keyframes pgIn{0%{opacity:0;transform:scale(1.08)}100%{opacity:1;transform:none}}
-.pg.sig,.pg.cls{display:block}
-.pg.cover{justify-content:flex-start}
-.cover .k,.cap .k{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:4.2vh;letter-spacing:.3em;color:var(--lime)}
-.cover .t{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:34vh;line-height:.8;color:transparent;-webkit-text-stroke:.6vh var(--acid);transform:rotate(-3deg);margin:2vh 0 3vh -.5vw}
-.cover .n{font-family:var(--ink);font-size:5vh;color:var(--bone)}
-.snap{flex:0 0 52vw;height:78vh;background:#F3EBD5;padding:2.2vh 2.2vh 7.5vh;position:relative;transform:rotate(-2.2deg)}
-.snap .mi{background:#0a1a10}
-.snap em{position:absolute;left:2.4vh;bottom:1.6vh;font-family:var(--ink);font-style:normal;font-size:3.6vh;color:#1a2b1d}
-.cap{flex:1;min-width:0;margin-left:5vw}
-.cap .t{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:14vh;line-height:.84;color:var(--acid);margin:1.4vh 0 2vh -.3vw;transform:rotate(-3deg);transform-origin:0 100%}
-.cap .n{font-family:var(--ink);font-size:6vh;color:var(--bone)}
-.cap .s{margin-top:1.6vh;font-weight:700;font-size:3vh;color:var(--dim)}
-.t2{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:11vh;line-height:.85;color:var(--acid);padding-top:3vh}
-.note{position:absolute;width:27vw;opacity:0;animation:noteIn .5s cubic-bezier(.2,1.3,.4,1) forwards}
-@keyframes noteIn{0%{opacity:0;transform:scale(.6)}100%{opacity:1}}
-.note span{display:block;font-family:var(--ink);font-size:4vh;line-height:1.1}
-.note em{display:block;margin-top:.8vh;font-style:normal;font-weight:700;font-size:2.4vh;color:var(--dim)}
-.grid{display:flex;flex-wrap:wrap;justify-content:center;padding:1vh 0 0}
-.cell{width:11.8vw;height:11.8vw;margin:0 .8vw 1.2vh;opacity:0;animation:cellIn .5s cubic-bezier(.2,1.3,.4,1) forwards}
-@keyframes cellIn{0%{opacity:0;transform:scale(.3) rotate(0)}100%{opacity:1;transform:scale(1) rotate(var(--r,0deg))}}
-.cell img{display:block;width:100%;height:100%;object-fit:cover}
-.foot{position:absolute;left:6vw;bottom:3vh;font-family:var(--ink);font-size:4vh;color:var(--bone)}
-
 #vbadge{position:absolute;left:2vw;bottom:calc(var(--bar) + 1.2vh);z-index:6;max-width:96vw;padding:.4vh 1.4vh;background:var(--alarm);color:#fff;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.8vh;line-height:1.05;display:none}
 
 #brand{position:absolute;left:1.4vw;top:1.2vh;z-index:25;display:flex;align-items:center;font-family:var(--ink);font-size:2.3vh;line-height:1;color:var(--bone);opacity:.82;text-shadow:0 0 .8vh #000,0 0 .3vh #000;pointer-events:none;max-width:92vw}
@@ -190,17 +162,6 @@ body{font-family:var(--body);color:var(--bone)}
 .wr .av:first-child{margin-left:0}
 .wr span{margin-left:1.2vh;font-weight:700;color:var(--dim);font-size:2.6vh}
 .lite .rc::before{animation:none}
-
-/* yearbook signatures */
-.pg.sig { display:flex !important; flex-direction:column; justify-content:center; padding:5vh 8vw; }
-.sig-head { display:flex; align-items:flex-end; justify-content:space-between; gap:2vw; width:100%; border-bottom:2px solid var(--line); padding-bottom:1.5vh; }
-.sig-head .t2 { padding:0; }
-.sig-page-no { color:var(--dim);font-weight:700;font-size:2.4vh;letter-spacing:.12em;white-space:nowrap; }
-.sig-sub { width:100%;margin-top:1.5vh;color:var(--dim);font-size:2.8vh; }
-.sig-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:2vh 2vw; padding-top:3vh; width:100%; }
-.sig-card { display:flex;flex-direction:column;justify-content:space-between;min-height:18vh;background:rgba(11,38,21,.72);border:1px solid rgba(55,255,118,.55);border-left:5px solid var(--lime);padding:2.2vh 2vw;border-radius:.8vh;opacity:0;animation:cellIn .6s cubic-bezier(.2,1.3,.4,1) forwards; }
-.sig-text { font-family:var(--body);font-weight:700;font-size:3.3vh;line-height:1.18;color:var(--bone);margin-bottom:1.4vh;word-break:break-word; }
-.sig-name { font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.2vh;color:var(--acid);letter-spacing:.1em; }
 
 .lite .mi.kb,.lite .new,.lite #qrcard.on .qb .tile,.lite #qrcard.on .a{animation:none}
 .lite .cell,.lite .note{animation:none;opacity:1}
@@ -732,11 +693,9 @@ body.qr-screen #bar .who{display:none!important}
   </div>
   <div class="say">
     <div class="hint" id="hint">Tonight’s memories · live</div>
-    <div class="cmt" id="cmt" hidden><b id="cn"></b><span id="ct"></span></div>
   </div>
 </div>
 
-<div id="yb"></div>
 <div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>ALWAYS SUNNY</strong><span>NEVERPARTLYCLOUDY PRODUCTION</span></span></div>
 <div id="vbadge"></div>
 <div id="toast"></div>
@@ -829,8 +788,8 @@ const $ = function (s) { return document.querySelector(s); };
 const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
 const PORT = window.matchMedia("(orientation: portrait)");
 const rxBox = $("#rx");
-const stage = $("#stage"), flashEl = $("#flash"), qrcard = $("#qrcard"), fx = $("#fx"), yb = $("#yb"), toastEl = $("#toast");
-const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint"), cmt = $("#cmt"), cn = $("#cn"), ct = $("#ct");
+const stage = $("#stage"), flashEl = $("#flash"), qrcard = $("#qrcard"), fx = $("#fx"), toastEl = $("#toast");
+const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint");
 $("#hi").innerHTML = ICON.heart;
 
 let items = [], pos = -1, fresh = [], seen = false;
@@ -858,7 +817,7 @@ function markScreenStatus(msg){
 }            
 let tok = 0, timer = null, wd = null;
 let cur = null, curItem = null, lastId = "", lastT = -1, lastTU = 0, revealAt = 0, planned = 0;
-let lastQR = Date.now(), lite = false, commentsOn = true, soundOn = false, fxN = 0, toastT = null, needTap = null;
+let lastQR = Date.now(), lite = false, soundOn = false, fxN = 0, toastT = null, needTap = null;
 const bad = {}, lastLikes = {}, warmed = {}, views = {};
 
 function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -871,8 +830,7 @@ function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.clas
 function showQR(on) {
   if(on){hint.textContent="A SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
   qrcard.className = on ? "on" : "";
-  // The QR interlude is not attributed to anyone. Keep event status/signatures
-  // but hide the stale "Shot by" name and like total until media plays.
+  // Hide media-specific attribution on the dedicated QR scan screen.
   document.body.classList.toggle("qr-screen", !!on);
 }
 
@@ -1223,7 +1181,7 @@ function setHearts(id, bumpIt) {
   if (bumpIt && eligible) { hnEl.className = ""; void hnEl.offsetWidth; hnEl.className = "bump"; }
 }
 function setBar(m, isFresh) {
-  if (!cShowing) { hint.textContent = "Tonight’s memories · live"; hint.hidden = false; }
+  hint.textContent = "Tonight’s memories · live"; hint.hidden = false;
   nmEl.textContent = m.name || "Somebody";
   nmEl.className = "nm"; void nmEl.offsetWidth; nmEl.className = "nm slam";
   newb.style.display = isFresh ? "block" : "none";
@@ -1406,7 +1364,6 @@ function reveal(w, m, isFresh, my) {
   if (old) { old.className = "w old"; setTimeout(function () { drop(old); }, t.ms + 150); }
   Array.prototype.slice.call(stage.children).forEach(function (c) { if (c !== w && c !== old) drop(c); });
   setBar(m, isFresh);
-  showSignatureOnReveal(m.id);
   showWhy(m);
   publish(m);
   const el = w.firstChild;
@@ -1505,7 +1462,6 @@ function next() {
 function nextInner() {
   if (screenPaused) { if(!curItem)showPauseStatus();return; }
   clearTimeout(timer); clearTimeout(wd);
-  if (mode === "yearbook") return;
   // Protect a playing video from incidental slideshow/Firestore updates.
   const activeVideo=cur?.firstChild;
   if(mode==="loop"&&curItem?.type==="video"&&activeVideo?.tagName==="VIDEO" &&
@@ -1533,7 +1489,7 @@ function nextInner() {
 }
 function qrInterlude() {
   mode = "qr"; tok++; lastQR = Date.now();markScreenStatus("SCAN BREAK · resumes in 18 seconds");
-  stopMedia();clearMediaSignature(); showQR(true);
+  stopMedia(); showQR(true);
   timer = setTimeout(function () {
     showQR(false);
     timer = setTimeout(function () { lastQR = Date.now(); mode = "loop"; next(); }, 500);
@@ -1541,7 +1497,7 @@ function qrInterlude() {
 }
 function goIdle(retry) {
   mode = "idle"; tok++; lastQR = Date.now();markScreenStatus("IDLE · "+items.length+" media ready");
-  stopMedia();clearMediaSignature(); showQR(true); setBarIdle();
+  stopMedia(); showQR(true); setBarIdle();
   if (retry) timer = setTimeout(next, 5000);
 }
 
@@ -1550,7 +1506,7 @@ function burst(k, n) {
   for (let i = 0; i < cnt; i++) setTimeout(function () { floater(k); }, i * 140);
 }
 function floater(k) {
-  if (fxN >= (lite ? 4 : 14) || mode === "yearbook") return;
+  if (fxN >= (lite ? 4 : 14)) return;
   fxN++;
   const port = PORT.matches, u = port ? "vw" : "vh";
   const e = document.createElement("div"); e.className = "fl";
@@ -1562,180 +1518,6 @@ function floater(k) {
   e.style.animationDuration = (2.8 + Math.random() * 1.4) + "s";
   fx.appendChild(e);
   setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); fxN--; }, 4500);
-}
-
-// A signature belongs ONLY to its selected media. Never put signatures
-// into a global playlist that can overlay somebody else's photograph.
-let cShowing=false,commentTimer=null,commentSnapshot=null;
-const seenCommentIds=new Set(),signaturesByMedia=new Map();
-function clearMediaSignature(){
-  clearTimeout(commentTimer);commentTimer=null;cShowing=false;
-  cmt.hidden=true;hint.hidden=false;
-}
-function showSignatureFor(id,entry){
-  if(!commentsOn||mode!=="loop"||curItem?.id!==id||!entry)return;
-  clearTimeout(commentTimer);
-  cShowing=true;hint.hidden=true;cmt.hidden=false;
-  cn.textContent=entry.name;ct.textContent=entry.text;
-  cmt.className="cmt";void cmt.offsetWidth;cmt.className="cmt pop";
-  commentTimer=setTimeout(()=>{
-    if(curItem?.id===id)clearMediaSignature();
-  },7500);
-}
-function refreshMediaSignatures(){
-  signaturesByMedia.clear();
-  if(!commentSnapshot||!currentEventId)return;
-  for(const d of commentSnapshot.docs){
-    const x=d.data();
-    if(x.eventId!==currentEventId||!x.mediaId||!x.text)continue;
-    const row=signaturesByMedia.get(x.mediaId)||[];
-    row.push({id:d.id,name:String(x.name||"Guest").slice(0,24),text:String(x.text).slice(0,70)});
-    signaturesByMedia.set(x.mediaId,row);
-  }
-}
-function showSignatureOnReveal(id){
-  clearMediaSignature();
-  const entries=signaturesByMedia.get(id);
-  if(entries?.length)showSignatureFor(id,entries[0]);
-}
-
-function clearYB() {
-  $$("#yb video").forEach(function (v) { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} });
-  yb.innerHTML = "";
-}
-function mediaEl(m) {
-  const v = m.type === "video";
-  const e = document.createElement(v ? "video" : "img"); e.className = "mi";
-  if (v) { e.muted = true; e.loop = true; e.autoplay = true; e.playsInline = true; e.setAttribute("playsinline", ""); }
-  e.src = photoLinks.resolve(playUrl(m)); return e;
-}
-function coverPage(sub) {
-  const pg = h("div", "pg cover"), box = h("div");
-  box.appendChild(h("div", "k", "Tonight, in review"));
-  box.appendChild(h("div", "t", "Yearbook"));
-  if (sub) box.appendChild(h("div", "n", sub));
-  pg.appendChild(box); return pg;
-}
-function awardPage(a) {
-  const pg = h("div", "pg"), snap = h("div", "snap"), cap = h("div", "cap");
-  snap.appendChild(mediaEl(a.m));
-  snap.appendChild(h("em", "", a.m.name ? "by " + a.m.name : ""));
-  awardRail(cap, a.m.id);
-  cap.appendChild(h("div", "k", a.kicker));
-  cap.appendChild(h("div", "t", a.title));
-  cap.appendChild(h("div", "n", a.who || a.m.name || ""));
-  if (a.stat) cap.appendChild(h("div", "s", a.stat));
-  const wr = whoRow(a.m.id); if (wr) cap.appendChild(wr);
-  pg.appendChild(snap); pg.appendChild(cap); return pg;
-}
-function sigPage(list, pageNo, pageTotal) {
-  const pg = h("div", "pg sig");
-  const head = h("div", "sig-head");
-  head.appendChild(h("div", "t2", "Yearbook notes"));
-  head.appendChild(h("div", "sig-page-no", "PAGE " + pageNo + " / " + pageTotal));
-  pg.appendChild(head);
-  pg.appendChild(h("div", "sig-sub", "Little messages from the people who made tonight."));
-  const grid = h("div", "sig-grid");
-  list.forEach(function (c, i) {
-    const card = h("div", "sig-card");
-    card.appendChild(h("div", "sig-text", c.text));
-    card.appendChild(h("div", "sig-name", "— " + c.name));
-    card.style.animationDelay = (i * 180) + "ms";
-    grid.appendChild(card);
-  });
-  pg.appendChild(grid);
-  return pg;
-}
-function classPage() {
-  const pg = h("div", "pg cls"), grid = h("div", "grid");
-  pg.appendChild(h("div", "t2", "Class of tonight"));
-  const picks = items.map(m => photoLinks.resolve(thumb(m))).filter(function (u) { return u; });
-  picks.sort(function () { return Math.random() - .5; });
-  picks.slice(0, 18).forEach(function (u, i) {
-    const c = h("div", "cell"), im = new Image();
-    c.style.animationDelay = (i * 90) + "ms";
-    c.style.setProperty("--r", ((Math.random() * 6) - 3).toFixed(1) + "deg");
-    im.alt = ""; im.src = u; c.appendChild(im); grid.appendChild(c);
-  });
-  pg.appendChild(grid);
-  pg.appendChild(h("div", "foot", "Thanks for coming. See you next time."));
-  return pg;
-}
-
-async function yearbook() {
-  if (mode === "yearbook") return;
-  mode = "yearbook"; tok++; clearTimeout(timer); clearTimeout(wd);
-  stopMedia(); showQR(false); fx.innerHTML = ""; fxN = 0;
-  yb.className = "on"; clearYB(); yb.appendChild(coverPage(""));
-  let R = [], C = [];
-  try { const a = await getDocs(collection(db, "reactions")); R = a.docs.map(function (d) { return d.data(); }).filter(d => !!currentEventId && d.eventId === currentEventId); } catch (e) { console.warn(e); }
-  try { const b = await getDocs(collection(db, "comments")); C = b.docs.map(function (d) { return d.data(); }).filter(d => !!currentEventId && d.eventId === currentEventId); } catch (e) { console.warn(e); }
-  if (mode !== "yearbook") return;
-
-  const S = {}; let rt = 0;
-  items.forEach(function (m) { S[m.id] = { m: m, heart: m.likes || 0, star: 0, bolt: 0, lol: 0, wow: 0, cool: 0, sad: 0, down: 0, cm: 0 }; });
-  R.forEach(function (r) {
-    if (!r.c) return;
-    Object.keys(r.c).forEach(function (k) {
-      const n = +r.c[k] || 0; rt += n;
-      const s = S[r.mediaId]; if (s && s[k] !== undefined) s[k] += n;
-    });
-  });
-  C.forEach(function (c) { const s = S[c.mediaId]; if (s) s.cm++; });
-
-  const used = {}, A = [];
-  function best(key) {
-    let b = null;
-    Object.keys(S).forEach(function (id) { const s = S[id]; if (!used[id] && s[key] > 0 && (!b || s[key] > b[key])) b = s; });
-    return b;
-  }
-  function add(key, title, kicker, unit) {
-    const b = best(key); if (!b) return;
-    used[b.m.id] = 1;
-    A.push({ m: b.m, title: title, kicker: kicker, stat: b[key] + " " + (b[key] === 1 ? unit.replace(/s$/, "") : unit) });
-  }
-  add("heart", "Most loved", "The fan favorite", "hearts");
-  add("lol", "Funniest", "Somebody lost it", "laughs");
-  add("wow", "Most shocking", "Jaws on the floor", "wows");
-  add("star", "Star of the show", "Main character energy", "stars");
-  add("bolt", "Most electric", "Pure energy", "bolts");
-  add("cm", "Most talked about", "Everybody had opinions", "comments");
-  add("cool", "Too cool", "Sunglasses required", "cools");
-  add("down", "Most shaded", "Shade level: extreme", "shades");
-  if (items.length) {
-    const f = items[0], l = items[items.length - 1];
-    if (!used[f.id]) { used[f.id] = 1; A.push({ m: f, title: "First one in", kicker: "Early bird", stat: "" }); }
-    if (!used[l.id]) { used[l.id] = 1; A.push({ m: l, title: "Last call", kicker: "Night owl", stat: "" }); }
-  }
-  const by = {};
-  items.forEach(function (m) { const k = (m.name || "").trim().toLowerCase(); if (!k) return; (by[k] = by[k] || []).push(m); });
-  let top = null;
-  Object.keys(by).forEach(function (k) { if (by[k].length > 1 && (!top || by[k].length > top.length)) top = by[k]; });
-  if (top) { const lm = top[top.length - 1]; A.push({ m: lm, title: "Life of the party", kicker: "Camera never stopped", who: lm.name, stat: top.length + " shots" }); }
-
-  const sig = C.filter(function (c) { return c.text; })
-    .sort(function (a, b) { return ((b.t && b.t.seconds) || 0) - ((a.t && a.t.seconds) || 0); })
-    .map(function (c) { return { name: String(c.name || "A guest").slice(0, 24), text: String(c.text).slice(0, 70) }; });
-
-  const pages = [{ ms: 4200, node: function () { return coverPage(items.length + " shots / " + rt + " reactions / " + sig.length + " signatures"); } }];
-  A.forEach(function (a) { pages.push({ ms: 7000, node: function () { return awardPage(a); } }); });
-  if (sig.length) {
-    const perPage = 4, totalPages = Math.ceil(sig.length / perPage);
-    for (let s = 0; s < sig.length; s += perPage) {
-      const chunk = sig.slice(s, s + perPage), pageNo = Math.floor(s / perPage) + 1;
-      pages.push({ ms: 12000, node: function () { return sigPage(chunk, pageNo, totalPages); } });
-    }
-  }
-  pages.push({ ms: 0, node: classPage });
-
-  let i = 0;
-  function step() {
-    if (mode !== "yearbook") return;
-    const p = pages[i++];
-    clearYB(); yb.appendChild(p.node());
-    if (p.ms) timer = setTimeout(step, p.ms);
-  }
-  step();
 }
 
 function applyScreenPause(paused) {
@@ -1753,7 +1535,7 @@ function applyScreenPause(paused) {
     } else if (mode === "loop" && curItem && curItem.type !== "video") {
       timer = setTimeout(next, pausedRemaining || 1000);
       slideDeadline = Date.now() + (pausedRemaining || 1000);
-    } else if (mode !== "yearbook") next();
+    } else next();
   }
 }
 function beginDisplayListeners(){
@@ -1782,7 +1564,7 @@ onSnapshot(doc(db,"display_control","current"),function(snap){
     // down that video. Likewise, non-playback control updates are harmless.
     const forceNewVideo=!!(v?.active&&v.mediaId&&v.mediaId!==curItem?.id);
     const clearOldForced=!!(previousKey&&!v?.active&&mode==="loop"&&curItem?.id);
-    if(!wantPause&&mode!=="yearbook" &&
+    if(!wantPause &&
        (forceNewVideo || (mode!=="loop"&&!curItem) || (clearOldForced&&curItem?.type!=="video"))){
       screenPaused=false;mode="idle";next();
     }
@@ -1840,8 +1622,6 @@ function resetForEventChange() {
   stage.replaceChildren();
   clearRx();
   fx.replaceChildren(); fxN = 0;
-  clearMediaSignature();signaturesByMedia.clear();seenCommentIds.clear();
-  yb.replaceChildren(); yb.className = "";
   showQR(true);
   items = []; pos = -1; fresh = []; seen = false; archivePlayback=false;
   cur = null; curItem = null; lastId = ""; override = null; overrideKey = ""; overridePlayed = false;
@@ -1909,10 +1689,8 @@ async function processMediaSnapshot(snap) {
   if(!curItem && list.length){
     markScreenStatus("SIGNING LINKS · "+list.length+" media record(s)");
     nmEl.textContent="LOADING EVENT MEDIA";
-    if(!cShowing){
-      hint.textContent="Connecting to the first photo or video…";
-      hint.hidden=false;
-    }
+    hint.textContent="Connecting to the first photo or video…";
+    hint.hidden=false;
   }
   // Try up to three recent items before showing a clear failure. This also
   // avoids blocking playback on one expired historical Cloudinary asset.
@@ -1925,7 +1703,7 @@ async function processMediaSnapshot(snap) {
   if(!ready.length&&list.length){
     markScreenStatus("SECURE LINK ERROR · "+safeMediaError(firstError));
     nmEl.textContent="MEDIA LINK ERROR";
-    cmt.hidden=true;hint.hidden=false;
+    hint.hidden=false;
     hint.textContent="Secure playback unavailable: "+safeMediaError(firstError)+". Check the deployed signing function.";
     console.error("No media could be signed",firstError);
     return;
@@ -1953,7 +1731,7 @@ async function processMediaSnapshot(snap) {
   archivePlayback=fallback;items=list;
   markScreenStatus(items.length?("READY · "+items.length+" media item(s)"+(fallback?" · earlier event":"")):"NO PLAYABLE MEDIA");
   refreshArchiveReactions();refreshArchiveGifts();updateGiftTally();recoverRecentGiftSpectacles();
-  if (list.length && !cShowing) { hint.textContent = fallback ? "Playing earlier memories until this event receives new photos and videos." : "Tonight’s memories · live"; hint.hidden = false; }
+  if (list.length) { hint.textContent = fallback ? "Playing earlier memories until this event receives new photos and videos." : "Tonight’s memories · live"; hint.hidden = false; }
   if(leavingArchive){stopMedia();mode="idle";pos=-1;}
   if (!list.length) {
     nmEl.textContent = "NO AVAILABLE MEDIA";
@@ -1965,7 +1743,6 @@ async function processMediaSnapshot(snap) {
   if (curItem && mode === "loop" && list.some(function (m) { return m.id === curItem.id && m.rotationPaused; })) {
     if (!screenPaused) { stopMedia(); next(); }
   }
-  if (first && /[?&]yearbook\b/.test(location.search)) { yearbook(); return; }
   if (mode === "boot" || mode === "idle" || (mode==="qr"&&!lastPlaybackStartedAt&&items.length)) next();
   if(screenPaused && !curItem && list.length)showPauseStatus();
 }
@@ -2045,21 +1822,6 @@ onSnapshot(collection(db,"photo_gifts"),function(s){
  badge.replaceChildren(h("strong","gift-tally-header","SPECTACLES NOT SYNCED: "+(e.code||e.message||"unknown")));
 });
 
-onSnapshot(query(collection(db, "comments"), orderBy("t", "desc"), limit(100)), function(s){
-  commentSnapshot=s;
-  if(!currentEventId)return;
-  refreshMediaSignatures();
-  // Only a brand-new signature for the CURRENT media appears immediately.
-  // Existing entries are shown when their own photo/video comes into view.
-  for(const change of s.docChanges()){
-    if(change.type!=="added")continue;
-    const d=change.doc,x=d.data();
-    if(!x.mediaId||x.eventId!==currentEventId||!x.text||seenCommentIds.has(d.id))continue;
-    seenCommentIds.add(d.id);
-    if(!s.metadata.fromCache&&curItem?.id===x.mediaId&&mode==="loop")
-      showSignatureFor(x.mediaId,{name:String(x.name||"Guest").slice(0,24),text:String(x.text).slice(0,70)});
-  }
-},function(e){console.warn("Signatures unavailable:",e);});
 /* Independent playback recovery for QR screens and stale signed links. */
 setInterval(()=>{
  if(!displayAuth.currentUser||document.hidden)return;
