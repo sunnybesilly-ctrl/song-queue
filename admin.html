@@ -220,7 +220,15 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
  <button class="go" id="makeGalleryCode" type="button" style="flex:1;min-width:130px">Generate guest code</button>
  <button class="go" id="closeGalleryEvent" type="button" style="flex:1;min-width:130px">Close gallery</button>
  </div>
+ <div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px">
  <div id="newGalleryCode" aria-live="polite" style="font-size:clamp(32px,8vw,58px);font-weight:900;letter-spacing:.13em;color:#efff17;text-align:center;padding:14px;overflow-wrap:anywhere"></div>
+ <button id="copyGalleryCode" type="button" class="go" style="width:auto;font-size:20px" hidden>COPY 8-DIGIT CODE</button>
+ </div>
+ <div id="galleryCodeFallback" hidden>
+ <label for="galleryCodeManual">Select and copy this 8-digit code manually:</label>
+ <input id="galleryCodeManual" type="text" readonly inputmode="numeric" style="width:100%;font-size:20px">
+ </div>
+ <p id="galleryCodeCopyStatus" class="l" role="status" aria-live="polite" aria-atomic="true"></p>
  <div id="guestInvitePanel" hidden><div class="guest-invite-card">
 <div id="guestInviteQr" aria-label="One-time guest invitation QR code"></div>
 <div class="guest-invite-detail"><strong>SCAN TO JOIN</strong><span>One guest · One use · 5 minutes</span><span>Scan, then tap UNLOCK. No phone number needed.</span>
@@ -349,6 +357,35 @@ $("adminGiftButtons").addEventListener("click",async e=>{
 
 const galleryStateText=document.getElementById("galleryEventStatus");
 let galleryOperation=false,guestInviteUrl="";
+function resetGalleryCodeCopy(){
+ $("copyGalleryCode").hidden=!/^\d{8}$/.test($("newGalleryCode").textContent);
+ $("galleryCodeFallback").hidden=true;
+ $("galleryCodeManual").value="";
+ $("galleryCodeCopyStatus").textContent="";
+}
+$("copyGalleryCode").addEventListener("click",async()=>{
+ const code=$("newGalleryCode").textContent;
+ if(!/^\d{8}$/.test(code))return;
+ const status=$("galleryCodeCopyStatus"),input=$("galleryCodeManual");
+ status.textContent="";
+ try{
+  await navigator.clipboard.writeText(code);
+  status.textContent="8-digit code copied.";
+ }catch(e){
+  input.value=code;
+  $("galleryCodeFallback").hidden=false;
+  input.focus();input.select();input.setSelectionRange(0,code.length);
+  let copied=false;
+  try{copied=document.execCommand("copy");}catch(e){}
+  if(copied){
+   $("galleryCodeFallback").hidden=true;
+   $("copyGalleryCode").focus();
+   status.textContent="8-digit code copied.";
+  }else{
+   status.textContent="Automatic copy unavailable. The 8-digit code is selected below. Use your device's Copy command.";
+  }
+ }
+});
 function renderGuestInvite(code){
  const url=new URL("react.html?v=20261111-36",location.href);
  url.search="";url.hash="invite="+encodeURIComponent(code);
@@ -392,10 +429,12 @@ async function gateAction(name,confirmText){
   const result=(await galleryCall(name)({})).data;
   if(name==="createGalleryCode"){
    document.getElementById("newGalleryCode").textContent=result.code;
+   resetGalleryCodeCopy();
    renderGuestInvite(result.code);
    galleryMsg.textContent="Single use • expires at "+new Date(result.expiresAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+". Give this code to ONE attendee.";
   }else{
    document.getElementById("newGalleryCode").textContent="";
+   resetGalleryCodeCopy();
    guestInviteUrl="";$("guestInvitePanel").hidden=true;$("guestInviteQr").replaceChildren();
    galleryMsg.textContent=name==="startGalleryEvent"?"New event opened. All previous guest codes and passes are invalid.":"Gallery closed. Guest access revoked.";
   }
