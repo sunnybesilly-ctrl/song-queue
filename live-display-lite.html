@@ -702,6 +702,46 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100% !important; overfl
 .paint-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.15; background: radial-gradient(circle at 12% 15%, #c8102e 0 95px, transparent 96px), radial-gradient(circle at 88% 20%, #c8102e 0 110px, transparent 111px), radial-gradient(circle at 85% 85%, #c8102e 0 100px, transparent 101px); }
 #notesCanvas { display: none !important; }
 .chat-section { background: rgba(0,0,0,0.72) !important; }
+
+/* Jukebox cabinet hem: static glass tubes, safe inset for projector edges. */
+#stage > .container {
+  position: absolute;
+  left: 52px;
+  top: 52px;
+  width: 1816px !important;
+  height: 976px !important;
+}
+.jukebox-hem {
+  position: absolute;
+  inset: 0;
+  z-index: 9500;
+  pointer-events: none;
+  border: 10px solid #071b0d;
+  border-radius: 62px;
+  box-shadow: inset 0 0 0 40px #071b0d;
+}
+.jukebox-hem::before,
+.jukebox-hem::after {
+  content: "";
+  position: absolute;
+  border: 5px solid #fff8cf;
+  border-radius: 44px;
+}
+.jukebox-hem::before {
+  inset: 8px;
+  box-shadow: 0 0 0 3px #FFD700, inset 0 0 0 3px #FFD700,
+    0 0 12px #FFD700, inset 0 0 12px #FFD700,
+    0 0 25px #FFD70080;
+}
+.jukebox-hem::after {
+  inset: 25px;
+  border-width: 3px;
+  border-color: #defff4;
+  border-radius: 28px;
+  box-shadow: 0 0 0 2px #6DD5FF, inset 0 0 0 2px #5CFF9D,
+    0 0 10px #6DD5FF, inset 0 0 10px #5CFF9D;
+}
+
 </style>
 <link rel="apple-touch-icon" href="icon-lite.png?v=20261111-links2">
 <link rel="icon" type="image/png" href="icon-lite.png?v=20261111-links2">
@@ -739,6 +779,7 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100% !important; overfl
   
 <body>
 <div id="stage">
+<div class="jukebox-hem" aria-hidden="true"></div>
 <script>
 var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 (function () {
