@@ -30,6 +30,27 @@
     :root{--edge-x:0%;--edge-y:0%}
     .fallback{display:none}
   }
+
+  /* Two slim lit tubes in the existing overscan buffer. */
+  .tv-frame{
+    position:absolute;
+    inset:calc(var(--edge-y) - 1.7%) calc(var(--edge-x) - 1.2%);
+    border:2px solid #ffffcc;border-radius:22px;
+    box-shadow:0 0 0 2px #f4ff1a,inset 0 0 0 2px #f4ff1a,
+      0 0 12px #f4ff1a66,inset 0 0 12px #f4ff1a33;
+    pointer-events:none;z-index:2
+  }
+  .tv-frame::after{
+    content:"";position:absolute;inset:6px;border:1px solid #caffdc;
+    border-radius:16px;
+    box-shadow:0 0 6px #37ff76aa,inset 0 0 6px #37ff7644;
+    animation:tv-tube-glow 8s ease-in-out infinite
+  }
+  .screen{border-radius:10px}
+  @keyframes tv-tube-glow{0%,100%{opacity:.65}50%{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.tv-frame::after{animation:none}}
+  @media(max-width:700px) and (orientation:portrait){.tv-frame{display:none}.screen{border-radius:0}}
+
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -38,7 +59,8 @@
 <link rel="icon" type="image/png" href="icons/photo-tv.png?v=20261111-links2">
 </head>
 <body>
-<iframe class="screen" title="Sunny DJ photo wall television display" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;layout=20261111-36" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-<div class="fallback"><a href="./display.html?v=20261111-36">Full-width display</a></div>
+<div class="tv-frame" aria-hidden="true"></div>
+<iframe class="screen" title="Sunny DJ photo wall television display" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;layout=20261115-philips-frame" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+<div class="fallback"><a href="./display.html?v=20261115-philips-frame">Full-width display</a></div>
 </body>
 </html>
