@@ -706,10 +706,12 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100% !important; overfl
 /* Jukebox cabinet hem: static glass tubes, safe inset for projector edges. */
 #stage > .container {
   position: absolute;
-  left: 52px;
-  top: 52px;
-  width: 1816px !important;
-  height: 976px !important;
+  left: 96px;
+  top: 54px;
+  width: 1920px !important;
+  height: 1080px !important;
+  transform: scale(0.9);
+  transform-origin: top left;
 }
 .jukebox-hem {
   position: absolute;
@@ -740,6 +742,40 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100% !important; overfl
   border-radius: 28px;
   box-shadow: 0 0 0 2px #6DD5FF, inset 0 0 0 2px #5CFF9D,
     0 0 10px #6DD5FF, inset 0 0 10px #5CFF9D;
+}
+
+
+/* Keep complete queue cards inside the cabinet's original proportions. */
+.song-info { gap: 6px; }
+.card-requester { font-size: 48px; }
+.card-song { font-size: 36px; line-height: 1.15; }
+.card-artist { font-size: 30px; }
+.card-hype {
+  font-size: 22px;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.newest-badge { font-size: 20px; line-height: 1.2; animation: none; }
+/* A slow change in tube brightness, with no flashing or moving lights. */
+.jukebox-hem::before { animation: cabinet-glow 7s ease-in-out infinite; }
+@keyframes cabinet-glow {
+  0%, 100% { opacity: .82; }
+  50% { opacity: 1; }
+}
+.jukebox-hem::after {
+  box-shadow: 0 0 0 2px #6DD5FF, inset 0 0 0 2px #5CFF9D,
+    0 0 14px #6DD5FF, inset 0 0 14px #5CFF9D,
+    0 0 26px #6DD5FF55;
+}
+.title { text-shadow: 0 0 12px #FFD70066, 0 0 28px #FFD70033, 0 3px 0 #000; }
+.chat-header { text-shadow: 0 0 12px #FFD70055; }
+.qr-verb { text-shadow: 0 0 10px var(--c), 0 3px 0 #000; }
+.total-stat { box-shadow: 0 0 0 3px #c8102e, 0 0 18px #FFD70033; }
+@media (prefers-reduced-motion: reduce) {
+  .jukebox-hem::before { animation: none; }
 }
 
 </style>
