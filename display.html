@@ -745,6 +745,67 @@ body.qr-screen #mediaComments{display:none}
 .gift-tally-badge{border-radius:3px}
 .spectacle-name{text-shadow:0 2px 12px #000;font-weight:900}
 .spectacle-from{text-shadow:0 2px 8px #000}
+
+/* Philips lower third: readable from the room, contained below the yellow rule.
+   Scoped to this TV so projector and guest-phone layouts keep their sizing. */
+@media (orientation:landscape) {
+ html.tv-safe { --bar:20vh; --reaction-dock:0vh; }
+ .tv-safe #bar {
+   grid-template-columns:minmax(0,48fr) minmax(0,52fr);
+   gap:0; padding:1.6vh 2.4vw;
+   border-top:3px solid var(--acid);
+ }
+ .tv-safe #brand {
+   left:2.4vw; bottom:0; top:auto; width:46vw; max-width:46vw;
+   height:var(--bar); padding:1.8vh 1.5vw 1.5vh 0;
+   gap:1.2vw; align-items:center;
+ }
+ .tv-safe #brand .brand-symbol {
+   flex:none; font-size:6.5vh; color:var(--acid);
+   text-shadow:0 0 14px #f4ff1a33;
+ }
+ .tv-safe #brand .brand-copy { gap:.9vh; width:100%; min-width:0; }
+ .tv-safe #brand .brand-copy strong {
+   font:900 5.4vh/1 var(--display);
+   letter-spacing:.015em; white-space:normal; color:var(--acid);
+ }
+ .tv-safe #brand .brand-copy span {
+   font:900 4.1vh/1.05 var(--display);
+   letter-spacing:.025em; white-space:normal;
+   overflow-wrap:normal; color:#ffffff;
+ }
+ .tv-safe #bar .who {
+   display:grid; grid-template-columns:minmax(0,1fr) auto;
+   grid-template-rows:auto minmax(0,1fr); gap:.7vh 1.3vw;
+   align-content:center; align-items:center; text-align:left;
+   padding:0 0 0 2.2vw; border-left:1px solid #f4ff1a55;
+   overflow:hidden; white-space:normal;
+ }
+ .tv-safe #bar .who .posted-by {
+   grid-column:1; grid-row:1;
+   font:800 3.5vh/1.1 var(--body); color:#e9ffea;
+ }
+ .tv-safe #bar .who .nm {
+   grid-column:1; grid-row:2;
+   font:900 6.2vh/1.02 var(--display);
+   width:100%; max-width:none; min-width:0;
+   white-space:normal; overflow-wrap:anywhere;
+   display:-webkit-box; -webkit-box-orient:vertical;
+   -webkit-line-clamp:2; color:var(--acid);
+ }
+ .tv-safe #bar .who .hr {
+   grid-column:2; grid-row:1 / 3; margin:0;
+   font-size:4.8vh; gap:.6vw;
+ }
+ .tv-safe #bar .who .hr svg { width:4.6vh; height:4.6vh; }
+ .tv-safe #bar .who .new { top:-4vh; font-size:2.8vh; }
+ .tv-safe body.qr-screen { --bar:14vh; }
+ .tv-safe body.qr-screen #bar .hint {
+   font-size:4.1vh; line-height:1.1; letter-spacing:.02em;
+ }
+ .tv-safe #bar .say { padding:0; }
+}
+
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -782,7 +843,7 @@ body.qr-screen #mediaComments{display:none}
   </div>
 </div>
 
-<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>An Always Sunny</strong><span>NEVERPARTLYCLOUDY PRODUCTION</span></span></div>
+<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>An Always Sunny</strong><span>NEVERPARTLYCLOUDY PRODUCTIONS</span></span></div>
 <div id="vbadge"></div>
 <div id="toast"></div>
 
@@ -911,7 +972,7 @@ function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTime
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) {
   if(on)document.getElementById("mediaComments").replaceChildren();
-  if(on){hint.textContent="AN ALWAYS SUNNY · NEVERPARTLYCLOUDY PRODUCTION";hint.hidden=false;}
+  if(on){hint.textContent="AN ALWAYS SUNNY · NEVERPARTLYCLOUDY PRODUCTIONS";hint.hidden=false;}
   qrcard.className = on ? "on" : "";
   // Hide media-specific attribution on the dedicated QR scan screen.
   document.body.classList.toggle("qr-screen", !!on);
