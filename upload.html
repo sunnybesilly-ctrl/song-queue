@@ -87,13 +87,29 @@ body{
 .editor{margin-top:14px;padding:16px;background:rgba(2,10,5,.78);border:1px solid var(--line)}
 .editor h3{font-family:var(--display);font-size:30px;line-height:1;color:var(--acid);text-transform:uppercase;margin-bottom:8px}
 .editor p{font-size:14px;color:var(--dim);margin-bottom:12px}
-.edit-row{margin-top:12px}
-.edit-row label{display:flex;justify-content:space-between;gap:12px;font-size:14px;font-weight:700;color:var(--bone);margin-bottom:6px}
-.edit-row input[type=range],.edit-row select{width:100%;accent-color:var(--lime)}
-.edit-row select{background:#020A05;color:var(--bone);border:1px solid var(--line);padding:10px;font:inherit}
-.edit-preview{display:block;width:100%;max-height:240px;object-fit:contain;background:#000}
-.timepair{display:flex;gap:12px;align-items:center;color:var(--dim);font-size:13px}
-.timepair span{flex:1}
+.edit-source{position:absolute;width:1px;height:1px;opacity:.001;pointer-events:none}
+.edit-stage{position:relative;margin:0 auto;background:#000;touch-action:none;user-select:none;cursor:crosshair}
+.edit-stage canvas{display:block;width:100%;height:auto}
+.crop-frame{position:absolute;border:2px solid var(--acid);box-shadow:0 0 0 100vmax #0009;pointer-events:none}
+.edit-stage{overflow:hidden}
+.crop-frame button{position:absolute;width:44px;height:44px;border:0;background:none;padding:0;pointer-events:auto;touch-action:none}
+.crop-frame button::after{content:"";position:absolute;width:12px;height:12px;background:var(--acid);border:1px solid #101600}
+.crop-frame [data-corner="nw"]{top:0;left:0;cursor:nwse-resize}
+.crop-frame [data-corner="ne"]{top:0;right:0;cursor:nesw-resize}
+.crop-frame [data-corner="sw"]{bottom:0;left:0;cursor:nesw-resize}
+.crop-frame [data-corner="se"]{bottom:0;right:0;cursor:nwse-resize}
+.crop-frame [data-corner^="n"]::after{top:0}
+.crop-frame [data-corner^="s"]::after{bottom:0}
+.crop-frame [data-corner$="w"]::after{left:0}
+.crop-frame [data-corner$="e"]::after{right:0}
+.crop-frame button:focus-visible,.edit-controls button:focus-visible{outline:2px solid white;outline-offset:-3px}
+.edit-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.edit-controls[hidden],.edit-stage[hidden]{display:none}
+.edit-controls button{min-height:44px;padding:6px 12px;border:1px solid var(--line);background:#020a05;color:var(--bone);font:inherit;cursor:pointer}
+.edit-controls button:disabled{opacity:.5;cursor:default}
+.edit-controls input{flex:1;min-width:55px;accent-color:var(--lime)}
+#editDuration{font-size:14px;color:var(--bone);font-variant-numeric:tabular-nums}
+
 .drop.has{padding:0;border-style:solid;border-color:var(--lime);background:var(--bog)}
 .drop.has::after{display:none}
 .drop.has .drop-idle{display:none}
@@ -170,22 +186,27 @@ body{
       </label>
       <div class="editor" id="editor" hidden>
         <h3 id="editorTitle">Edit your media</h3>
-        <p id="editorHelp">Preview your changes before sending.</p>
-        <div id="videoEdit" hidden>
-          <video class="edit-preview" id="editVideo" controls playsinline></video>
-        </div>
-        <div id="imageEdit" hidden>
-          <img class="edit-preview" id="editImage" alt="Crop preview">
-          <div class="edit-row">
-            <label for="cropRatio">Photo crop</label>
-            <select id="cropRatio">
-              <option value="original">Original shape</option>
-              <option value="1:1">Square</option>
-              <option value="4:5">Portrait (4:5)</option>
-              <option value="16:9">Wide (16:9)</option>
-            </select>
+        <p id="editorHelp">Drag on the preview or move the corners to crop to any shape. Use the arrows to rotate.</p>
+        <img id="editImage" hidden alt="">
+        <video class="edit-source" id="editVideo" playsinline preload="auto" aria-hidden="true"></video>
+        <div class="edit-stage" id="editStage" hidden>
+          <canvas id="editCanvas" aria-label="Media preview"></canvas>
+          <div class="crop-frame" id="cropFrame">
+            <button type="button" data-corner="nw" aria-label="Crop top left. Use arrow keys to move."></button>
+            <button type="button" data-corner="ne" aria-label="Crop top right. Use arrow keys to move."></button>
+            <button type="button" data-corner="sw" aria-label="Crop bottom left. Use arrow keys to move."></button>
+            <button type="button" data-corner="se" aria-label="Crop bottom right. Use arrow keys to move."></button>
           </div>
-          <p>The crop is centered. Choose the shape that looks best.</p>
+        </div>
+        <div class="edit-controls" id="videoTools" hidden>
+          <button type="button" id="editPlay">Play</button>
+          <input type="range" id="editSeek" aria-label="Video position" min="0" max="0" step=".01" value="0">
+          <span id="editDuration"></span>
+        </div>
+        <div class="edit-controls">
+          <button type="button" id="rotateLeft">↶ Left</button>
+          <button type="button" id="rotateRight">↷ Right</button>
+          <button type="button" id="cropReset">Reset</button>
         </div>
       </div>
     </div>
@@ -207,10 +228,11 @@ body{
     <div class="go-wrap"><button class="go ghost again" id="again" type="button">Send another</button></div>
   </section>
 
-  <p class="brand">An Always Sunny <b>neverpartlycloudy</b> production</p>
+  <p class="brand"><b>Never Partly Cloudy Production</b></p>
 </main>
 
 <script type="module">
+import { createMediaEditor, mediaClock } from "./photo-wall-editor.js?v=20261118";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, collection, setDoc, serverTimestamp, getCountFromServer, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
@@ -243,8 +265,7 @@ const form = $("#form"), nameIn = $("#name"), fileIn = $("#file"), drop = $("#dr
 const prev = $("#prev"), meta = $("#meta"), go = $("#go"), goWrap = $("#goWrap"), goLabel = $("#goLabel");
 const meter = $("#meter"), led = $("#led"), statusEl = $("#status");
 const done = $("#done"), rank = $("#rank"), again = $("#again");
-const editor = $("#editor"), videoEdit = $("#videoEdit"), imageEdit = $("#imageEdit"), editVideo = $("#editVideo"), editImage = $("#editImage");
-const cropRatio = $("#cropRatio");
+const mediaEditor = createMediaEditor($("#editor"));
 
 for (let i = 0; i < SEGMENTS; i++) led.appendChild(document.createElement("i"));
 const segs = led.children;
@@ -262,17 +283,6 @@ function guestId() {
 
 let busy = false;
 let objUrl = null;
-let selectedIsVideo = false;
-cropRatio.addEventListener("change", updateCropPreview);
-function updateCropPreview() {
-  const ratio = cropRatio.value;
-  editImage.style.objectFit = ratio === "original" ? "contain" : "cover";
-  if (ratio === "1:1") editImage.style.aspectRatio = "1 / 1";
-  else if (ratio === "4:5") editImage.style.aspectRatio = "4 / 5";
-  else if (ratio === "16:9") editImage.style.aspectRatio = "16 / 9";
-  else { editImage.style.aspectRatio = "auto"; editImage.style.maxHeight = "240px"; }
-}
-
 function setPct(p) {
   const n = Math.round(p * SEGMENTS);
   for (let i = 0; i < SEGMENTS; i++) {
@@ -282,6 +292,7 @@ function setPct(p) {
 }
 function setBusy(b) {
   busy = b;
+  mediaEditor.lock(b);
   go.disabled = b;
   nameIn.disabled = b;
   fileIn.disabled = b;
@@ -304,12 +315,7 @@ function clearPreview() {
   prev.innerHTML = "";
   prev.hidden = true;
   meta.hidden = true;
-  editor.hidden = true;
-  videoEdit.hidden = true;
-  imageEdit.hidden = true;
-  editVideo.removeAttribute("src");
-  editImage.removeAttribute("src");
-  selectedIsVideo = false;
+  mediaEditor.clear();
   drop.classList.remove("has");
 }
 
@@ -341,24 +347,7 @@ fileIn.addEventListener("change", () => {
   meta.textContent = f.name + " (" + fmtSize(f.size) + "). Tap to change.";
   meta.hidden = false;
   drop.classList.add("has");
-  editor.hidden = false;
-  selectedIsVideo = isV;
-  if (isV) {
-    videoEdit.hidden = false;
-    imageEdit.hidden = true;
-    editVideo.src = objUrl;
-    editVideo.onloadedmetadata = null;
-    $("#editorTitle").textContent = "Your video preview";
-    $("#editorHelp").textContent = "Your entire video will be uploaded. You can press play to preview it.";
-  } else {
-    videoEdit.hidden = true;
-    imageEdit.hidden = false;
-    editImage.src = objUrl;
-    cropRatio.value = "original";
-    updateCropPreview();
-    $("#editorTitle").textContent = "Crop your photo";
-    $("#editorHelp").textContent = "Choose a shape for the screen. Your original upload stays untouched.";
-  }
+  mediaEditor.selected(objUrl, isV);
   if (isV && f.size > MAX_VIDEO_MB * 1048576) {
     fail("That video is " + fmtSize(f.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Choose a smaller or shorter video.");
   }
@@ -374,23 +363,6 @@ function decodeViaImg(file) {
   });
 }
 
-async function cropImage(file, ratioChoice) {
-  if (ratioChoice === "original" || /gif|svg/.test(file.type)) return file;
-  try {
-    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const w = bmp.width, h = bmp.height;
-    const parts = ratioChoice.split(":").map(Number), target = parts[0] / parts[1];
-    let sw = w, sh = h;
-    if (w / h > target) sw = Math.round(h * target);
-    else sh = Math.round(w / target);
-    const sx = Math.round((w - sw) / 2), sy = Math.round((h - sh) / 2);
-    const c = document.createElement("canvas"); c.width = sw; c.height = sh;
-    c.getContext("2d").drawImage(bmp, sx, sy, sw, sh, 0, 0, sw, sh);
-    if (bmp.close) bmp.close();
-    const blob = await new Promise((res) => c.toBlob(res, "image/jpeg", 0.9));
-    return blob ? new File([blob], "shot-cropped.jpg", { type: "image/jpeg" }) : file;
-  } catch (e) { console.warn("Crop skipped:", e); return file; }
-}
 async function squeezeImage(file) {
   if (/gif|svg/.test(file.type)) return file;
   try {
@@ -476,8 +448,11 @@ form.addEventListener("submit", async (e) => {
     meter.hidden = true;
     goLabel.textContent = "Preparing your memory…";
     statusEl.textContent = "Getting everything ready.";
-    const cropped = isImage ? await cropImage(file, cropRatio.value) : file;
-    const prepared = isImage ? await squeezeImage(cropped) : file;
+    const edited = await mediaEditor.prepare(file, MAX_EDGE, MAX_VIDEO_MB * 1048576, (elapsed, duration) => {
+      goLabel.textContent = "Saving video edits";
+      statusEl.textContent = mediaClock(elapsed) + " / " + mediaClock(duration) + " · Keep this tab open.";
+    });
+    const prepared = isImage && edited === file ? await squeezeImage(file) : edited;
 
     setPct(0);
     meter.hidden = false;
