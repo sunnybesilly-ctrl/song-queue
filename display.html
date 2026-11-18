@@ -746,64 +746,65 @@ body.qr-screen #mediaComments{display:none}
 .spectacle-name{text-shadow:0 2px 12px #000;font-weight:900}
 .spectacle-from{text-shadow:0 2px 8px #000}
 
-/* Philips lower third: readable from the room, contained below the yellow rule.
-   Scoped to this TV so projector and guest-phone layouts keep their sizing. */
+/* Give the guest attribution and production credit room below the yellow rule. */
 @media (orientation:landscape) {
- html.tv-safe { --bar:20vh; --reaction-dock:0vh; }
- .tv-safe #bar {
-   grid-template-columns:minmax(0,48fr) minmax(0,52fr);
-   gap:0; padding:1.6vh 2.4vw;
-   border-top:3px solid var(--acid);
- }
- .tv-safe #brand {
-   left:2.4vw; bottom:0; top:auto; width:46vw; max-width:46vw;
-   height:var(--bar); padding:1.8vh 1.5vw 1.5vh 0;
-   gap:1.2vw; align-items:center;
- }
- .tv-safe #brand .brand-symbol {
-   flex:none; font-size:6.5vh; color:var(--acid);
-   text-shadow:0 0 14px #f4ff1a33;
- }
- .tv-safe #brand .brand-copy { gap:.9vh; width:100%; min-width:0; }
- .tv-safe #brand .brand-copy strong {
-   font:900 5.4vh/1 var(--display);
-   letter-spacing:.015em; white-space:normal; color:var(--acid);
- }
- .tv-safe #brand .brand-copy span {
-   font:900 4.1vh/1.05 var(--display);
-   letter-spacing:.025em; white-space:normal;
-   overflow-wrap:normal; color:#ffffff;
- }
- .tv-safe #bar .who {
-   display:grid; grid-template-columns:minmax(0,1fr) auto;
-   grid-template-rows:auto minmax(0,1fr); gap:.7vh 1.3vw;
-   align-content:center; align-items:center; text-align:left;
-   padding:0 0 0 2.2vw; border-left:1px solid #f4ff1a55;
-   overflow:hidden; white-space:normal;
- }
- .tv-safe #bar .who .posted-by {
-   grid-column:1; grid-row:1;
-   font:800 3.5vh/1.1 var(--body); color:#e9ffea;
- }
- .tv-safe #bar .who .nm {
-   grid-column:1; grid-row:2;
-   font:900 5.8vh/1.02 var(--display);
-   width:100%; max-width:none; min-width:0;
-   white-space:normal; overflow-wrap:anywhere;
-   display:-webkit-box; -webkit-box-orient:vertical;
-   -webkit-line-clamp:2; color:var(--acid);
- }
- .tv-safe #bar .who .hr {
-   grid-column:2; grid-row:1 / 3; margin:0;
-   font-size:4.8vh; gap:.6vw;
- }
- .tv-safe #bar .who .hr svg { width:4.6vh; height:4.6vh; }
- .tv-safe #bar .who .new { top:-4vh; font-size:2.8vh; }
- .tv-safe body.qr-screen { --bar:14vh; }
- .tv-safe body.qr-screen #bar .hint {
-   font-size:4.1vh; line-height:1.1; letter-spacing:.02em;
- }
- .tv-safe #bar .say { padding:0; }
+  :root, html.tv-safe { --bar:22vh; --reaction-dock:0vh; }
+  #bar, .tv-safe #bar {
+    grid-template-columns:minmax(0,43fr) minmax(0,57fr);
+    gap:0; padding:1.05vh 2.4vw;
+    border-top:3px solid var(--acid);
+  }
+  #brand, .tv-safe #brand {
+    left:2.4vw; bottom:0; top:auto; width:41vw; max-width:41vw;
+    height:var(--bar); padding:1.8vh 1.5vw 1.5vh 0;
+    gap:1.2vw; align-items:center;
+  }
+  #brand .brand-symbol, .tv-safe #brand .brand-symbol {
+    flex:none; font-size:min(6.5vh, 4vw); color:var(--acid);
+    text-shadow:0 0 14px #f4ff1a33;
+  }
+  #brand .brand-copy, .tv-safe #brand .brand-copy { gap:.9vh; width:100%; min-width:0; }
+  #brand .brand-copy strong, .tv-safe #brand .brand-copy strong {
+    font:900 min(6.1vh, 5.4vw)/1 var(--display);
+    letter-spacing:.015em; white-space:normal; color:var(--acid);
+  }
+  #brand .brand-copy span, .tv-safe #brand .brand-copy span {
+    font:900 min(4.7vh, 3.5vw)/1.05 var(--display);
+    letter-spacing:.025em; white-space:normal;
+    overflow-wrap:normal; color:#ffffff;
+  }
+  #bar .who, .tv-safe #bar .who {
+    display:grid; grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto minmax(0,1fr); gap:.45vh 1.3vw;
+    align-content:center; align-items:center; text-align:left;
+    padding:0 0 0 2.2vw; border-left:1px solid #f4ff1a55;
+    overflow:hidden; white-space:normal;
+  }
+  #bar .who .posted-by, .tv-safe #bar .who .posted-by {
+    grid-column:1; grid-row:1;
+    font:800 min(3.7vh, 4.1vw)/1.1 var(--body); color:#e9ffea;
+  }
+  #bar .who .nm, .tv-safe #bar .who .nm {
+    grid-column:1; grid-row:2;
+    font:900 min(7.2vh, 7.2vw)/1.02 var(--display);
+    width:100%; max-width:none; min-width:0;
+    white-space:normal; overflow-wrap:anywhere;
+    display:-webkit-box; -webkit-box-orient:vertical;
+    -webkit-line-clamp:2; color:var(--acid);
+  }
+  #bar .who .hr, .tv-safe #bar .who .hr {
+    grid-column:2; grid-row:1 / 3; margin:0;
+    font-size:min(5.5vh, 5.5vw); gap:.6vw;
+  }
+  #bar .who .hr svg, .tv-safe #bar .who .hr svg {
+    width:min(5.2vh, 5.2vw); height:min(5.2vh, 5.2vw);
+  }
+  #bar .who .new, .tv-safe #bar .who .new { top:-4vh; font-size:2.8vh; }
+  body.qr-screen, .tv-safe body.qr-screen { --bar:13vh; }
+  body.qr-screen #qrcard .qt .a { font-size:min(20.5vh, 12vw, 245px); }
+  body.qr-screen #bar .hint, .tv-safe body.qr-screen #bar .hint {
+    font-size:min(5.2vh, 5.2vw); line-height:1.1; letter-spacing:.02em;
+  }
 }
 
 </style>
