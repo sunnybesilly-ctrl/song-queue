@@ -203,7 +203,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 </div>
 
 <div id="app" hidden>
-  <p style="margin:12px 0 20px"><a href="event-archive.html?v=20261111-36" style="display:inline-block;background:#f4ff1a;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none">VIEW PRIVATE EVENT ARCHIVE</a> <a href="philips-tv.html?v=20261111-36" target="_blank" rel="noopener" style="display:inline-block;background:#37ff76;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none;margin-top:8px">OPEN PHILIPS TV DISPLAY</a></p>
+  <p style="margin:12px 0 20px"><a href="event-archive.html?v=20261119-photos" style="display:inline-block;background:#f4ff1a;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none">VIEW PRIVATE EVENT ARCHIVE</a> <a href="philips-tv.html?v=20261111-36" target="_blank" rel="noopener" style="display:inline-block;background:#37ff76;color:#061207;padding:12px 18px;border-radius:10px;font-weight:900;text-decoration:none;margin-top:8px">OPEN PHILIPS TV DISPLAY</a></p>
   <div class="dashboard-intro"><div><span class="eyebrow">LIVE EVENT · MANAGEMENT</span><h2>Tonight’s dashboard</h2><p>Keep the memories moving. You’re in control.</p></div><span class="live-indicator"><span class="live-dot"></span> CONTROL CENTER</span></div>
   <div class="top-panels">
   <div class="inject">
@@ -284,6 +284,7 @@ import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendE
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 
 import { createAdminPhotoLinks } from "./photo-links.js";
+import { closePhotosSave, openPhotosSave } from "./photo-save.js?v=20261119";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",
@@ -469,7 +470,7 @@ async function applyUser(user) {
   $("signOut").hidden = !user;
   if (ok && !started) { started = true; startApp(); }
 }
-onAuthStateChanged(auth, (user) => { applyUser(user); });
+onAuthStateChanged(auth, (user) => { closePhotosSave(); applyUser(user); });
 $("sendVerify").addEventListener("click", async () => {
   const st = $("verifyStatus");
   try { await sendEmailVerification(auth.currentUser); st.className = ""; st.textContent = "Sent. Check inbox and spam, open the link, then tap continue."; }
@@ -704,6 +705,12 @@ function renderGrid() {
     dl.href = photoLinks.resolve(download) || "#";
     dl.setAttribute("download", "");
     info.appendChild(dl);
+    const save = h("button", "go2", "SAVE TO PHOTOS");
+    save.type = "button";
+    save.addEventListener("click", () => openPhotosSave({
+      url: data.url, fallback: photoLinks.resolve(download), type: data.type, links: photoLinks,
+    }));
+    info.appendChild(save);
     card.appendChild(info);
     if (openId === d.id) { card.classList.add("open"); card.appendChild(logPanel(d, list)); }
     grid.appendChild(card);

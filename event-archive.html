@@ -30,6 +30,7 @@ import {getFirestore,collection,getDocs,doc,getDoc} from "https://www.gstatic.co
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 import {createAdminPhotoLinks} from "./photo-links.js";
+import { closePhotosSave, openPhotosSave } from "./photo-save.js?v=20261119";
 const config={apiKey:"AIzaSyC8iZiPt_BOZBJ8xiGZLELHRHqv6OSjUXg",authDomain:"dj-photo-wall.firebaseapp.com",projectId:"dj-photo-wall",storageBucket:"dj-photo-wall.firebasestorage.app",messagingSenderId:"187308843014",appId:"1:187308843014:web:a4dbf9c17011767890a387"};
 const app=initializeApp(config),db=getFirestore(app),auth=getAuth(app);
 const links=createAdminPhotoLinks(httpsCallable(getFunctions(app,"us-central1"),"signAdminPhotoWallUrls"));
@@ -75,7 +76,12 @@ function render(){
   const summary=el("div","reaction",Object.entries(counts).map(([k,n])=>(kinds[k]||k)+" "+n).join("  ")||"No reactions");
   const giftSummary=el("p","reaction",gifts.filter(g=>g.mediaId===m.id).map(g=>(g.name||"Guest")+" sent "+g.kind+" ("+g.cost+" credits)").join(" · ")||"No gifts");
   body.append(heading,date,summary,giftSummary);
-  if(url){const a=el("a","dl","Open / save media");a.href=url;a.target="_blank";a.rel="noopener noreferrer";body.append(a)}
+  if(url){
+   const a=el("a","dl","Open file");a.href=url;a.target="_blank";a.rel="noopener noreferrer";
+   const save=el("button","dl","Save to Photos");save.type="button";
+   save.addEventListener("click",()=>openPhotosSave({url:m.url,fallback:url,type:m.type,links}));
+   const actions=el("div","bar");actions.append(save,a);body.append(actions);
+  }
   else body.append(el("p","muted","Media preview unavailable or original no longer hosted."));
   card.append(mediaEl,body);grid.append(card);
  }
@@ -121,6 +127,7 @@ $("refresh").onclick=()=>void reload();
 $("exportCsv").onclick=()=>exportData("csv");
 $("exportJson").onclick=()=>exportData("json");
 onAuthStateChanged(auth,user=>{
+ closePhotosSave();
  const ok=user?.email==="sunnybesilly@gmail.com"&&user.emailVerified;
  $("login").hidden=!!ok;$("app").hidden=!ok;
  if(ok)void reload();else $("loginStatus").textContent=user?"Use the verified DJ admin account to view the archive.":"";
