@@ -8,49 +8,19 @@
 <style>
   :root{color-scheme:dark;--edge-x:6%;--edge-y:6%}
   *{box-sizing:border-box}
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#010603}
-  body{font:14px system-ui,Arial,sans-serif;color:#b5cfbd}
-  /* 1366×768 Philips panels can crop HDMI edges. The inset gives
-     the fullscreen show a protected title/QR safe area. */
-  .screen{
-    position:absolute;left:var(--edge-x);top:var(--edge-y);
-    width:calc(100% - 2 * var(--edge-x));
-    height:calc(100% - 2 * var(--edge-y));
-    border:0;display:block;background:#020a05;
-    box-shadow:0 0 0 1px #153a20,0 0 36px rgba(55,255,118,.10)
-  }
-  body::before{
-    content:"";position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(ellipse at 50% 50%,#092317,#010603 80%)
-  }
-  .fallback{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:9px;opacity:.45}
-  .fallback a{color:#a7d5ac;text-decoration:none}
-  /* Smaller buffer on ordinary computer monitors, preserve extra room on TV. */
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08090a}
+  body{font:14px system-ui,sans-serif}
+  /* Keep the Philips overscan inset around the content. */
+  .screen,.tv-frame{position:absolute;inset:var(--edge-y) var(--edge-x)}
+  .screen{width:calc(100% - 2 * var(--edge-x));height:calc(100% - 2 * var(--edge-y));border:0;background:#101113}
+  .tv-frame{outline:1px solid #44453a;pointer-events:none;z-index:2}
+  .fallback{position:absolute;bottom:1.35%;left:50%;transform:translateX(-50%);white-space:nowrap}
+  .fallback a{color:#bec0b3;font-size:clamp(11px,1.6vh,18px);text-decoration:none}
+  .fallback a:focus-visible{outline:2px solid #f4ff1a;outline-offset:3px}
   @media(max-width:700px) and (orientation:portrait){
     :root{--edge-x:0%;--edge-y:0%}
-    .fallback{display:none}
+    .tv-frame,.fallback{display:none}
   }
-
-  /* Two slim lit tubes in the existing overscan buffer. */
-  .tv-frame{
-    position:absolute;
-    inset:calc(var(--edge-y) - 1.7%) calc(var(--edge-x) - 1.2%);
-    border:2px solid #ffffcc;border-radius:22px;
-    box-shadow:0 0 0 2px #f4ff1a,inset 0 0 0 2px #f4ff1a,
-      0 0 12px #f4ff1a66,inset 0 0 12px #f4ff1a33;
-    pointer-events:none;z-index:2
-  }
-  .tv-frame::after{
-    content:"";position:absolute;inset:6px;border:1px solid #caffdc;
-    border-radius:16px;
-    box-shadow:0 0 6px #37ff76aa,inset 0 0 6px #37ff7644;
-    animation:tv-tube-glow 8s ease-in-out infinite
-  }
-  .screen{border-radius:10px}
-  @keyframes tv-tube-glow{0%,100%{opacity:.65}50%{opacity:1}}
-  @media(prefers-reduced-motion:reduce){.tv-frame::after{animation:none}}
-  @media(max-width:700px) and (orientation:portrait){.tv-frame{display:none}.screen{border-radius:0}}
-
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -60,7 +30,7 @@
 </head>
 <body>
 <div class="tv-frame" aria-hidden="true"></div>
-<iframe class="screen" title="Sunny DJ photo wall television display" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;layout=20261119-photo-wall" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-<div class="fallback"><a href="./display.html?v=20261119-photo-wall">Full-width display</a></div>
+<iframe class="screen" title="Sunny DJ photo wall television display" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;layout=20261119-wall-design" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+<div class="fallback"><a href="./display.html?v=20261119-wall-design">Full-width display</a></div>
 </body>
 </html>

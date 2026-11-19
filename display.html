@@ -35,31 +35,38 @@ body{font-family:var(--body);color:var(--bone)}
 .mi.kb{animation:kb 8s linear forwards}
 @keyframes kb{0%{transform:scale(1)}100%{transform:scale(1.07)}}
 
-/* Cinematic transitions: composited opacity/transform only, no video decoding effects. */
-@keyframes tAurora{0%{opacity:0;transform:translate3d(0,7%,0) scale(1.11)}55%{opacity:1}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
-@keyframes tSweepLeft{0%{opacity:0;transform:translate3d(14%,0,0) scale(1.035)}38%{opacity:1}100%{opacity:1;transform:none}}
-@keyframes tSweepRight{0%{opacity:0;transform:translate3d(-14%,0,0) scale(1.035)}38%{opacity:1}100%{opacity:1;transform:none}}
-@keyframes tGlide{0%{opacity:0;transform:translate3d(0,-10%,0) scale(1.08)}60%{opacity:1}100%{opacity:1;transform:none}}
-@keyframes tFocus{0%{opacity:0;transform:scale(1.22)}45%{opacity:1}100%{opacity:1;transform:scale(1)}}
-@keyframes tPulse{0%{opacity:0;transform:scale(.91)}65%{opacity:1;transform:scale(1.015)}100%{opacity:1;transform:scale(1)}}
-@keyframes tFade{from{opacity:0}to{opacity:1}}
-@keyframes tRetreat{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.045)}}
-.w{will-change:opacity,transform}
-.w.old{animation:tRetreat .85s cubic-bezier(.16,1,.3,1) both}
-.in-aurora{animation:tAurora .95s cubic-bezier(.16,1,.3,1) both}
-.in-sweepl{animation:tSweepLeft .9s cubic-bezier(.16,1,.3,1) both}
-.in-sweepr{animation:tSweepRight .9s cubic-bezier(.16,1,.3,1) both}
-.in-glide{animation:tGlide .9s cubic-bezier(.16,1,.3,1) both}
-.in-focus{animation:tFocus 1s cubic-bezier(.16,1,.3,1) both}
-.in-pulse{animation:tPulse .85s cubic-bezier(.16,1,.3,1) both}
-.in-fade{animation:tFade .6s ease-out both}
-.w.top::after{content:"";position:absolute;inset:0;pointer-events:none;border-top:2px solid rgba(244,255,26,.55);border-bottom:2px solid rgba(55,255,118,.45);opacity:0;animation:edgeGlow .95s ease-out}
-@keyframes edgeGlow{15%{opacity:.75}100%{opacity:0}}
-@media(prefers-reduced-motion:reduce){.w.top,.w.old,.w.top::after,.mi.kb{animation:none!important}.w.top{opacity:1}}
-
-#flash{position:absolute;left:0;top:0;right:0;bottom:calc(var(--bar) + var(--reaction-dock));z-index:5;background:#fff;opacity:0;pointer-events:none}
-#flash.go{animation:flash .45s ease-out}
-@keyframes flash{0%{opacity:0}18%{opacity:.5}100%{opacity:0}}
+/* Paired entrances and exits share the same timing so the screen never blanks. */
+.w{--scene-time:760ms;--scene-ease:cubic-bezier(.22,.82,.27,1)}
+.w.top{opacity:1;animation-duration:var(--scene-time);animation-timing-function:var(--scene-ease);animation-fill-mode:both}
+.w.old{animation:scene-dim var(--scene-time) ease-out both}
+.w.in-shutter{animation-name:scene-shutter}
+.w.in-sweep{animation-name:scene-sweep}
+.w.in-lift{animation-name:scene-lift}
+.w.in-fade{animation-name:scene-fade}
+.w.old.out-sweep{animation-name:scene-shift}
+.w.old.out-lift{animation-name:scene-drop}
+.w.old.out-fade{animation-name:scene-fade-out}
+@keyframes scene-shutter{
+  from{clip-path:inset(46% 0);transform:scale(1.07)}
+  to{clip-path:inset(0);transform:none}
+}
+@keyframes scene-sweep{
+  from{clip-path:inset(0 0 0 100%);transform:translateX(3vw) scale(1.035)}
+  to{clip-path:inset(0);transform:none}
+}
+@keyframes scene-lift{
+  from{clip-path:inset(100% 0 0);transform:translateY(4vh) scale(.98)}
+  to{clip-path:inset(0);transform:none}
+}
+@keyframes scene-dim{from{opacity:1;transform:none}to{opacity:.25;transform:scale(.98)}}
+@keyframes scene-shift{from{opacity:1;transform:none}to{opacity:.25;transform:translateX(-4vw)}}
+@keyframes scene-drop{from{opacity:1;transform:none}to{opacity:.25;transform:translateY(-4vh)}}
+@keyframes scene-fade{from{opacity:0}to{opacity:1}}
+@keyframes scene-fade-out{from{opacity:1}to{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+  .w.top,.w.old,.mi.kb{animation:none!important}
+  .w.old{opacity:0}
+}
 
 #qrcard{position:absolute;left:0;top:0;right:0;bottom:calc(var(--bar) + var(--reaction-dock));z-index:4;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;
   background:radial-gradient(120% 90% at 85% 10%,#0e2a17 0%,transparent 60%),radial-gradient(90% 70% at 10% 100%,#2a0a0a 0%,transparent 55%),#050a07;
@@ -707,67 +714,125 @@ body.qr-screen #mediaComments{display:none}
 .spectacle-name{text-shadow:0 2px 12px #000;font-weight:900}
 .spectacle-from{text-shadow:0 2px 8px #000}
 
-/* Give the media count and guest attribution room below the yellow rule. */
-@media (orientation:landscape) {
-  :root, html.tv-safe { --bar:22vh; --reaction-dock:0vh; }
-  #bar, .tv-safe #bar {
-    grid-template-columns:minmax(0,43fr) minmax(0,57fr);
-    gap:0; padding:1.05vh 2.4vw;
-    border-top:3px solid var(--acid);
-  }
-  #bar .who, .tv-safe #bar .who {
-    display:grid; grid-template-columns:minmax(0,1fr) auto;
-    grid-template-rows:auto minmax(0,1fr); gap:.45vh 1.3vw;
-    align-content:center; align-items:center; text-align:left;
-    padding:0 0 0 2.2vw; border-left:1px solid #f4ff1a55;
-    overflow:hidden; white-space:normal;
-  }
-  #bar .who .posted-by, .tv-safe #bar .who .posted-by {
-    grid-column:1; grid-row:1;
-    font:800 min(3.7vh, 4.1vw)/1.1 var(--body); color:#e9ffea;
-  }
-  #bar .who .nm, .tv-safe #bar .who .nm {
-    grid-column:1; grid-row:2;
-    font:900 min(7.2vh, 7.2vw)/1.02 var(--display);
-    width:100%; max-width:none; min-width:0;
-    white-space:normal; overflow-wrap:anywhere;
-    display:-webkit-box; -webkit-box-orient:vertical;
-    -webkit-line-clamp:2; color:var(--acid);
-  }
-  #bar .who .hr, .tv-safe #bar .who .hr {
-    grid-column:2; grid-row:1 / 3; margin:0;
-    font-size:min(5.5vh, 5.5vw); gap:.6vw;
-  }
-  #bar .who .hr svg, .tv-safe #bar .who .hr svg {
-    width:min(5.2vh, 5.2vw); height:min(5.2vh, 5.2vw);
-  }
-  #bar .who .new, .tv-safe #bar .who .new { top:-4vh; font-size:2.8vh; }
-  body.qr-screen, .tv-safe body.qr-screen { --bar:13vh; }
-  body.qr-screen #qrcard .qt .a { font-size:min(20.5vh, 12vw, 245px); }
-  body.qr-screen #bar .hint, .tv-safe body.qr-screen #bar .hint {
-    font-size:min(5.2vh, 5.2vw); line-height:1.1; letter-spacing:.02em;
-  }
+/* Photo Wall presentation */
+:root,html.tv-safe{--bar:15vh;--reaction-dock:0vh;--paper:#f5f5eb;--muted:#b8beb5}
+#stage{background:#08090a}
+.w.triptych{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr) minmax(0,1fr);gap:1px;background:#101113}
+.w.triptych>.portrait-side{opacity:.46;filter:saturate(.8) brightness(.78)}
+#bar,.tv-safe #bar{
+  grid-template-columns:minmax(0,1fr) minmax(0,auto);gap:3vw;padding:0 2.5vw;
+  background:#101113;border-top:2px solid var(--acid);
 }
+#bar .who,.tv-safe #bar .who{
+  grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;gap:2.6vw;
+  text-align:left;padding:0;border:0;white-space:normal;width:100%;height:100%;min-width:0;
+}
+.byline{min-width:0;flex:1;display:grid;align-content:center;gap:.5vh}
+#bar .who .posted-by,.tv-safe #bar .who .posted-by{
+  color:var(--muted);font:700 clamp(12px,2.2vh,24px)/1 var(--body);
+}
+#bar .who .nm,.tv-safe #bar .who .nm{
+  display:block;min-width:0;width:100%;max-width:none;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--paper);font:900 clamp(28px,7.4vh,88px)/.95 var(--display);
+}
+#bar .who .nm.slam{animation:byline-in .32s ease-out both}
+@keyframes byline-in{from{opacity:0;transform:translateY(.7vh)}to{opacity:1;transform:none}}
+#bar .who .hr,.tv-safe #bar .who .hr{
+  margin:0;font:700 clamp(14px,3.9vh,45px)/1 var(--body);gap:.55vw;color:#ff89a2;
+}
+#bar .who .hr svg,.tv-safe #bar .who .hr svg{width:clamp(15px,3.3vh,38px);height:clamp(15px,3.3vh,38px)}
+#bar .who .new,.tv-safe #bar .who .new{position:static;flex:none;margin-left:.65vw;color:var(--acid);
+  background:transparent;border:1px solid #f4ff1a70;padding:.26em .55em;border-radius:2px;
+  transform:none;animation:none;font:800 clamp(11px,2.65vh,28px)/1 var(--display);letter-spacing:.06em;
+}
+#bar .say,.tv-safe #bar .say{grid-column:2;grid-row:1;display:grid;align-content:center;justify-items:end;
+  gap:1vh;padding:0;min-width:0;overflow:visible;color:var(--paper);
+}
+#mediaCount,#videoTime{font:700 clamp(12px,2.8vh,31px)/1.15 var(--body);font-variant-numeric:tabular-nums}
+#mediaCount{color:var(--muted);text-align:right}
+#videoTime{font-weight:900;white-space:nowrap}
+#rx.docked,.tv-safe #rx.docked,#giftTally{background:#101113e8;border:1px solid #ffffff32;border-radius:4px;box-shadow:none}
+#giftTally{gap:.7vw;padding:.8vh 1vw}
+#giftTally .gift-tally-header{font:900 clamp(22px,4.4vh,54px)/.94 var(--display);letter-spacing:.01em;color:var(--acid)}
+#giftTally .gift-tally-badge{background:transparent;border:0;color:var(--paper)}
+.media-comment{background:#101113ee;border-left:0;border-top:2px solid var(--acid);padding:1.2vh 1.15vw}
+.comment-author{color:var(--paper)}
+.comment-body{color:#e0e2db;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 
-#mediaCount,#videoTime{font:800 clamp(11px,2.6vh,32px)/1.1 var(--body);color:#e9ffea}
-body.qr-screen #mediaCount{display:none}
-#videoTime{grid-column:2;grid-row:3;font-variant-numeric:tabular-nums;white-space:nowrap}
-.spectacle-copy .spectacle-name,.spectacle-copy .spectacle-from{max-width:100%;overflow-wrap:anywhere}
-.spectacle-copy .spectacle-name{font-size:clamp(48px,12vh,144px);line-height:.93;letter-spacing:.035em}
-.spectacle-copy .spectacle-from{font-size:clamp(26px,6.3vh,72px);line-height:1.03;letter-spacing:.025em}
-.spectacle-copy .spectacle-art{height:clamp(120px,31vh,360px);width:clamp(120px,31vh,360px)}
-.gift-tally-header{font-size:clamp(15px,3vh,34px)}
-@media(orientation:landscape){
-  #mediaCount{font-size:min(3.25vh,3vw);padding-right:1.5vw}
-  #bar .who,.tv-safe #bar .who{grid-template-rows:auto minmax(0,auto) auto;gap:.65vh 1.4vw}
-  #bar .who .nm,.tv-safe #bar .who .nm{font-size:min(6.75vh,6.8vw)}
-  #bar .who .hr,.tv-safe #bar .who .hr{grid-row:1/3}
-  #videoTime{font-size:min(3.85vh,3.25vw)}
+/* The scan page stays still once the codes are visible. */
+body.qr-screen,.tv-safe body.qr-screen{--bar:9vh}
+#qrcard,body.qr-screen #qrcard{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.18fr);align-items:center;
+  gap:4vw;padding:4vh 4vw;background:#101113;
 }
+body.qr-screen #qrcard .qt .a{
+  margin:0;text-transform:none;font-size:min(16.8vh,13.8vw);line-height:.82;letter-spacing:-.04em;
+  animation:none;color:var(--acid);
+}
+body.qr-screen #qrcard .qt .qs{margin:3vh 0 0;padding:0;border:0;max-width:31ch}
+body.qr-screen #qrcard .qt .qs span{font:700 clamp(15px,3.1vh,36px)/1.2 var(--body);color:var(--paper)}
+body.qr-screen #qrcard .qq{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:none;gap:1.25vw;height:auto}
+body.qr-screen #qrcard .qb,body.qr-screen #qrcard .qb.b2{
+  display:grid;justify-items:start;align-content:start;gap:1.8vh;padding:1.25vw;
+  background:#191b1e;border:1px solid #ffffff36;border-radius:3px;text-align:left;
+}
+body.qr-screen #qrcard .qb .tile{width:100%;height:auto;aspect-ratio:1;background:#fff;border:0;box-shadow:none}
+body.qr-screen #qrcard .scan-text{display:grid;gap:.65vh;width:100%}
+body.qr-screen #qrcard .qb .ql{font-size:clamp(20px,4.1vh,54px);color:var(--paper);line-height:.96;margin:0;letter-spacing:0}
+body.qr-screen #qrcard .scan-text p{font:700 clamp(14px,2.25vh,28px)/1.15 var(--body);color:var(--muted)}
+body.qr-screen #bar .say,.tv-safe body.qr-screen #bar .say{grid-column:1/-1;justify-items:start;padding:0}
+body.qr-screen #bar .hint,.tv-safe body.qr-screen #bar .hint{font:700 clamp(14px,2.9vh,30px)/1.1 var(--body);color:var(--muted);letter-spacing:0}
+
+/* Keep the text stationary through the peak of each Spectacle. */
+.spectacle-copy{width:min(94vw,1250px);max-width:none;gap:.9vh;padding:2vh 2vw;isolation:isolate;filter:none;animation:spectacle-lockup 5s both}
+.spectacle-copy::before{content:"";position:absolute;inset:-8vh -4vw;z-index:-1;
+  background:radial-gradient(ellipse at center,#000e 0%,#000b 40%,#0000 72%);pointer-events:none}
+.spectacle-copy .spectacle-name{
+  font:900 min(22vh,19vw)/.84 var(--display);letter-spacing:-.04em;text-transform:uppercase;
+  color:var(--effect,#f4ff1a);text-shadow:0 3px 15px #000a;
+}
+.spectacle-copy .spectacle-from{
+  max-width:min(84vw,31ch);font:700 min(8.2vh,7.1vw)/.98 var(--display);letter-spacing:.005em;
+  color:#fff;text-wrap:balance;overflow-wrap:anywhere;text-shadow:0 2px 14px #000;
+}
+.spectacle-copy .spectacle-from.long-sender{font-size:min(6.5vh,5.8vw)}
+.spectacle-copy .spectacle-art{width:19vh;height:19vh;color:var(--effect);filter:none}
+.spectacle-live[data-kind="spark"]{--effect:#ffeaa5}
+.spectacle-live[data-kind="comet"]{--effect:#8dffe8}
+.spectacle-live[data-kind="galaxy"]{--effect:#e1cfff}
+.spectacle-live[data-kind="supernova"]{--effect:#f4ff1a}
+.spectacle-live[data-kind="comet"] .spectacle-copy{padding-top:5vh}
+.spectacle-live[data-kind="comet"] .spectacle-art{z-index:-1}
+.spectacle-live[data-kind="galaxy"] .spectacle-orbit{border-width:2px}
+@keyframes spectacle-lockup{0%,7%{opacity:0;transform:translateY(2vh) scale(.97)}
+  21%,85%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-.55vh)}}
+
 @media(orientation:portrait){
-  #mediaCount,#videoTime{font-size:clamp(10px,2.5vw,18px)}
-  .spectacle-copy .spectacle-name{font-size:12vw}
-  .spectacle-copy .spectacle-from{font-size:7vw}
+  :root,html.tv-safe{--bar:13vh}
+  .w.triptych{display:block}
+  #bar,.tv-safe #bar{gap:2.5vw;padding:0 3vw;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+  #bar .who,.tv-safe #bar .who{gap:1.2vw}
+  #bar .who .nm,.tv-safe #bar .who .nm{font-size:clamp(23px,6vw,44px)}
+  #bar .who .new,.tv-safe #bar .who .new{position:absolute;top:auto;bottom:1px;left:0;margin:0;padding:1px 4px}
+  #videoTime,#mediaCount{font-size:clamp(11px,3vw,20px)}
+  #qrcard,body.qr-screen #qrcard{grid-template-columns:1fr;align-content:center;gap:3vh;padding:3vh 5vw}
+  body.qr-screen #qrcard .qt .a{font-size:min(16vw,13vh)}
+  body.qr-screen #qrcard .qt .qs{margin-top:1.4vh}
+  body.qr-screen #qrcard .qq{gap:3vw}
+  body.qr-screen #qrcard .qb,body.qr-screen #qrcard .qb.b2{padding:2.5vw;gap:1vh}
+  body.qr-screen #qrcard .qb .tile{width:min(100%,24vh)}
+  body.qr-screen #qrcard .qb .ql{font-size:clamp(16px,5vw,34px)}
+  body.qr-screen #qrcard .scan-text p{font-size:clamp(12px,3.35vw,20px)}
+  .spectacle-copy .spectacle-name{font-size:17vw}
+  .spectacle-copy .spectacle-from{font-size:9vw}
+  .spectacle-copy .spectacle-from.long-sender{font-size:7.5vw}
+  .spectacle-copy .spectacle-art{width:min(37vw,17vh);height:min(37vw,17vh)}
+}
+@media(prefers-reduced-motion:reduce){
+  #bar .who .nm.slam,.spectacle-live,.spectacle-copy{animation:none}
+  .spectacle-wash,.spectacle-ring,.spectacle-shine,.spectacle-stars,.spectacle-orbit{display:none!important}
+  .spectacle-live[data-kind="comet"] .spectacle-art{position:static;animation:none}
+  .spectacle-live[data-kind="comet"] .spectacle-art::before{display:none}
 }
 
 </style>
@@ -779,17 +844,16 @@ body.qr-screen #mediaCount{display:none}
 </head>
 <body>
 <div id="stage"></div>
-<div id="flash"></div>
 <div id="rx"></div><div id="giftTally" aria-live="off" aria-label="Spectacles received"></div><div id="playbackStatus" hidden aria-hidden="true"></div><div id="reactionCascade" aria-hidden="true"></div><div id="giftStage" aria-hidden="true"></div>
 
 <div id="qrcard">
   <div class="qt">
-    <div class="a">Drop</div><div class="a a2">your</div><div class="a a3">shot.</div>
-    <div class="qs"><strong>BE PART OF THE PARTY.</strong><span>Open your phone camera.<br>Point it at a code.<br>Tap the link.</span></div>
+    <h1 class="a">Drop your<br>shot.</h1>
+    <div class="qs"><span>Scan with your phone camera.</span></div>
   </div>
   <div class="qq">
-    <div class="qb"><div class="tile qU"></div><div class="scan-text"><span class="scan-number">01</span><div class="ql">POST A PHOTO</div><p>Or a video. It goes on this screen!</p></div></div>
-    <div class="qb b2"><div class="tile qR"></div><div class="scan-text"><span class="scan-number">02</span><div class="ql">SHOW SOME LOVE</div><p>React, send a gift, or leave a message.</p></div></div>
+    <div class="qb"><div class="tile qU"></div><div class="scan-text"><div class="ql">Post a shot</div><p>Send a photo or video.</p></div></div>
+    <div class="qb b2"><div class="tile qR"></div><div class="scan-text"><div class="ql">Show some love</div><p>React, comment, or send a Spectacle.</p></div></div>
   </div>
 </div>
 
@@ -797,13 +861,15 @@ body.qr-screen #mediaCount{display:none}
 
 <div id="bar">
   <div class="who">
-    <span class="posted-by" id="postedBy">Posted by:</span>
-    <div class="nm" id="nm">Nobody yet</div>
+    <div class="byline">
+      <span class="posted-by" id="postedBy" hidden>Posted by</span>
+      <div class="nm" id="nm">Waiting for media</div>
+    </div>
     <div class="hr"><span id="hi"></span><b id="hn">0</b></div>
-    <span id="videoTime" hidden></span>
     <div class="new" id="newb">Just dropped</div>
   </div>
   <div class="say">
+    <span id="videoTime" hidden></span>
     <span id="mediaCount" hidden></span>
     <div class="hint" id="hint">Tonight’s memories · live</div>
   </div>
@@ -896,7 +962,7 @@ const $ = function (s) { return document.querySelector(s); };
 const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
 const PORT = window.matchMedia("(orientation: portrait)");
 const rxBox = $("#rx");
-const stage = $("#stage"), flashEl = $("#flash"), qrcard = $("#qrcard"), fx = $("#fx"), toastEl = $("#toast");
+const stage = $("#stage"), qrcard = $("#qrcard"), fx = $("#fx"), toastEl = $("#toast");
 const nmEl = $("#nm"), hnEl = $("#hn"), newb = $("#newb"), hint = $("#hint"), postedBy=$("#postedBy");
 $("#hi").innerHTML = ICON.heart;
 
@@ -934,7 +1000,6 @@ function markBad(m, min) { bad[m.url] = Date.now() + min * 60000; }
 function isBad(m) { return (bad[m.url] || 0) > Date.now(); }
 function setLite(b) { lite = b; document.body.className = b ? "lite" : ""; }
 function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.className = ""; }, 2200); }
-function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) {
   if(on)document.getElementById("mediaComments").replaceChildren();
   if(on){hint.textContent="Tonight’s memories · live";hint.hidden=false;}
@@ -953,7 +1018,7 @@ function qrSvg(text, fg, bg) {
 function fallbackImg(u) { return '<img alt="" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(u) + '">'; }
 function fillQR() {
   let su = "", sr = "";
-  try { su = qrSvg(UPLOAD_URL, "#061207", "#F4FF1A"); sr = qrSvg(REACT_URL, "#061207", "#37FF76"); } catch (e) { console.warn(e); }
+  try { su = qrSvg(UPLOAD_URL, "#101113", "#FFFFFF"); sr = qrSvg(REACT_URL, "#101113", "#FFFFFF"); } catch (e) { console.warn(e); }
   $$(".qU").forEach(function (e) { e.innerHTML = su || fallbackImg(UPLOAD_URL); });
   $$(".qR").forEach(function (e) { e.innerHTML = sr || fallbackImg(REACT_URL); });
 }
@@ -1207,7 +1272,8 @@ function playGift(){
    const art=h("div","spectacle-art");
    art.innerHTML=ICON[gift.kind];
    const title=h("div","spectacle-name",GIFT_LABELS[gift.kind]||gift.kind);
-   const from=h("div","spectacle-from","FROM "+gift.name);
+   const from=h("div","spectacle-from","From "+gift.name);
+   if(gift.name.length>30)from.classList.add("long-sender");
    const copy=h("div","spectacle-copy");
    copy.append(art,title,from);
    const stars=h("div","spectacle-stars");
@@ -1346,20 +1412,19 @@ function publish(m) {
   } catch (e) { console.warn(e); }
 }
 
-const T = [
-  { n: "aurora", ms: 950 },
-  { n: "sweepl", ms: 900 },
-  { n: "sweepr", ms: 900 },
-  { n: "glide", ms: 900 },
-  { n: "focus", ms: 1000 },
-  { n: "pulse", ms: 850 }
+const sceneTransitions = [
+  { n: "sweep", ms: 730 },
+  { n: "lift", ms: 800 },
+  { n: "shutter", ms: 680 }
 ];
 function pickT(isFresh) {
-  if (lite || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return {n:"fade",ms:600};
-  if (isFresh) return {n:"focus",ms:1000};
-  let i; do { i = Math.floor(Math.random() * T.length); } while (i === lastT);
-  lastT = i;
-  return T[i];
+  if (lite || matchMedia("(prefers-reduced-motion: reduce)").matches) return {n:"fade",ms:320};
+  if (isFresh && lastT !== 2) {
+    lastT = 2;
+  } else {
+    lastT = (lastT + 1) % sceneTransitions.length;
+  }
+  return sceneTransitions[lastT];
 }
 function holdFor(isFresh) {
   const n = items.length;
@@ -1520,8 +1585,13 @@ function reveal(w, m, isFresh, my) {
   if (qrcard.className === "on") showQR(false);
   const t = pickT(isFresh);
   w.className = "w top in-" + t.n + (w.classList.contains("triptych")?" triptych":"");
-  if (t.flash) fire();
-  if (old) { old.className = "w old"; setTimeout(function () { drop(old); }, t.ms + 150); }
+  w.style.setProperty("--scene-time", t.ms + "ms");
+  if (old) {
+    const portrait = old.classList.contains("triptych");
+    old.className = "w old out-" + t.n + (portrait ? " triptych" : "");
+    old.style.setProperty("--scene-time", t.ms + "ms");
+    setTimeout(function () { drop(old); }, t.ms + 60);
+  }
   Array.prototype.slice.call(stage.children).forEach(function (c) { if (c !== w && c !== old) drop(c); });
   setBar(m, isFresh);
   showWhy(m);
