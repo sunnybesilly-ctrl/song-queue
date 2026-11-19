@@ -748,8 +748,30 @@ body.qr-screen #mediaComments{display:none}
 #bar .say,.tv-safe #bar .say{grid-column:2;grid-row:1;display:grid;align-content:center;justify-items:end;
   gap:1vh;padding:0;min-width:0;overflow:visible;color:var(--paper);
 }
-#mediaCount{font:700 clamp(12px,2.8vh,31px)/1.15 var(--body);font-variant-numeric:tabular-nums}
-#mediaCount{color:var(--muted);text-align:right}
+#mediaCount{display:flex;align-items:start;justify-content:flex-end;gap:1.1vw;
+  color:var(--paper);text-align:center;font-variant-numeric:tabular-nums;
+}
+#mediaCount .media-stat{display:grid;gap:.45vh}
+#mediaCount b{font:900 clamp(19px,4.5vh,50px)/.95 var(--display)}
+#mediaCount small{color:var(--muted);font:700 clamp(10px,2.5vh,23px)/1 var(--body)}
+
+@media(orientation:landscape){
+  :root,html.tv-safe{--bar:20vh;--footer-gutter:9vw}
+  #bar,.tv-safe #bar{
+    grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:3vw;
+    padding:0 var(--footer-gutter) 2.75vh;
+  }
+  #bar .who,.tv-safe #bar .who{gap:1.4vw}
+  #bar .who .posted-by,.tv-safe #bar .who .posted-by{
+    color:var(--paper);font-size:min(3.95vh,3.45vw);
+  }
+  #bar .who .nm,.tv-safe #bar .who .nm{font-size:min(8.8vh,7.2vw,100px)}
+  #bar .who .hr,.tv-safe #bar .who .hr{font-size:min(5.6vh,4.6vw);gap:1vw}
+  #bar .who .hr svg,.tv-safe #bar .who .hr svg{width:min(4.7vh,4vw);height:min(4.7vh,4vw)}
+  #mediaCount{gap:2.5vw}
+  #mediaCount b{font-size:min(7.3vh,6vw,82px)}
+  #mediaCount small{font-size:min(3.65vh,2.72vw,40px);color:var(--paper)}
+}
 .video-badge{
   position:absolute;right:0;bottom:0;z-index:4;pointer-events:none;
   margin:0 clamp(9px,1.65vh,24px) clamp(9px,1.65vh,24px) 0;
@@ -824,7 +846,9 @@ body.qr-screen #bar .hint,.tv-safe body.qr-screen #bar .hint{font:700 clamp(14px
   #bar .who,.tv-safe #bar .who{gap:1.2vw}
   #bar .who .nm,.tv-safe #bar .who .nm{font-size:clamp(23px,6vw,44px)}
   #bar .who .new,.tv-safe #bar .who .new{position:absolute;top:auto;bottom:1px;left:0;margin:0;padding:1px 4px}
-  #mediaCount{font-size:clamp(11px,3vw,20px)}
+  #mediaCount{gap:1.5vw}
+  #mediaCount b{font-size:clamp(18px,5vw,30px)}
+  #mediaCount small{font-size:clamp(10px,2.7vw,16px)}
   #qrcard,body.qr-screen #qrcard{grid-template-columns:1fr;align-content:center;gap:3vh;padding:3vh 5vw}
   body.qr-screen #qrcard .qt .a{font-size:min(16vw,13vh)}
   body.qr-screen #qrcard .qt .qs{margin-top:1.4vh}
@@ -879,7 +903,11 @@ body.qr-screen #bar .hint,.tv-safe body.qr-screen #bar .hint{font:700 clamp(14px
     <div class="new" id="newb">Just dropped</div>
   </div>
   <div class="say">
-    <span id="mediaCount" hidden></span>
+    <div id="mediaCount" hidden>
+      <span class="media-stat"><b id="mediaTotal">0</b><small>Total</small></span>
+      <span class="media-stat"><b id="mediaPhotos">0</b><small>Photos</small></span>
+      <span class="media-stat"><b id="mediaVideos">0</b><small>Videos</small></span>
+    </div>
     <div class="hint" id="hint">Tonight’s memories · live</div>
   </div>
 </div>
@@ -1453,6 +1481,9 @@ function drop(w) {
   if (w.parentNode) w.parentNode.removeChild(w);
 }
 const mediaCount = document.getElementById("mediaCount");
+const mediaTotal = document.getElementById("mediaTotal");
+const mediaPhotos = document.getElementById("mediaPhotos");
+const mediaVideos = document.getElementById("mediaVideos");
 function positionVideoBadge(w) {
   const video = w.firstChild;
   const badge = w.querySelector(".video-badge");
@@ -1959,8 +1990,9 @@ async function processMediaSnapshot(snap) {
   });
   const photoCount = current.filter(item => item.type === "image").length;
   const videoCount = current.length - photoCount;
-  mediaCount.textContent = current.length + " total · " + photoCount + (photoCount === 1 ? " photo" : " photos") +
-    " · " + videoCount + (videoCount === 1 ? " video" : " videos");
+  mediaTotal.textContent = String(current.length);
+  mediaPhotos.textContent = String(photoCount);
+  mediaVideos.textContent = String(videoCount);
   mediaCount.hidden = false;
   const fallback=current.length===0;
   // Historical fallback is intentionally bounded: signing every old upload
