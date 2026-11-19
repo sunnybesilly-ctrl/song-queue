@@ -748,9 +748,19 @@ body.qr-screen #mediaComments{display:none}
 #bar .say,.tv-safe #bar .say{grid-column:2;grid-row:1;display:grid;align-content:center;justify-items:end;
   gap:1vh;padding:0;min-width:0;overflow:visible;color:var(--paper);
 }
-#mediaCount,#videoTime{font:700 clamp(12px,2.8vh,31px)/1.15 var(--body);font-variant-numeric:tabular-nums}
+#mediaCount{font:700 clamp(12px,2.8vh,31px)/1.15 var(--body);font-variant-numeric:tabular-nums}
 #mediaCount{color:var(--muted);text-align:right}
-#videoTime{font-weight:900;white-space:nowrap}
+.video-badge{
+  position:absolute;right:0;bottom:0;z-index:4;pointer-events:none;
+  margin:0 clamp(9px,1.65vh,24px) clamp(9px,1.65vh,24px) 0;
+  padding:.36em .57em;border:1px solid #ffffff69;border-radius:4px;
+  background:#101113ed;color:#f5f5eb;white-space:nowrap;
+  font:700 clamp(14px,3.6vh,44px)/1 var(--body);
+  font-variant-numeric:tabular-nums;
+}
+.video-badge.is-loop{padding:.17em .25em;color:var(--acid)}
+.video-badge svg{display:block;width:1.28em;height:1.44em}
+@media(orientation:portrait){.video-badge{font-size:clamp(14px,4.4vw,26px)}}
 #rx.docked,.tv-safe #rx.docked,#giftTally{background:#101113e8;border:1px solid #ffffff32;border-radius:4px;box-shadow:none}
 #giftTally{gap:.7vw;padding:.8vh 1vw}
 #giftTally .gift-tally-header{font:900 clamp(22px,4.4vh,54px)/.94 var(--display);letter-spacing:.01em;color:var(--acid)}
@@ -814,7 +824,7 @@ body.qr-screen #bar .hint,.tv-safe body.qr-screen #bar .hint{font:700 clamp(14px
   #bar .who,.tv-safe #bar .who{gap:1.2vw}
   #bar .who .nm,.tv-safe #bar .who .nm{font-size:clamp(23px,6vw,44px)}
   #bar .who .new,.tv-safe #bar .who .new{position:absolute;top:auto;bottom:1px;left:0;margin:0;padding:1px 4px}
-  #videoTime,#mediaCount{font-size:clamp(11px,3vw,20px)}
+  #mediaCount{font-size:clamp(11px,3vw,20px)}
   #qrcard,body.qr-screen #qrcard{grid-template-columns:1fr;align-content:center;gap:3vh;padding:3vh 5vw}
   body.qr-screen #qrcard .qt .a{font-size:min(16vw,13vh)}
   body.qr-screen #qrcard .qt .qs{margin-top:1.4vh}
@@ -869,7 +879,6 @@ body.qr-screen #bar .hint,.tv-safe body.qr-screen #bar .hint{font:700 clamp(14px
     <div class="new" id="newb">Just dropped</div>
   </div>
   <div class="say">
-    <span id="videoTime" hidden></span>
     <span id="mediaCount" hidden></span>
     <div class="hint" id="hint">Tonight’s memories · live</div>
   </div>
@@ -1437,23 +1446,60 @@ function drop(w) {
   if (!w) return;
   const v = w.firstChild;
   if (v) {
-    v.onended = v.onerror = v.onloadeddata = v.onload = v.ontimeupdate = null;
+    v.onended = v.onerror = v.onloadeddata = v.onload = v.ontimeupdate = v.onplaying = null;
     if (v.tagName === "VIDEO") { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} }
   }
+  w.videoBadgeObserver?.disconnect();
   if (w.parentNode) w.parentNode.removeChild(w);
 }
-const videoTime = document.getElementById("videoTime");
 const mediaCount = document.getElementById("mediaCount");
-function showVideoTime(video) {
-  videoTime.hidden = !video || !Number.isFinite(video.duration) || video.duration <= 0;
-  if (videoTime.hidden) return;
-  const clock = seconds => Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
-  const elapsed = Math.floor(video.currentTime);
-  const total = Math.ceil(video.duration);
-  const caption = clock(Math.min(elapsed, total)) + " / " + clock(total);
-  if (videoTime.textContent !== caption) videoTime.textContent = caption;
+function positionVideoBadge(w) {
+  const video = w.firstChild;
+  const badge = w.querySelector(".video-badge");
+  if (!badge || !video.videoWidth || !video.videoHeight || !video.clientWidth || !video.clientHeight) return;
+  const scale = Math.min(video.clientWidth / video.videoWidth, video.clientHeight / video.videoHeight);
+  const right = video.offsetLeft + (video.clientWidth + video.videoWidth * scale) / 2;
+  const bottom = video.offsetTop + (video.clientHeight + video.videoHeight * scale) / 2;
+  badge.style.right = Math.max(0, w.clientWidth - right) + "px";
+  badge.style.bottom = Math.max(0, w.clientHeight - bottom) + "px";
 }
-function stopMedia() { showVideoTime(null); document.getElementById("mediaComments").replaceChildren(); Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); document.getElementById("reactionCascade").replaceChildren();cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; clearRx(); }
+
+function isBoomerangDuration(duration) {
+  // Allow a frame of encoder padding on clips exported at two or four seconds.
+  return duration >= 1.95 && duration <= 4.05;
+}
+
+function videoClock(seconds) {
+  return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+}
+
+function showVideoBadge(badge, video, pass) {
+  const duration = video.duration;
+  badge.hidden = !Number.isFinite(duration) || duration <= 0;
+  if (badge.hidden) return;
+  if (isBoomerangDuration(duration)) {
+    if (badge.dataset.pass === String(pass)) return;
+    badge.classList.add("is-loop");
+    badge.dataset.pass = String(pass);
+    badge.setAttribute("aria-label", "Play " + pass + " of 3");
+    const fingers = [
+      '<path d="M11 19V5a2 2 0 0 1 4 0v11"/>',
+      pass >= 2 ? '<path d="M15 16V3a2 2 0 0 1 4 0v13"/>' : '<path d="M15 16a2 2 0 0 1 4 0v3"/>',
+      pass >= 3 ? '<path d="M19 16V6a2 2 0 0 1 4 0v12"/>' : '<path d="M19 18a2 2 0 0 1 4 0v2"/>'
+    ].join("");
+    badge.innerHTML = '<svg viewBox="0 0 32 36" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + fingers +
+      '<path d="M23 18a2 2 0 0 1 4 0v7a9 9 0 0 1-9 9h-1a9 9 0 0 1-7-3l-6-8a2 2 0 0 1 3-2.5l4 3v-4.5"/></svg>';
+    return;
+  }
+  if (badge.dataset.pass) delete badge.dataset.pass;
+  badge.classList.remove("is-loop");
+  badge.removeAttribute("aria-label");
+  const total = Math.ceil(duration);
+  const elapsed = video.ended ? total : Math.min(Math.floor(video.currentTime), total);
+  const caption = videoClock(elapsed) + " / " + videoClock(total);
+  if (badge.textContent !== caption) badge.textContent = caption;
+}
+function stopMedia() { document.getElementById("mediaComments").replaceChildren(); Array.prototype.slice.call(stage.children).forEach(function (c) { drop(c); }); document.getElementById("reactionCascade").replaceChildren();cur = null; curItem = null; needTap = null; $("#vbadge").style.display = "none"; clearRx(); }
 
 function usable(m) {
   if (!isBad(m)) return m;
@@ -1550,6 +1596,7 @@ function show(m, isFresh, gesture) {
     right.onerror=()=>{if(right.src!==leftSrc)right.src=leftSrc;else right.style.opacity="0";};
     w.append(left,right);
     w.classList.add("triptych");
+    if (isV) positionVideoBadge(w);
   };
   const checkPortrait=()=>{
     const iw=el.videoWidth||el.naturalWidth,ih=el.videoHeight||el.naturalHeight;
@@ -1597,11 +1644,9 @@ function reveal(w, m, isFresh, my) {
   showWhy(m);
   publish(m);
   const el = w.firstChild;
-  showVideoTime(m.type === "video" ? el : null);
   if (m.type === "video") {
     lastTU = Date.now();
-    el.ontimeupdate = function () { lastTU = Date.now(); if (cur === w) showVideoTime(el); };
-    el.addEventListener("durationchange", () => { if (cur === w) showVideoTime(el); });
+    armVideo(el, my, m, w);
     
     el.muted = !soundOn;
     const p = el.play();
@@ -1616,7 +1661,6 @@ function reveal(w, m, isFresh, my) {
         videoFail(m, isFresh, playWhy(err));
       }
     });
-    armVideo(el, my, m);
   } else {
     const ms = holdFor(isFresh);
     planned = ms;
@@ -1649,10 +1693,24 @@ function reveal(w, m, isFresh, my) {
   }
 }
 
-function armVideo(v,my,m){
- // Actual media ending controls advance. Short clips replay only enough to
- // remain on screen for MIN_VIDEO_MS. Longer clips always finish normally.
- let plays=0,playedSeconds=0;
+function armVideo(v,my,m,w){
+ const badge = h("div", "video-badge");
+ badge.hidden = true;
+ w.appendChild(badge);
+ let plays=0,playedSeconds=0,pass=1;
+ const refreshBadge=()=>showVideoBadge(badge,v,pass);
+ const refreshPosition=()=>positionVideoBadge(w);
+ const refreshVideo=()=>{refreshBadge();refreshPosition();};
+ v.ontimeupdate=()=>{lastTU=Date.now();refreshBadge();};
+ v.onplaying=refreshBadge;
+ v.addEventListener("durationchange",refreshVideo);
+ v.addEventListener("loadedmetadata",refreshVideo,{once:true});
+ if (typeof ResizeObserver === "function") {
+  w.videoBadgeObserver = new ResizeObserver(refreshPosition);
+  w.videoBadgeObserver.observe(v);
+  w.videoBadgeObserver.observe(w);
+ }
+ refreshVideo();
  const initial=Number.isFinite(v.duration)&&v.duration>0?v.duration:0;
  planned=initial?Math.max(initial*1000,MIN_VIDEO_MS)+3000:60000;
  console.info("Photo Wall video metadata",m.id,"duration",initial,"trim",m.trimStart||0,m.trimEnd||0);
@@ -1669,14 +1727,15 @@ function armVideo(v,my,m){
    markScreenStatus("VIDEO ENDED · "+v.currentTime.toFixed(1)+" / "+(actual?actual.toFixed(1):"?")+"s · "+m.id.slice(0,8));
    if(override?.active&&override.mediaId===m.id){
     if(override.repeat){
+      pass=pass%3+1;
       v.currentTime=0;
       v.play().catch(e=>console.warn("Admin repeat unavailable",e));
       return;
     }
     overridePlayed=true;
-   }else if(actual>0 && actual*1000<MIN_VIDEO_MS &&
-       playedSeconds*1000<MIN_VIDEO_MS && plays<3){
-    // A true short clip gets a modest repeat; an 11s clip never repeats.
+   }else if(plays<3 && (isBoomerangDuration(actual) ||
+       (actual>0 && actual*1000<MIN_VIDEO_MS && playedSeconds*1000<MIN_VIDEO_MS))){
+    pass=plays+1;
     v.currentTime=0;
     v.play().catch(e=>{console.warn("Short clip replay unavailable",e);next()});
     return;
