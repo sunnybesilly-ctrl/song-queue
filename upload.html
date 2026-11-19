@@ -135,20 +135,26 @@ body{
 .led i.hot{background:var(--acid);box-shadow:0 0 10px rgba(244,255,26,.7)}
 .status{margin-top:14px;min-height:22px;font-weight:700;font-size:15px;color:var(--dim)}
 .status.err{color:var(--alarm);padding-left:10px;border-left:3px solid var(--alarm)}
-.done{margin-top:6px}
-.stamp{display:inline-block;margin:10px 0 18px 6px;animation:slam .55s cubic-bezier(.2,1.4,.4,1) both}
-.stamp span{
-  display:block;font-family:var(--display);font-weight:900;text-transform:uppercase;
-  font-size:clamp(110px,38vw,190px);line-height:.82;color:var(--acid);
-  border:7px solid var(--acid);padding:.02em .12em 0;transform:rotate(-6deg);
-  text-shadow:0 0 14px rgba(244,255,26,.6),0 0 40px rgba(244,255,26,.3);
+.done{margin-top:6px;min-width:0}
+.stamp{
+  position:relative;display:grid;gap:.05em;margin:0 0 20px;padding:.21em .2em .25em;
+  width:100%;box-sizing:border-box;overflow:hidden;border:2px solid var(--acid);
+  font:900 clamp(43px,17vw,98px)/.87 var(--display);
+  letter-spacing:-.035em;color:var(--acid);text-transform:uppercase;background:#102014;
+  animation:stamp-in .55s cubic-bezier(.2,.8,.2,1) both;
 }
-@keyframes slam{ 0%{transform:scale(2.6);opacity:0} 65%{transform:scale(.94);opacity:1} 100%{transform:scale(1);opacity:1} }
-.rank{font-weight:700;font-size:30px;line-height:1.1;color:var(--lime);margin:0 0 10px 6px}
-.done .lede{margin-bottom:26px}
+.stamp span{display:block;position:relative}
+.stamp::before{
+  content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,#f4ff1a30 49%,transparent 66%);
+  transform:translateX(-125%);animation:stamp-sweep .95s .17s ease-out both;pointer-events:none;
+}
+@keyframes stamp-in{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes stamp-sweep{to{transform:translateX(125%)}}
+.rank{font:700 clamp(17px,4.7vw,23px)/1.36 var(--body);color:var(--bone);margin:0 0 22px}
+.shot-number{color:var(--lime);font:900 clamp(24px,8vw,38px)/1 var(--display)}
 @media (prefers-reduced-motion:reduce){
   .title span{animation:none;opacity:1;text-shadow:0 0 14px rgba(244,255,26,.75),0 0 48px rgba(244,255,26,.4)}
-  .stamp{animation:none}
+  .stamp,.stamp::before{animation:none}
 }
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -162,8 +168,8 @@ body{
 <div class="grain"></div>
 
 <main class="wrap">
-  <h1 class="title"><span>Drop</span><span>your</span><span>shot.</span></h1>
-  <p class="lede">Send a photo or video from your phone. It joins the album instantly!</p>
+  <h1 class="title" id="uploadHeading"><span>Drop</span><span>your</span><span>shot.</span></h1>
+  <p class="lede" id="uploadLede">Send a photo or video from your phone. It joins the album instantly!</p>
 
   <form id="form" novalidate>
     <div class="step s1">
@@ -220,9 +226,8 @@ body{
   </form>
 
   <section class="done" id="done" hidden>
-    <div class="stamp"><span>YOU’RE LIVE!</span></div>
-    <p class="rank" id="rank"></p>
-    <p class="lede">Your memory is in the LIVE album! Watch for it on the big screen. 🎉</p>
+    <h2 class="stamp" id="liveTitle" tabindex="-1"><span>You’re</span><span>Live!</span></h2>
+    <p class="rank" id="rank" role="status"><span class="shot-number" id="shotNumber" hidden></span> <span id="liveMessage"></span></p>
     <div class="go-wrap"><button class="go ghost again" id="again" type="button">Send another</button></div>
   </section>
 
@@ -231,8 +236,9 @@ body{
 <script type="module">
 import { createMediaEditor, mediaClock } from "./photo-wall-editor.js?v=20261118";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, setDoc, serverTimestamp, getCountFromServer, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, setDoc, serverTimestamp, getCountFromServer, doc, getDoc, query, where, orderBy, endAt } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 const CLOUDINARY_CLOUD_NAME = "yl4yzjh5";
 
@@ -247,6 +253,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 const createUpload = httpsCallable(getFunctions(app, "us-central1"), "createPhotoWallUpload");
 
@@ -261,7 +268,8 @@ const $ = (s) => document.querySelector(s);
 const form = $("#form"), nameIn = $("#name"), fileIn = $("#file"), drop = $("#drop");
 const prev = $("#prev"), meta = $("#meta"), go = $("#go"), goWrap = $("#goWrap"), goLabel = $("#goLabel");
 const meter = $("#meter"), led = $("#led"), statusEl = $("#status");
-const done = $("#done"), rank = $("#rank"), again = $("#again");
+const done = $("#done"), again = $("#again"), shotNumber = $("#shotNumber"), liveMessage = $("#liveMessage");
+let confirmationVersion = 0;
 const mediaEditor = createMediaEditor($("#editor"));
 
 for (let i = 0; i < SEGMENTS; i++) led.appendChild(document.createElement("i"));
@@ -484,16 +492,30 @@ form.addEventListener("submit", async (e) => {
     });
     try { localStorage.setItem(LAST_KEY, ref.id); } catch (_) {}
 
-    let n = 0;
-    try {
-      const snap = await getCountFromServer(collection(db, "media_queue"));
-      n = snap.data().count;
-    } catch (_) {}
-    rank.textContent = n > 1 ? "You’re in the live album! Upload #" + n + "." : "Your memory is posted to the live album!";
-
-    form.hidden = true;
+    const version = ++confirmationVersion;
+    form.hidden = $("#uploadHeading").hidden = $("#uploadLede").hidden = true;
+    shotNumber.hidden = true;
+    liveMessage.textContent = "Shot posted. Keep an eye on the big screen!";
     done.hidden = false;
     window.scrollTo(0, 0);
+    $("#liveTitle").focus({ preventScroll: true });
+
+    if (upload.eventId) void (async () => {
+      try {
+        await auth.authStateReady();
+        if (!auth.currentUser || version !== confirmationVersion) return;
+        const posted = await getDoc(ref);
+        if (!posted.exists() || !posted.data().timestamp) return;
+        const eventShots = query(collection(db, "media_queue"), where("eventId", "==", upload.eventId),
+          orderBy("timestamp"), endAt(posted));
+        const number = (await getCountFromServer(eventShots)).data().count;
+        if (version !== confirmationVersion || !number) return;
+        shotNumber.textContent = "Shot #" + number;
+        shotNumber.hidden = false;
+      } catch (_) {
+        // Confirmation is already visible. Only guests with event read access can look up the number.
+      }
+    })();
   } catch (err) {
     alert(err.message);
     console.error(err);
@@ -508,8 +530,9 @@ again.addEventListener("click", () => {
   clearPreview();
   clearStatus();
   setPct(0);
+  confirmationVersion++;
   done.hidden = true;
-  form.hidden = false;
+  form.hidden = $("#uploadHeading").hidden = $("#uploadLede").hidden = false;
   window.scrollTo(0, 0);
 });
 </script>

@@ -784,8 +784,6 @@ body.qr-screen #mediaComments{display:none}
   top:0;left:0;margin:clamp(9px,1.65vh,24px) 0 0 clamp(9px,1.65vh,24px);
   color:var(--acid);font-size:clamp(19px,4.6vh,54px);
 }
-.video-badge.is-loop{padding:.17em .25em;color:var(--acid)}
-.video-badge svg{display:block;width:1.28em;height:1.44em}
 @media(orientation:portrait){.video-badge{font-size:clamp(14px,4.4vw,26px)}}
 #rx.docked,.tv-safe #rx.docked,#giftTally{background:#101113e8;border:1px solid #ffffff32;border-radius:4px;box-shadow:none}
 #giftTally{gap:.7vw;padding:.8vh 1vw}
@@ -873,6 +871,45 @@ body.qr-screen #bar .hint,.tv-safe body.qr-screen #bar .hint{font:700 clamp(14px
   .spectacle-live[data-kind="comet"] .spectacle-art::before{display:none}
 }
 
+/* Keep the header and the media overlays on separate surfaces. */
+#bar,.tv-safe #bar{top:0;bottom:auto;border-top:0;border-bottom:2px solid var(--acid);padding-bottom:0}
+#stage,#qrcard,#fx,#rx,#marginRain,#mediaComments{top:var(--bar);bottom:0}
+#giftStage{inset:var(--bar) 0 0!important}
+#reactionCascade{top:var(--bar);bottom:0}
+#rx.docked,.tv-safe #rx.docked{top:calc(var(--bar) + 1.5vh);bottom:auto}
+#giftTally{top:calc(var(--bar) + 8vh)}
+#vbadge{bottom:2vh}
+.media-number{
+  border:0;border-radius:3px;border-left:.16em solid var(--acid);
+  padding:.34em .52em .37em;background:#101113eb;color:#fbfbed;
+  font:900 clamp(23px,5.1vh,60px)/.9 var(--display);
+  box-shadow:0 4px 14px #0005;
+}
+.loop-gesture{
+  position:absolute;z-index:4;pointer-events:none;
+  margin:0 0 clamp(9px,1.65vh,24px) clamp(9px,1.65vh,24px);
+  padding:.22em .27em;border:1px solid #ffffff60;border-radius:4px;
+  background:#101113ed;color:var(--acid);font-size:clamp(23px,5vh,60px);
+}
+.loop-gesture svg{display:block;width:1.02em;height:1.08em}
+body.qr-screen #qrcard{isolation:isolate;overflow:hidden;
+  background:radial-gradient(ellipse at 15% 68%,#26320c 0,transparent 56%),#101113}
+body.qr-screen #qrcard::before{
+  display:block;z-index:-1;opacity:1;inset:-25%;pointer-events:none;
+  background:repeating-linear-gradient(122deg,transparent 0 54px,#f4ff1a15 55px 56px,transparent 57px 105px);
+  mask-image:radial-gradient(ellipse at 20% 54%,#000 2%,transparent 60%);
+  animation:scan-light 7s linear infinite;
+}
+body.qr-screen #qrcard.on .qt .a{animation:scan-title .76s cubic-bezier(.15,.8,.22,1) both}
+body.qr-screen #qrcard.on .qt .qs{animation:scan-caption .6s .16s ease-out both}
+body.qr-screen #qrcard .qb,body.qr-screen #qrcard .qb.b2{border-top:3px solid var(--acid)}
+body.qr-screen #qrcard .qb.b2{border-top-color:var(--lime)}
+@keyframes scan-light{to{transform:translateX(124px)}}
+@keyframes scan-title{from{clip-path:inset(-.18em 100% -.18em -.1em);transform:translateX(-1.8vw)}to{clip-path:inset(-.18em -.1em);transform:none}}
+@keyframes scan-caption{from{opacity:0;transform:translateY(1vh)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  body.qr-screen #qrcard::before,body.qr-screen #qrcard.on .qt .a,body.qr-screen #qrcard.on .qt .qs{animation:none}
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -964,7 +1001,7 @@ const photoLinks = createAdminPhotoLinks(httpsCallable(getFunctions(app, "us-cen
 window.__djDisplayStarted = true;
 
 const BASE = "https://sunnybesilly-ctrl.github.io/song-queue/";
-const UPLOAD_URL = BASE + "upload.html?v=20261111-35";
+const UPLOAD_URL = BASE + "upload.html?v=20261119-live-card";
 const REACT_URL = BASE + "react.html?v=20261111-35";
 const QR_EVERY_MS = 90000;   
 const QR_HOLD_MS = 18000;     
@@ -1502,6 +1539,12 @@ function positionMediaBadges(w) {
     number.style.top = Math.max(top, w.clientHeight * .055) + "px";
     number.hidden = false;
   }
+  const gesture = w.querySelector(".loop-gesture");
+  if (gesture) {
+    gesture.style.left = Math.max(left, w.clientWidth * .06) + "px";
+    gesture.style.bottom = Math.max(w.clientHeight * .04, w.clientHeight - top - height * scale) + "px";
+    gesture.hidden = false;
+  }
   const timer = w.querySelector(".video-badge");
   if (timer) {
     timer.style.right = Math.max(0, w.clientWidth - left - width * scale) + "px";
@@ -1518,27 +1561,23 @@ function videoClock(seconds) {
   return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
 }
 
-function showVideoBadge(badge, video, pass) {
+function showLoopGesture(badge, pass) {
+  if (badge.dataset.pass === String(pass)) return;
+  badge.dataset.pass = String(pass);
+  badge.setAttribute("aria-label", "Pass " + pass + " of 3");
+  const fingers = [
+    '<path d="M11 19V5a2 2 0 0 1 4 0v11"/>',
+    pass >= 2 ? '<path d="M15 16V3a2 2 0 0 1 4 0v13"/>' : '<path d="M15 16a2 2 0 0 1 4 0v3"/>',
+    pass >= 3 ? '<path d="M19 16V6a2 2 0 0 1 4 0v12"/>' : '<path d="M19 18a2 2 0 0 1 4 0v2"/>'
+  ].join("");
+  badge.innerHTML = '<svg viewBox="0 0 32 36" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + fingers +
+    '<path d="M23 18a2 2 0 0 1 4 0v7a9 9 0 0 1-9 9h-1a9 9 0 0 1-7-3l-6-8a2 2 0 0 1 3-2.5l4 3v-4.5"/></svg>';
+}
+
+function showVideoBadge(badge, video) {
   const duration = video.duration;
-  badge.hidden = !Number.isFinite(duration) || duration <= 0;
+  badge.hidden = !Number.isFinite(duration) || duration <= 0 || isBoomerangDuration(duration);
   if (badge.hidden) return;
-  if (isBoomerangDuration(duration)) {
-    if (badge.dataset.pass === String(pass)) return;
-    badge.classList.add("is-loop");
-    badge.dataset.pass = String(pass);
-    badge.setAttribute("aria-label", "Play " + pass + " of 3");
-    const fingers = [
-      '<path d="M11 19V5a2 2 0 0 1 4 0v11"/>',
-      pass >= 2 ? '<path d="M15 16V3a2 2 0 0 1 4 0v13"/>' : '<path d="M15 16a2 2 0 0 1 4 0v3"/>',
-      pass >= 3 ? '<path d="M19 16V6a2 2 0 0 1 4 0v12"/>' : '<path d="M19 18a2 2 0 0 1 4 0v2"/>'
-    ].join("");
-    badge.innerHTML = '<svg viewBox="0 0 32 36" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + fingers +
-      '<path d="M23 18a2 2 0 0 1 4 0v7a9 9 0 0 1-9 9h-1a9 9 0 0 1-7-3l-6-8a2 2 0 0 1 3-2.5l4 3v-4.5"/></svg>';
-    return;
-  }
-  if (badge.dataset.pass) delete badge.dataset.pass;
-  badge.classList.remove("is-loop");
-  badge.removeAttribute("aria-label");
   const total = Math.ceil(duration);
   const elapsed = video.ended ? total : Math.min(Math.floor(video.currentTime), total);
   const caption = videoClock(elapsed) + " / " + videoClock(total);
@@ -1695,6 +1734,11 @@ function reveal(w, m, isFresh, my) {
     number.setAttribute("aria-label", "Media " + m.mediaNumber);
     w.appendChild(number);
   }
+  const gesture = h("div", "loop-gesture");
+  gesture.hidden = true;
+  w.appendChild(gesture);
+  const visitPass = (views[m.id] || 0) % 3 + 1;
+  showLoopGesture(gesture, visitPass);
   const refreshPosition = () => positionMediaBadges(w);
   if (typeof ResizeObserver === "function") {
     w.mediaBadgeObserver = new ResizeObserver(refreshPosition);
@@ -1704,7 +1748,7 @@ function reveal(w, m, isFresh, my) {
   refreshPosition();
   if (m.type === "video") {
     lastTU = Date.now();
-    armVideo(el, my, m, w);
+    armVideo(el, my, m, w, gesture, visitPass);
     
     el.muted = !soundOn;
     const p = el.play();
@@ -1751,12 +1795,15 @@ function reveal(w, m, isFresh, my) {
   }
 }
 
-function armVideo(v,my,m,w){
+function armVideo(v,my,m,w,gesture,visitPass){
  const badge = h("div", "video-badge");
  badge.hidden = true;
  w.appendChild(badge);
  let plays=0,playedSeconds=0,pass=1;
- const refreshBadge=()=>showVideoBadge(badge,v,pass);
+ const refreshBadge=()=>{
+  showVideoBadge(badge,v);
+  showLoopGesture(gesture,isBoomerangDuration(v.duration) ? pass : visitPass);
+ };
  const refreshVideo=()=>{refreshBadge();positionMediaBadges(w);};
  v.ontimeupdate=()=>{lastTU=Date.now();refreshBadge();};
  v.onplaying=refreshBadge;
