@@ -115,8 +115,6 @@ body{font-family:var(--body);color:var(--bone)}
 
 #vbadge{position:absolute;left:2vw;bottom:calc(var(--bar) + 1.2vh);z-index:6;max-width:96vw;padding:.4vh 1.4vh;background:var(--alarm);color:#fff;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:2.8vh;line-height:1.05;display:none}
 
-#brand{position:absolute;left:1.4vw;top:1.2vh;z-index:25;display:flex;align-items:center;font-family:var(--ink);font-size:2.3vh;line-height:1;color:var(--bone);opacity:.82;text-shadow:0 0 .8vh #000,0 0 .3vh #000;pointer-events:none;max-width:92vw}
-#brand svg{width:3vh;height:3vh;margin-right:.8vh;flex:none}
 
 #rx{position:absolute;left:0;right:0;top:0;bottom:calc(var(--bar) + var(--reaction-dock));height:auto;width:auto;z-index:6;pointer-events:none;overflow:hidden;background:transparent;display:block;padding:0}
 #rx.docked{top:auto;bottom:var(--bar);height:var(--reaction-dock);display:flex;justify-content:center;align-items:center;background:linear-gradient(90deg,#06130a,#0d2916,#06130a);border-top:1px solid rgba(55,255,118,.35)}
@@ -164,8 +162,6 @@ body{font-family:var(--body);color:var(--bone)}
 
 @media (orientation:portrait){
   :root{--bar:calc(var(--dv)*26);--chip:min(9vw,5.5vh);--reaction-dock:5vh}
-  #brand{left:3vw;top:calc(var(--dv)*.8);font-size:3.2vw}
-  #brand svg{width:4vw;height:4vw;margin-right:1.2vw}
   .wr{margin-top:calc(var(--dv)*1)}
   .wr span{font-size:4vw}
 
@@ -234,7 +230,6 @@ body{font-family:var(--body);color:var(--bone)}
  .tv-safe #rx.docked{padding:0 2vw;overflow:hidden}
  .tv-safe #rx .rc{width:5.6vh;height:5.6vh}
  .tv-safe #rx .rail{gap:1.6vh;flex-wrap:nowrap}
- .tv-safe #brand{left:2.3vw;top:2.0vh}
  .tv-safe #vbadge{left:2.3vw}
 }
 
@@ -278,19 +273,9 @@ body{font-family:var(--body);color:var(--bone)}
  #bar .who{grid-column:1;grid-row:1;padding-right:4vw}
  #bar .say{grid-column:1;grid-row:2;padding:1vh 4vw}
 }
-#brand{position:absolute;left:2vw;top:auto;bottom:calc(var(--bar) + var(--reaction-dock) + 1.5vh);z-index:25;max-width:min(65vw,720px);display:flex;align-items:center;gap:clamp(8px,1.3vh,18px);padding:1vh 1.5vw;border-left:4px solid var(--acid);border-radius:0 12px 12px 0;background:linear-gradient(90deg,rgba(2,12,7,.92),rgba(6,28,14,.72));box-shadow:0 8px 26px #0008,0 0 24px #a9ff3112;pointer-events:none;opacity:1;text-shadow:0 2px 8px #000;line-height:1.08;font-family:var(--body)}
-#brand .brand-symbol{font:700 clamp(30px,6vh,68px)/1 system-ui;color:#ffda39;text-shadow:0 0 18px #ffd35188}
-#brand .brand-copy{display:flex;flex-direction:column;min-width:0;gap:.3vh}
-#brand .brand-copy strong{display:block;font-family:var(--display);font-size:clamp(27px,5.4vh,58px);letter-spacing:.095em;line-height:.9;color:var(--acid)}
-#brand .brand-copy span{font-family:var(--body);font-size:clamp(13px,2.25vh,26px);font-weight:800;letter-spacing:.045em;color:#e8ffee;overflow-wrap:anywhere}
 @media (orientation:portrait){
- #brand{left:3vw;bottom:calc(var(--bar) + var(--reaction-dock) + 1vh);max-width:90vw;padding:1vh 3vw;gap:2vw}
- #brand .brand-symbol{font-size:clamp(28px,7vw,46px)}
- #brand .brand-copy strong{font-size:clamp(23px,6.3vw,42px)}
- #brand .brand-copy span{font-size:clamp(11px,2.8vw,18px)}
 }
 @media (orientation:landscape){
- .tv-safe #brand{left:2.4vw;top:auto;bottom:calc(var(--bar) + var(--reaction-dock) + 1.2vh);max-width:55vw}
  .tv-safe #bar .say{padding-left:2.5vw}
 }
 
@@ -371,13 +356,12 @@ body.qr-screen #bar .say { flex:1; min-width:0; border:0; padding-left:clamp(18p
 .w>.mi{object-fit:contain!important;object-position:center;min-width:0;min-height:0;max-width:100%;max-height:100%;transform:none!important}
 .w>.mi.kb{animation:none!important}
 
-/* Scan interlude: use the whole screen, except a slim branding footer. */
+/* Scan interlude: reserve a slim footer for status text. */
 body.qr-screen{--bar:9vh;--reaction-dock:0vh}
 body.qr-screen #rx{display:none!important}
 body.qr-screen #bar{height:var(--bar);background:linear-gradient(90deg,#072516,#03120a);border-top:.35vh solid var(--acid)}
 body.qr-screen #bar .say{padding-left:3vw}
 body.qr-screen #bar .hint{color:#f4ff1a;font-size:clamp(24px,4.3vh,49px);letter-spacing:.045em}
-body.qr-screen #brand{display:none!important}
 body.qr-screen #qrcard{
  padding:clamp(16px,2vw,34px) clamp(20px,3.2vw,62px);
  grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
@@ -462,16 +446,6 @@ body.qr-screen #qrcard .scan-text p{font-size:clamp(15px,2.4vh,30px);line-height
  border:0;overflow:hidden;
 }
 #bar .hint,.tv-safe #bar .hint{display:none}
-#brand,.tv-safe #brand{
- display:flex!important;position:absolute;left:2vw;top:auto;bottom:1vh;
- z-index:20;max-width:35vw;gap:clamp(5px,.7vw,13px);padding:0;border:0;
- background:none;border-radius:0;box-shadow:none;align-items:center;
- opacity:1;pointer-events:none;
-}
-#brand .brand-symbol{font-size:clamp(23px,3.8vh,43px)}
-#brand .brand-copy{gap:.12vh}
-#brand .brand-copy strong{font-size:clamp(22px,3.55vh,40px);white-space:nowrap;letter-spacing:.065em}
-#brand .brand-copy span{font-size:clamp(9px,1.45vh,17px);white-space:nowrap;letter-spacing:.025em}
 #rx.docked,.tv-safe #rx.docked{
  position:absolute;z-index:6;top:1.5vh;bottom:auto;left:auto;right:1.7vw;
  width:auto;max-width:70vw;height:auto;min-height:0;display:flex;
@@ -487,7 +461,6 @@ body.qr-screen #qrcard .scan-text p{font-size:clamp(15px,2.4vh,30px);line-height
 }
 #rx.docked .ic{width:clamp(18px,3vh,28px);height:clamp(18px,3vh,28px)}
 #rx.docked .rn{font-size:clamp(12px,2vh,20px)}
-body.qr-screen #brand{display:none!important}
 body.qr-screen #bar .say{display:flex;grid-column:1/-1;padding-left:1vw}
 body.qr-screen #bar .hint{display:block}
 body.qr-screen #bar .who{display:none!important}
@@ -511,10 +484,6 @@ body.qr-screen #bar .who{display:none!important}
 }
 @media(orientation:portrait){
  #bar,.tv-safe #bar{grid-template-columns:minmax(0,1fr) auto;padding:0 3vw}
- #brand,.tv-safe #brand{left:3vw;bottom:1.5vh;max-width:57vw}
- #brand .brand-symbol{font-size:5vw}
- #brand .brand-copy strong{font-size:4.6vw}
- #brand .brand-copy span{font-size:1.85vw}
  #bar .who .nm{display:none}
  #bar .who .hr{font-size:5vw}
  #rx.docked{top:1vh;right:2vw;max-width:92vw}
@@ -653,15 +622,9 @@ body.qr-screen #bar .who{display:none!important}
 #bar .who .nm,.tv-safe #bar .who .nm{display:block;flex:0 1 auto;max-width:52%;font:900 clamp(22px,3.9vh,44px)/1 var(--display);color:var(--acid);text-transform:none;letter-spacing:.015em;overflow:hidden;text-overflow:ellipsis}
 #bar .who .hr,.tv-safe #bar .who .hr{font-size:clamp(21px,3.9vh,42px);margin-left:.5vw;gap:.5vw}
 #bar .who .hr svg{width:clamp(22px,3.8vh,40px);height:clamp(22px,3.8vh,40px)}
-#brand,.tv-safe #brand{left:2vw;bottom:1.3vh;max-width:37vw}
-#brand .brand-copy strong{font-size:clamp(24px,3.75vh,44px);letter-spacing:.025em}
-#brand .brand-copy span{font-size:clamp(10px,1.65vh,19px)}
 @media(orientation:portrait){
  :root{--bar:12vh}
  #bar,.tv-safe #bar{grid-template-columns:minmax(0,38%) minmax(0,62%)}
- #brand,.tv-safe #brand{max-width:36vw}
- #brand .brand-copy strong{font-size:clamp(13px,3.2vw,25px);white-space:normal;line-height:.9}
- #brand .brand-copy span{font-size:clamp(8px,1.75vw,13px);white-space:normal}
  #bar .who .posted-by{font-size:clamp(10px,2.7vw,16px)}
  #bar .who .nm,.tv-safe #bar .who .nm{font-size:clamp(14px,4vw,30px);max-width:49%}
  #bar .who .hr{font-size:clamp(14px,4vw,28px)}
@@ -706,8 +669,6 @@ html,body{background:#000000}
 .w{background:#00000000}
 .w.triptych{background:#000000}
 #bar,.tv-safe #bar{background:#000000;border-top:2px solid #f4ff1a;box-shadow:none}
-#brand,.tv-safe #brand{background:none;box-shadow:none;text-shadow:none;border:0}
-#brand .brand-symbol{filter:none;text-shadow:none}
 #rx.docked,.tv-safe #rx.docked{background:#000000ad;border:1px solid #ffffff20;box-shadow:none}
 #giftTally{background:#000000b8;border:1px solid #ffffff28;box-shadow:none}
 #giftTally .gift-tally-badge{background:#141414;border:1px solid #ffffff2b}
@@ -746,32 +707,13 @@ body.qr-screen #mediaComments{display:none}
 .spectacle-name{text-shadow:0 2px 12px #000;font-weight:900}
 .spectacle-from{text-shadow:0 2px 8px #000}
 
-/* Give the guest attribution and production credit room below the yellow rule. */
+/* Give the media count and guest attribution room below the yellow rule. */
 @media (orientation:landscape) {
   :root, html.tv-safe { --bar:22vh; --reaction-dock:0vh; }
   #bar, .tv-safe #bar {
     grid-template-columns:minmax(0,43fr) minmax(0,57fr);
     gap:0; padding:1.05vh 2.4vw;
     border-top:3px solid var(--acid);
-  }
-  #brand, .tv-safe #brand {
-    left:2.4vw; bottom:0; top:auto; width:41vw; max-width:41vw;
-    height:var(--bar); padding:1.8vh 1.5vw 1.5vh 0;
-    gap:1.2vw; align-items:center;
-  }
-  #brand .brand-symbol, .tv-safe #brand .brand-symbol {
-    flex:none; font-size:min(6.5vh, 4vw); color:var(--acid);
-    text-shadow:0 0 14px #f4ff1a33;
-  }
-  #brand .brand-copy, .tv-safe #brand .brand-copy { gap:.9vh; width:100%; min-width:0; }
-  #brand .brand-copy strong, .tv-safe #brand .brand-copy strong {
-    font:900 min(6.1vh, 5.4vw)/1 var(--display);
-    letter-spacing:.015em; white-space:normal; color:var(--acid);
-  }
-  #brand .brand-copy span, .tv-safe #brand .brand-copy span {
-    font:900 min(4.7vh, 3.5vw)/1.05 var(--display);
-    letter-spacing:.025em; white-space:normal;
-    overflow-wrap:normal; color:#ffffff;
   }
   #bar .who, .tv-safe #bar .who {
     display:grid; grid-template-columns:minmax(0,1fr) auto;
@@ -808,6 +750,7 @@ body.qr-screen #mediaComments{display:none}
 }
 
 #mediaCount,#videoTime{font:800 clamp(11px,2.6vh,32px)/1.1 var(--body);color:#e9ffea}
+body.qr-screen #mediaCount{display:none}
 #videoTime{grid-column:2;grid-row:3;font-variant-numeric:tabular-nums;white-space:nowrap}
 .spectacle-copy .spectacle-name,.spectacle-copy .spectacle-from{max-width:100%;overflow-wrap:anywhere}
 .spectacle-copy .spectacle-name{font-size:clamp(48px,12vh,144px);line-height:.93;letter-spacing:.035em}
@@ -815,16 +758,14 @@ body.qr-screen #mediaComments{display:none}
 .spectacle-copy .spectacle-art{height:clamp(120px,31vh,360px);width:clamp(120px,31vh,360px)}
 .gift-tally-header{font-size:clamp(15px,3vh,34px)}
 @media(orientation:landscape){
-  #brand .brand-copy strong,.tv-safe #brand .brand-copy strong{font-size:min(6.35vh,5.25vw);line-height:.97}
-  #brand .brand-copy #mediaCount{font:800 min(3.25vh,3vw)/1.1 var(--body);color:#e9ffea;white-space:normal}
+  #mediaCount{font-size:min(3.25vh,3vw);padding-right:1.5vw}
   #bar .who,.tv-safe #bar .who{grid-template-rows:auto minmax(0,auto) auto;gap:.65vh 1.4vw}
   #bar .who .nm,.tv-safe #bar .who .nm{font-size:min(6.75vh,6.8vw)}
   #bar .who .hr,.tv-safe #bar .who .hr{grid-row:1/3}
   #videoTime{font-size:min(3.85vh,3.25vw)}
 }
 @media(orientation:portrait){
-  #brand .brand-copy strong{line-height:1}
-  #brand .brand-copy #mediaCount,#videoTime{font-size:clamp(10px,2.5vw,18px)}
+  #mediaCount,#videoTime{font-size:clamp(10px,2.5vw,18px)}
   .spectacle-copy .spectacle-name{font-size:12vw}
   .spectacle-copy .spectacle-from{font-size:7vw}
 }
@@ -863,11 +804,11 @@ body.qr-screen #mediaComments{display:none}
     <div class="new" id="newb">Just dropped</div>
   </div>
   <div class="say">
+    <span id="mediaCount" hidden></span>
     <div class="hint" id="hint">Tonight’s memories · live</div>
   </div>
 </div>
 
-<div id="brand"><span class="brand-symbol" aria-hidden="true">☀</span><span class="brand-copy"><strong>Never Partly Cloudy Production</strong><span id="mediaCount" hidden></span></span></div>
 <div id="vbadge"></div>
 <div id="toast"></div>
 
@@ -996,7 +937,7 @@ function toast(t) { toastEl.textContent = t; toastEl.className = "on"; clearTime
 function fire() { flashEl.className = ""; void flashEl.offsetWidth; flashEl.className = "go"; }
 function showQR(on) {
   if(on)document.getElementById("mediaComments").replaceChildren();
-  if(on){hint.textContent="Never Partly Cloudy Production";hint.hidden=false;}
+  if(on){hint.textContent="Tonight’s memories · live";hint.hidden=false;}
   qrcard.className = on ? "on" : "";
   // Hide media-specific attribution on the dedicated QR scan screen.
   document.body.classList.toggle("qr-screen", !!on);
