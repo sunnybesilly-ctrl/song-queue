@@ -772,13 +772,17 @@ body.qr-screen #mediaComments{display:none}
   #mediaCount b{font-size:min(7.3vh,6vw,82px)}
   #mediaCount small{font-size:min(3.65vh,2.72vw,40px);color:var(--paper)}
 }
-.video-badge{
-  position:absolute;right:0;bottom:0;z-index:4;pointer-events:none;
-  margin:0 clamp(9px,1.65vh,24px) clamp(9px,1.65vh,24px) 0;
+.video-badge,.media-number{
+  position:absolute;z-index:4;pointer-events:none;
   padding:.36em .57em;border:1px solid #ffffff69;border-radius:4px;
   background:#101113ed;color:#f5f5eb;white-space:nowrap;
   font:700 clamp(14px,3.6vh,44px)/1 var(--body);
   font-variant-numeric:tabular-nums;
+}
+.video-badge{right:0;bottom:0;margin:0 clamp(9px,1.65vh,24px) clamp(9px,1.65vh,24px) 0}
+.media-number{
+  top:0;left:0;margin:clamp(9px,1.65vh,24px) 0 0 clamp(9px,1.65vh,24px);
+  color:var(--acid);font-size:clamp(19px,4.6vh,54px);
 }
 .video-badge.is-loop{padding:.17em .25em;color:var(--acid)}
 .video-badge svg{display:block;width:1.28em;height:1.44em}
@@ -1115,7 +1119,7 @@ function stillUrl(m) {
 
 function stillOf(m) {
   const u = stillUrl(m);
-  return u ? { id: m.id, name: m.name, likes: m.likes, type: "image", url: u, still: true } : null;
+  return u ? { id: m.id, name: m.name, likes: m.likes, type: "image", url: u, still: true, mediaNumber: m.mediaNumber } : null;
 }
 function playWhy(e) {
   return (e && e.name === "NotAllowedError") ? "TAP SCREEN TO PLAY VIDEO" : "VIDEO ERROR: " + ((e && e.name) || "PLAY FAILED");
@@ -1477,22 +1481,32 @@ function drop(w) {
     v.onended = v.onerror = v.onloadeddata = v.onload = v.ontimeupdate = v.onplaying = null;
     if (v.tagName === "VIDEO") { try { v.pause(); } catch (e) {} v.removeAttribute("src"); try { v.load(); } catch (e) {} }
   }
-  w.videoBadgeObserver?.disconnect();
+  w.mediaBadgeObserver?.disconnect();
   if (w.parentNode) w.parentNode.removeChild(w);
 }
 const mediaCount = document.getElementById("mediaCount");
 const mediaTotal = document.getElementById("mediaTotal");
 const mediaPhotos = document.getElementById("mediaPhotos");
 const mediaVideos = document.getElementById("mediaVideos");
-function positionVideoBadge(w) {
-  const video = w.firstChild;
-  const badge = w.querySelector(".video-badge");
-  if (!badge || !video.videoWidth || !video.videoHeight || !video.clientWidth || !video.clientHeight) return;
-  const scale = Math.min(video.clientWidth / video.videoWidth, video.clientHeight / video.videoHeight);
-  const right = video.offsetLeft + (video.clientWidth + video.videoWidth * scale) / 2;
-  const bottom = video.offsetTop + (video.clientHeight + video.videoHeight * scale) / 2;
-  badge.style.right = Math.max(0, w.clientWidth - right) + "px";
-  badge.style.bottom = Math.max(0, w.clientHeight - bottom) + "px";
+function positionMediaBadges(w) {
+  const media = w.firstChild;
+  const width = media.videoWidth || media.naturalWidth;
+  const height = media.videoHeight || media.naturalHeight;
+  if (!width || !height || !media.clientWidth || !media.clientHeight) return;
+  const scale = Math.min(media.clientWidth / width, media.clientHeight / height);
+  const left = media.offsetLeft + (media.clientWidth - width * scale) / 2;
+  const top = media.offsetTop + (media.clientHeight - height * scale) / 2;
+  const number = w.querySelector(".media-number");
+  if (number) {
+    number.style.left = Math.max(left, w.clientWidth * .06) + "px";
+    number.style.top = Math.max(top, w.clientHeight * .055) + "px";
+    number.hidden = false;
+  }
+  const timer = w.querySelector(".video-badge");
+  if (timer) {
+    timer.style.right = Math.max(0, w.clientWidth - left - width * scale) + "px";
+    timer.style.bottom = Math.max(0, w.clientHeight - top - height * scale) + "px";
+  }
 }
 
 function isBoomerangDuration(duration) {
@@ -1627,7 +1641,7 @@ function show(m, isFresh, gesture) {
     right.onerror=()=>{if(right.src!==leftSrc)right.src=leftSrc;else right.style.opacity="0";};
     w.append(left,right);
     w.classList.add("triptych");
-    if (isV) positionVideoBadge(w);
+    positionMediaBadges(w);
   };
   const checkPortrait=()=>{
     const iw=el.videoWidth||el.naturalWidth,ih=el.videoHeight||el.naturalHeight;
@@ -1675,6 +1689,19 @@ function reveal(w, m, isFresh, my) {
   showWhy(m);
   publish(m);
   const el = w.firstChild;
+  if (m.mediaNumber) {
+    const number = h("div", "media-number", "#" + m.mediaNumber);
+    number.hidden = true;
+    number.setAttribute("aria-label", "Media " + m.mediaNumber);
+    w.appendChild(number);
+  }
+  const refreshPosition = () => positionMediaBadges(w);
+  if (typeof ResizeObserver === "function") {
+    w.mediaBadgeObserver = new ResizeObserver(refreshPosition);
+    w.mediaBadgeObserver.observe(el);
+    w.mediaBadgeObserver.observe(w);
+  }
+  refreshPosition();
   if (m.type === "video") {
     lastTU = Date.now();
     armVideo(el, my, m, w);
@@ -1730,17 +1757,11 @@ function armVideo(v,my,m,w){
  w.appendChild(badge);
  let plays=0,playedSeconds=0,pass=1;
  const refreshBadge=()=>showVideoBadge(badge,v,pass);
- const refreshPosition=()=>positionVideoBadge(w);
- const refreshVideo=()=>{refreshBadge();refreshPosition();};
+ const refreshVideo=()=>{refreshBadge();positionMediaBadges(w);};
  v.ontimeupdate=()=>{lastTU=Date.now();refreshBadge();};
  v.onplaying=refreshBadge;
  v.addEventListener("durationchange",refreshVideo);
  v.addEventListener("loadedmetadata",refreshVideo,{once:true});
- if (typeof ResizeObserver === "function") {
-  w.videoBadgeObserver = new ResizeObserver(refreshPosition);
-  w.videoBadgeObserver.observe(v);
-  w.videoBadgeObserver.observe(w);
- }
  refreshVideo();
  const initial=Number.isFinite(v.duration)&&v.duration>0?v.duration:0;
  planned=initial?Math.max(initial*1000,MIN_VIDEO_MS)+3000:60000;
@@ -1983,9 +2004,21 @@ async function processMediaSnapshot(snap) {
   const revision = ++mediaRevision;
   const eventAtStart = currentEventId;
   const current=[],historical=[];let curChanged=false;
+  const eventNumbers = new Map();
   snap.docs.forEach(d=>{
     const x=d.data();x.id=d.id;x.type=kindOf(x);
     if(!x.url||!x.type)return;
+    const eventId = x.eventId || null;
+    x.mediaNumber = (eventNumbers.get(eventId) || 0) + 1;
+    eventNumbers.set(eventId, x.mediaNumber);
+    if (curItem?.id === x.id && curItem.mediaNumber !== x.mediaNumber) {
+      curItem.mediaNumber = x.mediaNumber;
+      const number = cur?.querySelector(".media-number");
+      if (number) {
+        number.textContent = "#" + x.mediaNumber;
+        number.setAttribute("aria-label", "Media " + x.mediaNumber);
+      }
+    }
     (eventAtStart&&x.eventId===eventAtStart?current:historical).push(x);
   });
   const photoCount = current.filter(item => item.type === "image").length;
