@@ -35,8 +35,8 @@ exports.createPhotoWallUpload = onCall(OPTIONS, async () => {
   };
 });
 
-function timedDownload(credentials, media, expiry, preview) {
-  const settings = preview ? PREVIEW[media.type] : { attachment: "true" };
+function timedDownload(credentials, media, expiry, preview, profile = PREVIEW[media.type]) {
+  const settings = preview ? profile : { attachment: "true" };
   const params = signedParams(credentials, {
     public_id: media.publicId,
     type: "authenticated",
@@ -160,7 +160,10 @@ exports.projectorReel = onCall(OPTIONS, async req => {
     if (m.cloudPath.startsWith(m.type+"/upload/") || /^https:\/\/(?:firebasestorage\.googleapis\.com\/v0\/b\/dj-photo-wall\.(?:firebasestorage\.app|appspot\.com)\/o\/|storage\.googleapis\.com\/dj-photo-wall\.(?:firebasestorage\.app|appspot\.com)\/)/.test(m.url))
       return [{...row,url:m.url}];
     if (!m.publicId) return [];
-    const url = timedDownload(credentials,m,expiry,true);
+    const projectorProfile = m.type === "video"
+      ? {format:"mp4", transformation:"c_limit,w_854,h_480,fps_24,vc_h264:baseline,ac_none,q_auto:eco"}
+      : PREVIEW.image;
+    const url = timedDownload(credentials,m,expiry,true,projectorProfile);
     return [{...row,url,...(m.type==="video" ? {fallbackUrl:timedDownload(credentials,m,expiry,false)} : {})}];
   })};
 });
