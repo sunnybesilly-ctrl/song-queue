@@ -1,0 +1,120 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Drop Your Shot × Jukebox · Philips TV</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#070c09;color:#fff;font-family:system-ui,sans-serif}main{position:absolute;inset:6% 6%;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:1vw}iframe{height:100%;width:100%;border:0}aside{min-height:0;background:#102318;border-left:4px solid #e7ef62;padding:1.3vw;overflow:hidden}h1{font-size:3vw;line-height:1;margin:0;color:#fff27a;letter-spacing:.04em}h2{font-size:1.65vw;margin:.5em 0 1em}#cards{display:grid;gap:1.5vh;font-size:1.7vw}article{padding:.8vw;border:1px solid #697b62;border-radius:.5vw;background:#09140e;overflow-wrap:anywhere}article.new{border-color:#fff27a}b{display:inline-block;color:#10170e;background:#fff27a;font-size:2.8vw;padding:0 .35em;border-radius:.2em}h3,p,small{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;margin:.2em 0;line-height:1.14}h3{font-size:2vw;-webkit-line-clamp:3}p,small{font-size:1.55vw;-webkit-line-clamp:2}small{color:#d3e8c7}
+</style></head><body><main><iframe title="Drop Your Shot photo and video wall" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;hybrid=jukebox" allow="autoplay; fullscreen" allowfullscreen></iframe><aside><h1>JUKEBOX</h1><h2>Song requests</h2><div id="cards">Loading queue…</div></aside></main><script>const SONG_QUEUE_URL   = 'https://script.google.com/macros/s/AKfycbwOl2qF3bAl5yWNolDvYlN0Thgp93jgJAQuUB7lphpw5xEqY5tdHMFjxR4VskzsWXnTvA/exec';
+function getSongName(song) {
+      const keys = [
+        "WHAT’S YOUR NAME?",   // curly apostrophe — CONFIRMED from sheet
+        "WHAT'S YOUR NAME?",          // straight apostrophe fallback
+        "What’s your name?",
+        "What's your name?",
+        "Name", "name", "NAME",
+        "YOUR NAME", "Your Name",
+        "Requester", "requester",
+        "Guest Name", "guest name"
+      ];
+      for (const k of keys) {
+        const v = (song[k] || '').toString().trim();
+        if (!v || v.length < 2) continue;
+        if (/^\d{4}-\d{2}-\d{2}T/.test(v)) continue; // skip timestamps
+        if (/^\d+$/.test(v)) continue;                      // skip pure numbers
+        return v;
+      }
+      return '';
+    }
+
+    // Artist name — HARDCODED exact keys confirmed from Google Sheet console log
+    function getArtist(song) {
+      const keys = [
+        "WHO’S THE ARTIST?",  // curly apostrophe — CONFIRMED from sheet
+        "WHO'S THE ARTIST?",          // straight apostrophe fallback
+        "Who’s the artist?",
+        "Who's the artist?",
+        "Artist", "artist", "ARTIST", "Artist Name", "Band"
+      ];
+      for (const k of keys) {
+        const v = (song[k] || '').toString().trim();
+        if (v && !/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
+      }
+      return '';
+    }
+
+    // Song title — hardcoded exact keys from sheet
+    function getSongTitle(song) {
+      const exactKeys = [
+        "SONG TITLE?",  // confirmed from sheet
+        "Song Title?", "SONG TITLE", "Song Title",
+        "Song", "song", "SONG", "Track", "track"
+      ];
+      for (const k of exactKeys) {
+        const v = (song[k] || '').toString().trim();
+        if (v && !/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
+      }
+      return '';
+    }
+
+    function getTimestamp(song) {
+      return song["Timestamp"] || song["timestamp"] || song["TIMESTAMP"] || "";
+    }
+function todaysQueue(songs) {
+  const today = new Date().toDateString();
+  const sorted = songs.filter(song => (getArtist(song) || getSongTitle(song)) && (!getTimestamp(song) || new Date(getTimestamp(song)).toDateString() === today))
+    .sort((a,b)=>new Date(getTimestamp(a)||0)-new Date(getTimestamp(b)||0));
+  const normalized = value => String(value || "").toLowerCase().replace(/[^a-z0-9\u00c0-\u024f]+/g, "");
+        const unique = [], recent = new Map();
+        for (const song of sorted) {
+          const id = String(song["Request ID"] || song.requestId || "").trim();
+          const key = id ? "id:" + id : "legacy:" + normalized(getSongName(song)) + "|" + normalized(getArtist(song)) + "|" + normalized(getSongTitle(song));
+          const when = new Date(getTimestamp(song)).getTime();
+          const previous = recent.get(key);
+          if (previous && (id || (Number.isFinite(when) && Number.isFinite(previous.when) && Math.abs(when - previous.when) <= 10000))) {
+            const original = unique[previous.index];
+            Object.keys(song).forEach(field => {
+              if (!original[field] && song[field]) original[field] = song[field];
+            });
+          } else {
+            recent.set(key, {index: unique.length, when});
+            unique.push({...song});
+          }
+        }
+        
+  return unique.map((song,index)=>({number:index+1,title:getSongTitle(song),artist:getArtist(song),name:getSongName(song),
+    key:song["Request ID"] || song.requestId || JSON.stringify([getTimestamp(song),getSongTitle(song),getArtist(song),getSongName(song)])}));
+}
+const cards=document.querySelector("#cards");
+const heading=document.querySelector("h2");
+let queue=[], known=null, cursor=0, alerts=[], active=null, until=0;
+function draw(){
+  if(Date.now()>=until) {
+    active=alerts.shift();
+    if(active) until=Date.now()+6000;
+  }
+  heading.textContent=active?"New song request":"Song requests";
+  const selection=active?[active]:Array.from({length:Math.min(2,queue.length)},(_,i)=>queue[(cursor+i)%queue.length]);
+  cards.replaceChildren();
+  for(const song of selection){
+    const card=document.createElement("article");
+    if(active) card.className="new";
+    for(const [tag,value] of [["b","#"+song.number],["h3",song.title||song.artist],["p",song.title?song.artist:""],["small",song.name && "Requested by "+song.name]]){
+      if(!value)continue;
+      const el=document.createElement(tag);el.textContent=value;card.append(el);
+    }
+    cards.append(card);
+  }
+  if(!selection.length) cards.textContent=known?"No requests yet":"Loading queue…";
+}
+async function refresh(){
+  try{
+    const response=await fetch(SONG_QUEUE_URL,{cache:"no-store"});
+    if(!response.ok)throw Error(response.status);
+    const rows=await response.json();
+    if(!Array.isArray(rows))throw Error("Invalid song feed");
+    queue=todaysQueue(rows);
+    if(known)alerts.push(...queue.filter(song=>!known.has(song.key)));
+    known=new Set(queue.map(song=>song.key));
+    draw();
+  }catch(error){if(!known)cards.textContent="Reconnecting to queue…";}
+  finally{setTimeout(refresh,10000);}
+}
+setInterval(()=>{if(!active && queue.length>2)cursor=(cursor+2)%queue.length;draw();},6000);
+refresh();</script></body></html>
