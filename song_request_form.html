@@ -263,6 +263,13 @@ footer { position: relative; z-index: 10; background: rgba(0,0,0,0.65); border-t
 @keyframes vibeFlash { 0% { box-shadow: 0 0 0 rgba(245,197,24,0); } 35% { box-shadow: 0 0 24px rgba(245,197,24,0.6); border-color: var(--gold); } 100% { box-shadow: 0 0 0 rgba(245,197,24,0); } }
 .field-card.flash { animation: vibeFlash 1s ease-out; }
 @media (prefers-reduced-motion: reduce) { .field-card.flash { animation: none; } .qp-num.pop { animation: none; } }
+
+#btn-next { transition: transform 120ms ease-out, filter 120ms ease-out; }
+#btn-next:enabled:active { transform: scale(0.97); filter: brightness(0.88); transition-duration: 0s; }
+@media (prefers-reduced-motion: reduce) {
+  #btn-next { transition: none; }
+  #btn-next:enabled:active { transform: none; }
+}
 </style>
 
 
