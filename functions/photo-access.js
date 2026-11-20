@@ -98,3 +98,50 @@ exports.signAdminPhotoWallUrls = onCall(OPTIONS, async req => {
     }),
   };
 });
+
+const projectorState = () => getFirestore().doc("projector_pairing/current");
+exports.manageProjector = onCall(OPTIONS, async req => {
+  if (!isAdmin(req)) throw new HttpsError("permission-denied", "Admin required.");
+  const ref = projectorState();
+  if (req.data?.action === "disconnect") {
+    await ref.delete();
+    return { disconnected: true };
+  }
+  if (req.data?.action !== "generate") throw new HttpsError("invalid-argument", "Unknown action.");
+  const code = crypto.randomInt(10000000,100000000).toString();
+  await ref.set({ hash: crypto.createHash("sha256").update(code).digest("hex"), expires: Date.now()+300000, attempts: 0 }, {merge:true});
+  return {code};
+});
+exports.pairProjector = onCall(OPTIONS, async req => {
+  if (req.auth?.token.firebase?.sign_in_provider !== "anonymous") throw new HttpsError("permission-denied","Projector sign-in required.");
+  const code = req.data?.code;
+  if (typeof code !== "string" || !/^\d{8}$/.test(code)) throw new HttpsError("invalid-argument","Enter eight digits.");
+  const ref = projectorState();
+  const ok = await getFirestore().runTransaction(async tx => {
+    const state = (await tx.get(ref)).data();
+    if (!state?.hash || state.expires <= Date.now() || state.attempts >= 8) return false;
+    if (crypto.createHash("sha256").update(code).digest("hex") !== state.hash) {
+      tx.update(ref,{attempts:state.attempts+1});
+      return false;
+    }
+    tx.set(ref,{uid:req.auth.uid});
+    return true;
+  });
+  if (!ok) throw new HttpsError("permission-denied","Generate a fresh projector code.");
+  return {paired:true};
+});
+exports.projectorReel = onCall(OPTIONS, async req => {
+  if (!req.auth || (await projectorState().get()).data()?.uid !== req.auth.uid)
+    throw new HttpsError("permission-denied","Pair this projector.");
+  const db = getFirestore();
+  const event = (await db.doc("gallery_state/current").get()).data();
+  if (!event?.active || !event.eventId) return {media:[]};
+  const rows = await db.collection("media_queue").where("eventId","==",event.eventId).get();
+  const items = rows.docs.map(doc=>doc.data()).filter(m=>!m.rotationPaused && Object.hasOwn(PREVIEW,m.type) && typeof m.url==="string");
+  const credentials = items.some(m=>PHOTO_ID.test(m.publicId)) ? await cloudCredentials() : null;
+  return {media:items.flatMap(m=>{
+    if (PHOTO_ID.test(m.publicId)) return [{type:m.type,url:timedDownload(credentials,m,Math.floor(Date.now()/1000)+1800,true),key:m.publicId}];
+    if (m.url.startsWith(DELIVERY+m.type+"/upload/")) return [{type:m.type,url:m.url,key:m.url}];
+    return [];
+  })};
+});
