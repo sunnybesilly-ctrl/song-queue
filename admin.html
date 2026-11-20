@@ -239,6 +239,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--acid);outline-offse
 <div class="guest-invite-detail"><strong>SCAN TO JOIN</strong><span>One guest · One use · 5 minutes</span><span>Scan, then tap UNLOCK. No phone number needed.</span>
 <div class="guest-invite-actions"><button id="copyGuestInvite" type="button">COPY INVITE LINK</button><button id="shareGuestInvite" type="button">SHARE INVITE</button></div></div></div>
 <p class="guest-invite-note">Show this QR privately to ONE guest. Once used, generate another. A forwarded link can be redeemed by someone else first.</p></div>
+<section><button type="button" class="go" id="pairProjector">Pair projector</button>
+<button type="button" id="disconnectProjector">Disconnect projector</button>
+<output id="projectorCode" aria-live="polite" style="display:block;font-size:2rem"></output></section>
 <p id="galleryCodeStatus" class="l" role="status"></p>
 </section>
   <section class="spectacle-admin">
@@ -452,6 +455,18 @@ async function gateAction(name,confirmText){
  finally{galleryOperation=false;for(const id of ["startGalleryEvent","makeGalleryCode","closeGalleryEvent"])document.getElementById(id).disabled=false;}
 }
 document.getElementById("startGalleryEvent").onclick=()=>gateAction("startGalleryEvent","Start a NEW event? Previous guest passes will stop working.");
+for (const [id,action] of [["pairProjector","generate"],["disconnectProjector","disconnect"]]) {
+  document.getElementById(id).onclick = async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    const output = document.getElementById("projectorCode");
+    try {
+      const {data} = await galleryCall("manageProjector")({action});
+      output.textContent = data.code ? data.code+" · valid for 5 minutes" : "Projector disconnected";
+    } catch { output.textContent = "Projector service unavailable. Try again."; }
+    finally { button.disabled = false; }
+  };
+}
 document.getElementById("makeGalleryCode").onclick=()=>gateAction("createGalleryCode");
 document.getElementById("closeGalleryEvent").onclick=()=>gateAction("closeGalleryEvent","Close guest gallery access now?");
 onAuthStateChanged(auth,u=>{if(u&&u.emailVerified)syncGalleryState();});
