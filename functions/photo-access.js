@@ -142,11 +142,25 @@ exports.projectorReel = onCall(OPTIONS, async req => {
   const event = (await db.doc("gallery_state/current").get()).data();
   if (!event?.active || !event.eventId) return {media:[]};
   const rows = await db.collection("media_queue").where("eventId","==",event.eventId).get();
-  const items = rows.docs.map(doc=>doc.data()).filter(m=>!m.rotationPaused && Object.hasOwn(PREVIEW,m.type) && typeof m.url==="string");
-  const credentials = items.some(m=>PHOTO_ID.test(m.publicId)) ? await cloudCredentials() : null;
+  const items = [];
+  for (const doc of rows.docs) {
+    const m = doc.data();
+    if (m.rotationPaused || typeof m.url !== "string") continue;
+    const cloudPath = m.url.startsWith(DELIVERY) ? m.url.slice(DELIVERY.length) : "";
+    const type = /^(video|image)\//.exec(cloudPath)?.[1] || /^(video|image)(?:\/|$)/i.exec(m.type || "")?.[1]?.toLowerCase()
+      || (/\.(mp4|mov|m4v|webm|3gp)(?:[?#]|$)/i.test(m.url) ? "video" : "image");
+    const publicId = PHOTO_ID.test(m.publicId) ? m.publicId : cloudPath.match(/\/(photo-wall-[a-f0-9-]{36})(?:\.[a-z0-9]+)?(?:[?#]|$)/i)?.[1];
+    items.push({...m, type, publicId, key:doc.id, cloudPath});
+  }
+  const privateItems = items.some(m => m.publicId && !m.cloudPath.startsWith(m.type+"/upload/"));
+  const credentials = privateItems ? await cloudCredentials() : null;
+  const expiry = Math.floor(Date.now()/1000)+1800;
   return {media:items.flatMap(m=>{
-    if (PHOTO_ID.test(m.publicId)) return [{type:m.type,name:m.name || "",url:timedDownload(credentials,m,Math.floor(Date.now()/1000)+1800,true),key:m.publicId}];
-    if (m.url.startsWith(DELIVERY+m.type+"/upload/")) return [{type:m.type,name:m.name || "",url:m.url,key:m.url}];
-    return [];
+    const row = {type:m.type, name:m.name || "", key:m.key};
+    if (m.cloudPath.startsWith(m.type+"/upload/") || /^https:\/\/(?:firebasestorage\.googleapis\.com\/v0\/b\/dj-photo-wall\.(?:firebasestorage\.app|appspot\.com)\/o\/|storage\.googleapis\.com\/dj-photo-wall\.(?:firebasestorage\.app|appspot\.com)\/)/.test(m.url))
+      return [{...row,url:m.url}];
+    if (!m.publicId) return [];
+    const url = timedDownload(credentials,m,expiry,true);
+    return [{...row,url,...(m.type==="video" ? {fallbackUrl:timedDownload(credentials,m,expiry,false)} : {})}];
   })};
 });
