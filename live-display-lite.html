@@ -784,6 +784,12 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100% !important; overfl
 <meta name="apple-mobile-web-app-title" content="DJ Lite">
 <style>
 #chatSection { position:relative; }
+#shotLogin { background:#101010; color:white; padding:24px; display:grid; gap:12px; font:700 42px/1.1 system-ui; }
+#shotLogin[hidden]{display:none}
+#shotLogin input,#shotLogin button { box-sizing:border-box;width:100%;font:inherit;padding:12px;border-radius:8px; }
+#shotLogin input { font-size:56px;text-align:center; }
+#shotLogin button {background:#ffd700;color:#141414;}
+#shotLogin [role=status]{font-size:34px;}
 #shotReel { position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; background:#080908; overflow:hidden; }
 #shotReel[hidden] { display:none; }
 .shot-stage { flex:1; min-height:0; display:grid; grid-template: minmax(0,1fr) / minmax(0,1fr); }
@@ -963,11 +969,10 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 
       <!-- RIGHT: Party chat panel -->
       <div class="chat-section" id="chatSection">
-        <form id="shotLogin" hidden style="background:#151515;color:white;padding:12px;font:20px sans-serif">
-<strong>Drop Your Shot projector sign-in</strong>
-<input aria-label="Admin email" name="email" type="email" placeholder="Admin email" autocomplete="username" required>
-<input aria-label="Password" name="password" type="password" placeholder="Password" autocomplete="current-password" required>
-<button type="submit">Sign in on this projector</button>
+        <form id="shotLogin" hidden>
+<label for="projectorPin">Pair Drop Your Shot</label>
+<input id="projectorPin" name="code" type="text" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" placeholder="8-digit code" required>
+<button type="submit">Connect projector</button>
 <span role="status"></span></form>
 <div id="shotReel" hidden><div class="chat-header">DROP YOUR SHOT</div><div class="shot-stage"></div></div>
         <div class="chat-header">💬 PARTY CHAT 💬</div>
@@ -2454,7 +2459,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {getFirestore, collection, query, where, getDocs, getDoc, doc} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signInAnonymously} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 import { createAdminPhotoLinks } from "./photo-links.js";
 const firebaseConfig = {
@@ -2516,7 +2521,10 @@ const login = document.getElementById("shotLogin");
 const status = login.querySelector('[role="status"]');
 let nextRound = Date.now() + 60000;
 let retryAt = 0;
+let pairedUid = localStorage.getItem('pairedProjectorUid');
+const projectorCall = name => httpsCallable(getFunctions(app,'us-central1'),name);
 function authorized(user) {
+  if (user?.isAnonymous && user.uid === pairedUid) return true;
   return user?.email === "sunnybesilly@gmail.com" && user.emailVerified;
 }
 function tick() {
@@ -2535,10 +2543,15 @@ login.addEventListener("submit", async event => {
   button.disabled = true;
   try {
     await setPersistence(auth, browserLocalPersistence);
-    await signInWithEmailAndPassword(auth, login.elements.email.value.trim(), login.elements.password.value);
-    login.elements.password.value = "";
+    const user = auth.currentUser?.isAnonymous ? auth.currentUser : (await signInAnonymously(auth)).user;
+    await projectorCall("pairProjector")({code:login.elements.code.value});
+    localStorage.setItem("pairedProjectorUid",user.uid);
+    pairedUid = user.uid;
+    login.elements.code.value = "";
+    login.hidden = true;
+    tick();
   } catch {
-    status.textContent = "Sign-in failed. Check the email, password and connection, then try again.";
+    status.textContent = "Check the code or generate a fresh one in admin.";
   } finally { button.disabled = false; }
 });
 document.addEventListener("visibilitychange", tick);
@@ -2595,15 +2608,30 @@ async function rotate() {
     await auth.authStateReady();
     if (!authorized(auth.currentUser)) return;
     const started = Date.now();
+    let candidates;
+    const paired = auth.currentUser.isAnonymous;
+    if (paired) {
+      try { candidates = (await projectorCall("projectorReel")({})).data.media; }
+      catch(error) {
+        if (error.code==="functions/permission-denied") {
+          pairedUid = null;
+          localStorage.removeItem("pairedProjectorUid");
+          login.hidden = false;
+          status.textContent = "Enter a fresh projector code.";
+        }
+        throw error;
+      }
+    } else {
     const state = (await getDoc(doc(db, "gallery_state", "current"))).data();
     if (!state?.active || !state.eventId) return;
     const snapshot = await getDocs(query(collection(db, "media_queue"), where("eventId", "==", state.eventId)));
-    const candidates = snapshot.docs.map(row => row.data()).filter(item => item.url && !item.rotationPaused && kindOf(item));
+    candidates = snapshot.docs.map(row => row.data()).filter(item => item.url && !item.rotationPaused && kindOf(item));
+    }
     for (let i = candidates.length - 1; i > 0; --i) {
       const j = Math.floor(Math.random() * (i + 1));
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
     }
-    candidates.sort((a,b) => Number(previous.has(a.url)) - Number(previous.has(b.url)));
+    candidates.sort((a,b) => Number(previous.has(a.key || a.url)) - Number(previous.has(b.key || b.url)));
     const links = createAdminPhotoLinks(sign);
     const seen = new Set();
     const shown = new Set();
@@ -2611,11 +2639,11 @@ async function rotate() {
       if (seen.has(item.url)) continue;
       seen.add(item.url);
       item.type = kindOf(item);
-      const source = playUrl({...item, trimStart:0, trimEnd:0});
+      const source = paired ? item.url : playUrl({...item, trimStart:0, trimEnd:0});
       try {
         await links.prepare([source]);
         const url = links.resolve(source);
-        if (url && await present(url, item.type)) shown.add(item.url);
+        if (url && await present(url, item.type)) shown.add(item.key || item.url);
       } catch (error) { console.warn("Drop Your Shot media unavailable", error); }
       panel.hidden = true;
       if (shown.size === 3) break;
