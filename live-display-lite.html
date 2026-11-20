@@ -2533,7 +2533,7 @@ function playUrl(m) {
 const panel = document.getElementById("shotReel");
 const stage = panel.querySelector(".shot-stage");
 let rotating = false;
-let previous = new Set();
+const lastShown = new Map();
 const login = document.getElementById("shotLogin");
 const status = login.querySelector('[role="status"]');
 let nextRound = Date.now() + 60000;
@@ -2611,13 +2611,13 @@ function present(url, type, name) {
       panel.hidden = false;
     }
     media.onerror = () => finish(false);
-    timeout(15000);
+    timeout(video ? 45000 : 15000);
     if (video) {
       media.muted = true;
       media.defaultMuted = true;
       media.playsInline = true;
       media.preload = "auto";
-      stage.replaceChildren(media);
+      reveal();
       media.onplaying = () => { reveal(); timeout(20000); };
       media.ontimeupdate = () => { updateClock(); timeout(20000); };
       media.onended = () => {
@@ -2665,7 +2665,8 @@ async function rotate() {
       const j = Math.floor(Math.random() * (i + 1));
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
     }
-    candidates.sort((a,b) => Number(previous.has(a.key || a.url)) - Number(previous.has(b.key || b.url)));
+    const priority = item => lastShown.get(item.key || item.url) || 0;
+    candidates.sort((a,b) => priority(a) - priority(b));
     const links = createAdminPhotoLinks(sign);
     const seen = new Set();
     const shown = new Set();
@@ -2673,7 +2674,9 @@ async function rotate() {
     const photos = candidates.filter(item => kindOf(item) === "image").reverse();
     let preferVideo = true;
     while (videos.length || photos.length) {
-      const item = preferVideo ? videos.pop() || photos.pop() : photos.pop() || videos.pop();
+      const videoAge = videos.length ? priority(videos[videos.length - 1]) : Infinity;
+      const photoAge = photos.length ? priority(photos[photos.length - 1]) : Infinity;
+      const item = videoAge < photoAge || (videoAge === photoAge && preferVideo) ? videos.pop() : photos.pop();
       if (seen.has(item.url)) continue;
       seen.add(item.url);
       item.type = kindOf(item);
@@ -2681,16 +2684,23 @@ async function rotate() {
       try {
         await links.prepare([source]);
         const url = links.resolve(source);
-        if (url && await present(url, item.type, item.name)) {
+        let played = url && await present(url, item.type, item.name);
+        const fallback = item.fallbackUrl || (source !== item.url ? item.url : "");
+        if (!played && item.type === "video" && fallback && fallback !== source) {
+          await links.prepare([fallback]);
+          const alternate = links.resolve(fallback);
+          if (alternate) played = await present(alternate, item.type, item.name);
+        }
+        if (played) {
+          lastShown.set(item.key || item.url, Date.now());
           shown.add(item.key || item.url);
           preferVideo = item.type !== "video";
         }
       } catch (error) { console.warn("Drop Your Shot media unavailable", error); }
       panel.hidden = true;
-      if (shown.size === 6) break;
+      if (shown.size === 11) break;
     }
     if (shown.size) {
-      previous = shown;
       nextRound = started + 60000;
     }
   } catch (error) { console.warn("Drop Your Shot rotation unavailable", error); }
