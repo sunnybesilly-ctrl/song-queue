@@ -963,7 +963,13 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 
       <!-- RIGHT: Party chat panel -->
       <div class="chat-section" id="chatSection">
-        <div id="shotReel" hidden><div class="chat-header">DROP YOUR SHOT</div><div class="shot-stage"></div></div>
+        <form id="shotLogin" hidden style="background:#151515;color:white;padding:12px;font:20px sans-serif">
+<strong>Drop Your Shot projector sign-in</strong>
+<input aria-label="Admin email" name="email" type="email" placeholder="Admin email" autocomplete="username" required>
+<input aria-label="Password" name="password" type="password" placeholder="Password" autocomplete="current-password" required>
+<button type="submit">Sign in on this projector</button>
+<span role="status"></span></form>
+<div id="shotReel" hidden><div class="chat-header">DROP YOUR SHOT</div><div class="shot-stage"></div></div>
         <div class="chat-header">💬 PARTY CHAT 💬</div>
         <!-- Ghost bubble container — floats above chat messages -->
         <div id="ghostBubbleContainer" style="position:relative;flex-shrink:0;height:0;overflow:visible;"></div>
@@ -2448,7 +2454,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {getFirestore, collection, query, where, getDocs, getDoc, doc} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {getAuth} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 import { createAdminPhotoLinks } from "./photo-links.js";
 const firebaseConfig = {
@@ -2506,6 +2512,36 @@ const panel = document.getElementById("shotReel");
 const stage = panel.querySelector(".shot-stage");
 let rotating = false;
 let previous = new Set();
+const login = document.getElementById("shotLogin");
+const status = login.querySelector('[role="status"]');
+let nextRound = Date.now() + 60000;
+let retryAt = 0;
+function authorized(user) {
+  return user?.email === "sunnybesilly@gmail.com" && user.emailVerified;
+}
+function tick() {
+  if (!rotating && !document.hidden && authorized(auth.currentUser) && Date.now() >= Math.max(nextRound,retryAt)) {
+    void rotate();
+  }
+}
+onAuthStateChanged(auth, user => {
+  login.hidden = authorized(user);
+  status.textContent = user && !user.isAnonymous && !login.hidden ? "Use the verified DJ admin account." : "";
+  tick();
+});
+login.addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = login.querySelector("button");
+  button.disabled = true;
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithEmailAndPassword(auth, login.elements.email.value.trim(), login.elements.password.value);
+    login.elements.password.value = "";
+  } catch {
+    status.textContent = "Sign-in failed. Check the email, password and connection, then try again.";
+  } finally { button.disabled = false; }
+});
+document.addEventListener("visibilitychange", tick);
 
 function present(url, type) {
   return new Promise(resolve => {
@@ -2557,7 +2593,8 @@ async function rotate() {
   rotating = true;
   try {
     await auth.authStateReady();
-    if (!auth.currentUser) return;
+    if (!authorized(auth.currentUser)) return;
+    const started = Date.now();
     const state = (await getDoc(doc(db, "gallery_state", "current"))).data();
     if (!state?.active || !state.eventId) return;
     const snapshot = await getDocs(query(collection(db, "media_queue"), where("eventId", "==", state.eventId)));
@@ -2583,14 +2620,14 @@ async function rotate() {
       panel.hidden = true;
       if (shown.size === 3) break;
     }
-    previous = shown;
+    if (shown.size) {
+      previous = shown;
+      nextRound = started + 180000;
+    }
   } catch (error) { console.warn("Drop Your Shot rotation unavailable", error); }
-  finally { panel.hidden = true; rotating = false; }
+  finally { panel.hidden = true; rotating = false; retryAt = Date.now() + 10000; }
 }
-setTimeout(() => {
-  void rotate();
-  setInterval(rotate, 3 * 60 * 1000);
-}, 60 * 1000);
+setInterval(tick, 1000);
 </script>
 </body>
 </html>
