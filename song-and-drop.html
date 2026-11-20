@@ -2542,7 +2542,24 @@ function playUrl(m) {
 const panel = document.getElementById("shotReel");
 const stage = panel.querySelector(".shot-stage");
 let rotating = false;
-const lastShown = new Map();
+const cycleStorage = "dropYourShot.cycle." + location.pathname;
+let playedThisCycle = new Set();
+try {
+  const saved = JSON.parse(sessionStorage.getItem(cycleStorage));
+  if (Array.isArray(saved)) playedThisCycle = new Set(saved);
+} catch {}
+function saveCycle() {
+  try { sessionStorage.setItem(cycleStorage, JSON.stringify([...playedThisCycle])); } catch {}
+}
+function pendingUploads(items) {
+  if (!items.length) return [];
+  const key = item => item.key || item.url;
+  const available = new Set(items.map(key));
+  for (const id of playedThisCycle) if (!available.has(id)) playedThisCycle.delete(id);
+  if (items.every(item => playedThisCycle.has(key(item)))) playedThisCycle.clear();
+  saveCycle();
+  return items.filter(item => !playedThisCycle.has(key(item)));
+}
 const login = document.getElementById("shotLogin");
 const status = login.querySelector('[role="status"]');
 let nextRound = Date.now() + 60000;
@@ -2690,14 +2707,13 @@ async function rotate() {
     const state = (await getDoc(doc(db, "gallery_state", "current"))).data();
     if (!state?.active || !state.eventId) return;
     const snapshot = await getDocs(query(collection(db, "media_queue"), where("eventId", "==", state.eventId)));
-    candidates = snapshot.docs.map(row => row.data()).filter(item => item.url && !item.rotationPaused && kindOf(item));
+    candidates = snapshot.docs.map(row => ({...row.data(), key:row.id})).filter(item => item.url && !item.rotationPaused && kindOf(item));
     }
     for (let i = candidates.length - 1; i > 0; --i) {
       const j = Math.floor(Math.random() * (i + 1));
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
     }
-    const priority = item => lastShown.get(item.key || item.url) || 0;
-    candidates.sort((a,b) => priority(a) - priority(b));
+    candidates = pendingUploads(candidates);
     const links = createAdminPhotoLinks(sign);
     const seen = new Set();
     const shown = new Set();
@@ -2705,11 +2721,9 @@ async function rotate() {
     const photos = candidates.filter(item => kindOf(item) === "image").reverse();
     let preferVideo = true;
     while (videos.length || photos.length) {
-      const videoAge = videos.length ? priority(videos[videos.length - 1]) : Infinity;
-      const photoAge = photos.length ? priority(photos[photos.length - 1]) : Infinity;
-      const item = videoAge < photoAge || (videoAge === photoAge && preferVideo) ? videos.pop() : photos.pop();
-      if (seen.has(item.url)) continue;
-      seen.add(item.url);
+      const item = preferVideo ? videos.pop() || photos.pop() : photos.pop() || videos.pop();
+      if (seen.has(item.key || item.url)) continue;
+      seen.add(item.key || item.url);
       item.type = kindOf(item);
       const source = paired && !item.url.includes("/upload/") ? item.url : playUrl({...item, trimStart:0, trimEnd:0});
       try {
@@ -2723,7 +2737,8 @@ async function rotate() {
           if (alternate) played = await present(alternate, item.type, item.name);
         }
         if (played) {
-          lastShown.set(item.key || item.url, Date.now());
+          playedThisCycle.add(item.key || item.url);
+          saveCycle();
           shown.add(item.key || item.url);
           preferVideo = item.type !== "video";
         }
