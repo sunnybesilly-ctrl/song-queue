@@ -156,6 +156,13 @@ body{
   .title span{animation:none;opacity:1;text-shadow:0 0 14px rgba(244,255,26,.75),0 0 48px rgba(244,255,26,.4)}
   .stamp,.stamp::before{animation:none}
 }
+
+#go { transition: transform 120ms ease-out, filter 120ms ease-out; }
+#go:enabled:active { transform: scale(0.97); filter: brightness(0.88); transition-duration: 0s; }
+@media (prefers-reduced-motion: reduce) {
+  #go { transition: none; }
+  #go:enabled:active { transform: none; }
+}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
