@@ -145,8 +145,8 @@ exports.projectorReel = onCall(OPTIONS, async req => {
   const items = rows.docs.map(doc=>doc.data()).filter(m=>!m.rotationPaused && Object.hasOwn(PREVIEW,m.type) && typeof m.url==="string");
   const credentials = items.some(m=>PHOTO_ID.test(m.publicId)) ? await cloudCredentials() : null;
   return {media:items.flatMap(m=>{
-    if (PHOTO_ID.test(m.publicId)) return [{type:m.type,url:timedDownload(credentials,m,Math.floor(Date.now()/1000)+1800,true),key:m.publicId}];
-    if (m.url.startsWith(DELIVERY+m.type+"/upload/")) return [{type:m.type,url:m.url,key:m.url}];
+    if (PHOTO_ID.test(m.publicId)) return [{type:m.type,name:m.name || "",url:timedDownload(credentials,m,Math.floor(Date.now()/1000)+1800,true),key:m.publicId}];
+    if (m.url.startsWith(DELIVERY+m.type+"/upload/")) return [{type:m.type,name:m.name || "",url:m.url,key:m.url}];
     return [];
   })};
 });
