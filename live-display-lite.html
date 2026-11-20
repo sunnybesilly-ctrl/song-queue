@@ -2602,7 +2602,9 @@ function present(url, type, name) {
         ? clockText(media.currentTime) + " / " + clockText(media.duration) : "";
     }
     function reveal() {
-      document.getElementById("shotCredit").textContent = "Posted by: " + (name || "Guest");
+      const credit = document.getElementById("shotCredit");
+      const uploader = typeof name === "string" ? name.trim() : "";
+      credit.textContent = uploader ? "Posted by: " + uploader : "";
       clock.hidden = !video;
       if (video) updateClock();
       stage.replaceChildren(media);
