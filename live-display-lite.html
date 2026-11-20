@@ -806,7 +806,12 @@ html, body { margin: 0; padding: 0; width: 100%; height: 100% !important; overfl
 #shotReel { position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; background:#080908; overflow:hidden; }
 #shotReel[hidden] { display:none; }
 .shot-stage { flex:1; min-height:0; display:grid; grid-template: minmax(0,1fr) / minmax(0,1fr); }
-.shot-stage > * { width:100%; height:100%; object-fit:contain; object-position:center; }
+#shotReel .shot-stage { position:relative; min-width:0; overflow:hidden; }
+#shotReel .shot-stage > * { position:absolute; inset:0; width:100%; height:100%; min-width:0; min-height:0; object-fit:contain; object-position:center; }
+#shotReel .chat-header {font-size:48px;}
+.shot-caption {display:flex; align-items:flex-end; gap:18px; padding:10px 20px 16px; font:800 46px/1.1 system-ui; color:white; background:#080908;}
+#shotCredit {flex:1; min-width:0; overflow-wrap:anywhere;}
+#shotClock {flex:none; color:#fff587; font-variant-numeric:tabular-nums;}
 </style>
 </head>
 <!-- KEEP SCREEN AWAKE: paste this right before </body> in BOTH music display files -->
@@ -987,7 +992,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 <input id="projectorPin" name="code" type="text" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" placeholder="8-digit code" required>
 <button type="submit">Connect projector</button>
 <span role="status"></span></form>
-<div id="shotReel" hidden><div class="chat-header">DROP YOUR SHOT</div><div class="shot-stage"></div></div>
+<div id="shotReel" hidden><div class="chat-header">DROP YOUR SHOT</div><div class="shot-stage"></div><div class="shot-caption"><span id="shotCredit"></span><span id="shotClock" hidden></span></div></div>
         <div class="chat-header">💬 PARTY CHAT 💬</div>
         <!-- Ghost bubble container — floats above chat messages -->
         <div id="ghostBubbleContainer" style="position:relative;flex-shrink:0;height:0;overflow:visible;"></div>
@@ -2520,7 +2525,6 @@ function playUrl(m) {
    trans.push("f_mp4","vc_h264","ac_aac","q_auto");
    return p.pre+"video/"+p.delivery+"/"+trans.join(",")+"/"+swapExt(p.tail,".mp4");
  }
- if(m.url.includes("c_limit")&&/\.(jpe?g|png|webp|gif)$/i.test(m.url)&&!m.crop)return m.url;
  const keep=/\.(jpe?g|png|webp|gif)$/i.test(p.tail);
  return p.pre+"image/"+p.delivery+"/c_limit,w_2048,h_2048,q_auto/"+(keep?p.tail:swapExt(p.tail,".jpg"));
 }
@@ -2569,7 +2573,11 @@ login.addEventListener("submit", async event => {
 });
 document.addEventListener("visibilitychange", tick);
 
-function present(url, type) {
+function clockText(seconds) {
+  const whole = Math.floor(seconds);
+  return Math.floor(whole / 60) + ":" + String(whole % 60).padStart(2, "0");
+}
+function present(url, type, name) {
   return new Promise(resolve => {
     const video = type === "video";
     const media = document.createElement(video ? "video" : "img");
@@ -2588,7 +2596,15 @@ function present(url, type) {
       clearTimeout(timer);
       timer = setTimeout(() => finish(success), ms);
     }
+    const clock = document.getElementById("shotClock");
+    function updateClock() {
+      clock.textContent = Number.isFinite(media.duration)
+        ? clockText(media.currentTime) + " / " + clockText(media.duration) : "";
+    }
     function reveal() {
+      document.getElementById("shotCredit").textContent = "Posted by: " + (name || "Guest");
+      clock.hidden = !video;
+      if (video) updateClock();
       stage.replaceChildren(media);
       panel.hidden = false;
     }
@@ -2598,7 +2614,7 @@ function present(url, type) {
       media.muted = true;
       media.playsInline = true;
       media.onplaying = () => { reveal(); timeout(20000); };
-      media.ontimeupdate = () => timeout(20000);
+      media.ontimeupdate = () => { updateClock(); timeout(20000); };
       media.onended = () => {
         if (++plays === 1 && media.duration < 6) {
           media.currentTime = 0;
@@ -2652,18 +2668,18 @@ async function rotate() {
       if (seen.has(item.url)) continue;
       seen.add(item.url);
       item.type = kindOf(item);
-      const source = paired ? item.url : playUrl({...item, trimStart:0, trimEnd:0});
+      const source = paired && !item.url.includes("/upload/") ? item.url : playUrl({...item, trimStart:0, trimEnd:0});
       try {
         await links.prepare([source]);
         const url = links.resolve(source);
-        if (url && await present(url, item.type)) shown.add(item.key || item.url);
+        if (url && await present(url, item.type, item.name)) shown.add(item.key || item.url);
       } catch (error) { console.warn("Drop Your Shot media unavailable", error); }
       panel.hidden = true;
       if (shown.size === 3) break;
     }
     if (shown.size) {
       previous = shown;
-      nextRound = started + 180000;
+      nextRound = started + 60000;
     }
   } catch (error) { console.warn("Drop Your Shot rotation unavailable", error); }
   finally { panel.hidden = true; rotating = false; retryAt = Date.now() + 10000; }
