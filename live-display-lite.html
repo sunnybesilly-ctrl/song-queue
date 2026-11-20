@@ -2675,7 +2675,7 @@ async function rotate() {
         if (url && await present(url, item.type, item.name)) shown.add(item.key || item.url);
       } catch (error) { console.warn("Drop Your Shot media unavailable", error); }
       panel.hidden = true;
-      if (shown.size === 3) break;
+      if (shown.size === 6) break;
     }
     if (shown.size) {
       previous = shown;
