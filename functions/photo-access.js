@@ -1,7 +1,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 const { CLOUD, TAG, RETENTION_TAG, cloudCredentials, signedParams, deliverySignature } = require("./photo-services");
 
@@ -135,6 +135,35 @@ exports.pairProjector = onCall(OPTIONS, async req => {
   if (!ok) throw new HttpsError("permission-denied","Check the code. After repeated attempts, try again in five minutes.");
   return {paired:true};
 });
+function streamToken(secret,id,format,expires) {
+  return crypto.createHmac("sha256",secret).update([id,format,expires].join("|")).digest("hex");
+}
+function streamLink(secret,id,format,expires) {
+  const token=streamToken(secret,id,format,expires);
+  return "https://us-central1-dj-photo-wall.cloudfunctions.net/projectorStream?"+new URLSearchParams({id,format,expires,token});
+}
+exports.projectorStream = onRequest(OPTIONS, async (req,res)=>{
+  const {id,format,expires,token}=req.query;
+  if (!["GET","HEAD"].includes(req.method) || typeof id!=="string" || !PHOTO_ID.test(id) ||
+      !["mp4","webm"].includes(format) || !/^\d{10}$/.test(expires) || Number(expires)<=Date.now()/1000 ||
+      typeof token!=="string" || !/^[a-f0-9]{64}$/.test(token)) { res.sendStatus(403);return; }
+  const {secret}=await cloudCredentials();
+  if (!crypto.timingSafeEqual(Buffer.from(token),Buffer.from(streamToken(secret,id,format,expires)))) { res.sendStatus(403);return; }
+  const codec=format==="mp4"?"vc_h264:baseline":"vc_vp8";
+  const tail="c_limit,w_854,h_480,fps_24,ac_none,"+codec+"/"+id+"."+format;
+  const url=DELIVERY+"video/authenticated/s--"+deliverySignature(tail,secret)+"--/"+tail;
+  const headers={};
+  if(req.headers.range) headers.Range=req.headers.range;
+  const upstream=await fetch(url,{method:req.method,headers});
+  res.status(upstream.status);
+  res.set("Cache-Control","private, no-store");
+  if(!upstream.ok){await upstream.body?.cancel();res.end();return;}
+  for(const key of ["content-type","content-range","accept-ranges","content-length"]) {
+    const value=upstream.headers.get(key);if(value)res.set(key,value);
+  }
+  if(!upstream.body){res.end();return;}
+  await require("node:stream/promises").pipeline(require("node:stream").Readable.fromWeb(upstream.body),res);
+});
 exports.projectorReel = onCall(OPTIONS, async req => {
   if (!req.auth || (await projectorState().get()).data()?.uid !== req.auth.uid)
     throw new HttpsError("permission-denied","Pair this projector.");
@@ -160,10 +189,7 @@ exports.projectorReel = onCall(OPTIONS, async req => {
     if (m.cloudPath.startsWith(m.type+"/upload/") || /^https:\/\/(?:firebasestorage\.googleapis\.com\/v0\/b\/dj-photo-wall\.(?:firebasestorage\.app|appspot\.com)\/o\/|storage\.googleapis\.com\/dj-photo-wall\.(?:firebasestorage\.app|appspot\.com)\/)/.test(m.url))
       return [{...row,url:m.url}];
     if (!m.publicId) return [];
-    const projectorProfile = m.type === "video"
-      ? {format:"mp4", transformation:"c_limit,w_854,h_480,fps_24,vc_h264:baseline,ac_none,q_auto:eco"}
-      : PREVIEW.image;
-    const url = timedDownload(credentials,m,expiry,true,projectorProfile);
-    return [{...row,url,...(m.type==="video" ? {fallbackUrl:timedDownload(credentials,m,expiry,false)} : {})}];
+    if (m.type==="video") return [{...row,url:streamLink(credentials.secret,m.publicId,"mp4",expiry),fallbackUrl:streamLink(credentials.secret,m.publicId,"webm",expiry)}];
+    return [{...row,url:timedDownload(credentials,m,expiry,true,PREVIEW.image)}];
   })};
 });
