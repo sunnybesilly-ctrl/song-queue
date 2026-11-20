@@ -2607,14 +2607,17 @@ function present(url, type, name) {
       credit.textContent = uploader ? "Posted by: " + uploader : "";
       clock.hidden = !video;
       if (video) updateClock();
-      stage.replaceChildren(media);
+      if (media.parentNode !== stage) stage.replaceChildren(media);
       panel.hidden = false;
     }
     media.onerror = () => finish(false);
     timeout(15000);
     if (video) {
       media.muted = true;
+      media.defaultMuted = true;
       media.playsInline = true;
+      media.preload = "auto";
+      stage.replaceChildren(media);
       media.onplaying = () => { reveal(); timeout(20000); };
       media.ontimeupdate = () => { updateClock(); timeout(20000); };
       media.onended = () => {
@@ -2666,7 +2669,11 @@ async function rotate() {
     const links = createAdminPhotoLinks(sign);
     const seen = new Set();
     const shown = new Set();
-    for (const item of candidates) {
+    const videos = candidates.filter(item => kindOf(item) === "video").reverse();
+    const photos = candidates.filter(item => kindOf(item) === "image").reverse();
+    let preferVideo = true;
+    while (videos.length || photos.length) {
+      const item = preferVideo ? videos.pop() || photos.pop() : photos.pop() || videos.pop();
       if (seen.has(item.url)) continue;
       seen.add(item.url);
       item.type = kindOf(item);
@@ -2674,7 +2681,10 @@ async function rotate() {
       try {
         await links.prepare([source]);
         const url = links.resolve(source);
-        if (url && await present(url, item.type, item.name)) shown.add(item.key || item.url);
+        if (url && await present(url, item.type, item.name)) {
+          shown.add(item.key || item.url);
+          preferVideo = item.type !== "video";
+        }
       } catch (error) { console.warn("Drop Your Shot media unavailable", error); }
       panel.hidden = true;
       if (shown.size === 6) break;
