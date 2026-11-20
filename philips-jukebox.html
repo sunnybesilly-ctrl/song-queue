@@ -1,11 +1,29 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Drop Your Shot × Jukebox · Philips TV</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;background:#070c09;color:#fff;font-family:system-ui,sans-serif}main{position:absolute;inset:6% 6%;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:1vw}iframe{height:100%;width:100%;border:0}aside{min-height:0;background:#102318;border-left:4px solid #e7ef62;padding:1.3vw;overflow:hidden}h1{font-size:3vw;line-height:1;margin:0;color:#fff27a;letter-spacing:.04em}h2{font-size:1.65vw;margin:.5em 0 1em}#cards{display:grid;gap:1.5vh;font-size:1.7vw}article{padding:.8vw;border:1px solid #697b62;border-radius:.5vw;background:#09140e;overflow-wrap:anywhere}article.new{border-color:#fff27a}b{display:inline-block;color:#10170e;background:#fff27a;font-size:2.8vw;padding:0 .35em;border-radius:.2em}h3,p,small{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;margin:.2em 0;line-height:1.14}h3{font-size:2vw;-webkit-line-clamp:3}p,small{font-size:1.55vw;-webkit-line-clamp:2}small{color:#d3e8c7}
-article .queue-thumb{float:right;width:48%;aspect-ratio:16/9;object-fit:cover;border-radius:.25vw;}article h3{clear:both;padding-top:.15em;}aside{display:flex;flex-direction:column;padding-inline:.75vw}
+:root{color-scheme:dark;--gold:#ffd700;--mint:#b9f4c8;--shell:#091a10;--radius:1.25vw}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{color:#fafbf5;background:radial-gradient(ellipse at 24% 45%,#183924,#07160d 65%,#030906);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+main{position:absolute;inset:6% 6%;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:1vw}
+iframe,aside{border-radius:var(--radius);min-width:0;box-shadow:0 .5vw 1.4vw #0005}
+iframe{display:block;width:100%;height:100%;border:2px solid #77a384;background:#050906}
+aside{min-height:0;display:flex;flex-direction:column;padding:1.05vw .75vw .75vw;background:linear-gradient(155deg,#193925,var(--shell) 42%);border:2px solid #8bb796;overflow:hidden}
+h1,h2{padding-inline:.2vw}
+h1{margin:0;font-size:3vw;line-height:1;font-weight:800;letter-spacing:-.045em;color:#ffe66b}
+h2{font-size:1.55vw;font-weight:600;margin:.35em 0 .65em;color:#ddeddf}
 #queueWindow{position:relative;flex:1;min-height:0;overflow:hidden}
-#cards{display:block} .queue-set{display:grid;gap:1.5vh;padding-bottom:1.5vh}
-article{padding-inline:.55vw}article h3,article p,article small{display:block;overflow:visible;-webkit-line-clamp:unset;white-space:normal;word-break:normal}
-#announcement{position:absolute;inset:0;background:#102318;overflow:auto}#announcement[hidden]{display:none}
+#cards{font-size:1.7vw}
+.queue-set{display:grid;gap:1.15vh;padding-bottom:1.15vh}
+article{display:flow-root;padding:.63vw .6vw .7vw;border:clamp(2px,.18vw,4px) solid #a2d9af;border-radius:.85vw;background:linear-gradient(145deg,#193827,#102319);overflow-wrap:anywhere}
+article.new{border-color:var(--gold);background:#253820}
+b{display:inline-block;padding:.08em .32em;border-radius:.32em;background:var(--gold);color:#102016;font-size:2.65vw;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.12}
+.queue-thumb{float:right;width:48%;aspect-ratio:16/9;object-fit:cover;border-radius:.46vw}
+h3,p,small{display:block;margin:0;line-height:1.13;letter-spacing:-.018em}
+h3{clear:both;padding-top:.43vw;font-size:2vw;font-weight:700}
+p{padding-top:.24vw;font-size:1.55vw;color:#ecf6eb}
+small{margin-top:.45vw;padding-top:.38vw;border-top:1px solid #83ac8c;font-size:1.5vw;color:var(--mint)}
+#announcement{position:absolute;inset:0;background:var(--shell);overflow:auto}
+#announcement[hidden]{display:none}
 </style></head><body><main><iframe title="Drop Your Shot photo and video wall" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;hybrid=jukebox" allow="autoplay; fullscreen" allowfullscreen></iframe><aside><h1>JUKEBOX</h1><h2>Song requests</h2><div id="queueWindow"><div id="cards">Loading queue…</div><div id="announcement" hidden></div></div></aside></main><script>const SONG_QUEUE_URL   = 'https://script.google.com/macros/s/AKfycbwOl2qF3bAl5yWNolDvYlN0Thgp93jgJAQuUB7lphpw5xEqY5tdHMFjxR4VskzsWXnTvA/exec';
 function getSongName(song) {
       const keys = [
@@ -111,6 +129,7 @@ const cards=document.querySelector("#cards");
 const heading=document.querySelector("h2");
 const viewport=document.querySelector("#queueWindow");
 const announcement=document.querySelector("#announcement");
+const scrollPixelsPerMs = 0.07;
 let queue=[], known=null, signature="", animation=null, cycle=0;
 const alerts=[];
 function makeCard(song,isNew=false){
@@ -132,7 +151,7 @@ function makeCard(song,isNew=false){
   return card;
 }
 function draw(){
-  const offset=animation ? (Number(animation.currentTime)||0)*0.035 : 0;
+  const offset=animation ? (Number(animation.currentTime)||0)*scrollPixelsPerMs : 0;
   if(animation) animation.cancel();
   animation=null;
   const group=document.createElement("div");
@@ -145,8 +164,8 @@ function draw(){
   const twin=group.cloneNode(true);
   twin.setAttribute("aria-hidden","true");
   cards.append(twin);
-  animation=cards.animate([{transform:"translateY(0)"},{transform:"translateY(-"+cycle+"px)"}],{duration:cycle/0.035,iterations:Infinity,easing:"linear"});
-  animation.currentTime=(offset%cycle)/0.035;
+  animation=cards.animate([{transform:"translateY(0)"},{transform:"translateY(-"+cycle+"px)"}],{duration:cycle/scrollPixelsPerMs,iterations:Infinity,easing:"linear"});
+  animation.currentTime=(offset%cycle)/scrollPixelsPerMs;
   if(!announcement.hidden)animation.pause();
 }
 function announce(){
