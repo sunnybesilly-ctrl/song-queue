@@ -1,7 +1,12 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Drop Your Shot × Jukebox · Philips TV</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#070c09;color:#fff;font-family:system-ui,sans-serif}main{position:absolute;inset:6% 6%;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:1vw}iframe{height:100%;width:100%;border:0}aside{min-height:0;background:#102318;border-left:4px solid #e7ef62;padding:1.3vw;overflow:hidden}h1{font-size:3vw;line-height:1;margin:0;color:#fff27a;letter-spacing:.04em}h2{font-size:1.65vw;margin:.5em 0 1em}#cards{display:grid;gap:1.5vh;font-size:1.7vw}article{padding:.8vw;border:1px solid #697b62;border-radius:.5vw;background:#09140e;overflow-wrap:anywhere}article.new{border-color:#fff27a}b{display:inline-block;color:#10170e;background:#fff27a;font-size:2.8vw;padding:0 .35em;border-radius:.2em}h3,p,small{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;margin:.2em 0;line-height:1.14}h3{font-size:2vw;-webkit-line-clamp:3}p,small{font-size:1.55vw;-webkit-line-clamp:2}small{color:#d3e8c7}
-article .queue-thumb{float:right;width:48%;aspect-ratio:16/9;object-fit:cover;border-radius:.25vw;}article h3{clear:both;padding-top:.15em;}</style></head><body><main><iframe title="Drop Your Shot photo and video wall" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;hybrid=jukebox" allow="autoplay; fullscreen" allowfullscreen></iframe><aside><h1>JUKEBOX</h1><h2>Song requests</h2><div id="cards">Loading queue…</div></aside></main><script>const SONG_QUEUE_URL   = 'https://script.google.com/macros/s/AKfycbwOl2qF3bAl5yWNolDvYlN0Thgp93jgJAQuUB7lphpw5xEqY5tdHMFjxR4VskzsWXnTvA/exec';
+article .queue-thumb{float:right;width:48%;aspect-ratio:16/9;object-fit:cover;border-radius:.25vw;}article h3{clear:both;padding-top:.15em;}aside{display:flex;flex-direction:column;padding-inline:.75vw}
+#queueWindow{position:relative;flex:1;min-height:0;overflow:hidden}
+#cards{display:block} .queue-set{display:grid;gap:1.5vh;padding-bottom:1.5vh}
+article{padding-inline:.55vw}article h3,article p,article small{display:block;overflow:visible;-webkit-line-clamp:unset;white-space:normal;word-break:normal}
+#announcement{position:absolute;inset:0;background:#102318;overflow:auto}#announcement[hidden]{display:none}
+</style></head><body><main><iframe title="Drop Your Shot photo and video wall" src="./display.html?screen=philips-tv&amp;cinematic=1&amp;hybrid=jukebox" allow="autoplay; fullscreen" allowfullscreen></iframe><aside><h1>JUKEBOX</h1><h2>Song requests</h2><div id="queueWindow"><div id="cards">Loading queue…</div><div id="announcement" hidden></div></div></aside></main><script>const SONG_QUEUE_URL   = 'https://script.google.com/macros/s/AKfycbwOl2qF3bAl5yWNolDvYlN0Thgp93jgJAQuUB7lphpw5xEqY5tdHMFjxR4VskzsWXnTvA/exec';
 function getSongName(song) {
       const keys = [
         "WHAT’S YOUR NAME?",   // curly apostrophe — CONFIRMED from sheet
@@ -104,18 +109,13 @@ function todaysQueue(songs) {
 }
 const cards=document.querySelector("#cards");
 const heading=document.querySelector("h2");
-let queue=[], known=null, cursor=0, alerts=[], active=null, until=0;
-function draw(){
-  if(Date.now()>=until) {
-    active=alerts.shift();
-    if(active) until=Date.now()+6000;
-  }
-  heading.textContent=active?"New song request":"Song requests";
-  const selection=active?[active]:Array.from({length:Math.min(2,queue.length)},(_,i)=>queue[(cursor+i)%queue.length]);
-  cards.replaceChildren();
-  for(const song of selection){
+const viewport=document.querySelector("#queueWindow");
+const announcement=document.querySelector("#announcement");
+let queue=[], known=null, signature="", animation=null, cycle=0;
+const alerts=[];
+function makeCard(song,isNew=false){
     const card=document.createElement("article");
-    if(active) card.className="new";
+    if(isNew) card.className="new";
     if(song.videoId){
       const thumb=document.createElement("img");
       thumb.className="queue-thumb";
@@ -129,10 +129,40 @@ function draw(){
       if(!value)continue;
       const el=document.createElement(tag);el.textContent=value;card.append(el);
     }
-    cards.append(card);
-  }
-  if(!selection.length) cards.textContent=known?"No requests yet":"Loading queue…";
+  return card;
 }
+function draw(){
+  const offset=animation ? (Number(animation.currentTime)||0)*0.035 : 0;
+  if(animation) animation.cancel();
+  animation=null;
+  const group=document.createElement("div");
+  group.className="queue-set";
+  for(const song of queue) group.append(makeCard(song));
+  cards.replaceChildren(group);
+  if(!queue.length){cards.textContent="No requests yet";return;}
+  cycle=group.getBoundingClientRect().height;
+  if(cycle-parseFloat(getComputedStyle(group).paddingBottom)<=viewport.clientHeight)return;
+  const twin=group.cloneNode(true);
+  twin.setAttribute("aria-hidden","true");
+  cards.append(twin);
+  animation=cards.animate([{transform:"translateY(0)"},{transform:"translateY(-"+cycle+"px)"}],{duration:cycle/0.035,iterations:Infinity,easing:"linear"});
+  animation.currentTime=(offset%cycle)/0.035;
+  if(!announcement.hidden)animation.pause();
+}
+function announce(){
+  if(!announcement.hidden || !alerts.length)return;
+  announcement.replaceChildren(makeCard(alerts.shift(),true));
+  heading.textContent="New song request";
+  announcement.hidden=false;
+  if(animation)animation.pause();
+  setTimeout(()=>{
+    announcement.hidden=true;
+    heading.textContent="Song requests";
+    if(animation)animation.play();
+    announce();
+  },6000);
+}
+window.addEventListener("resize",()=>{if(known)draw();});
 async function refresh(){
   try{
     const response=await fetch(SONG_QUEUE_URL,{cache:"no-store"});
@@ -142,9 +172,10 @@ async function refresh(){
     queue=todaysQueue(rows);
     if(known)alerts.push(...queue.filter(song=>!known.has(song.key)));
     known=new Set(queue.map(song=>song.key));
-    draw();
+    const next=JSON.stringify(queue);
+    if(next!==signature){signature=next;draw();}
+    announce();
   }catch(error){if(!known)cards.textContent="Reconnecting to queue…";}
   finally{setTimeout(refresh,10000);}
 }
-setInterval(()=>{if(!active && queue.length>2)cursor=(cursor+2)%queue.length;draw();},6000);
 refresh();</script></body></html>
