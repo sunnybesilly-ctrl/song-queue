@@ -2551,7 +2551,7 @@ login.addEventListener("submit", async event => {
     login.hidden = true;
     tick();
   } catch {
-    status.textContent = "Check the code or generate a fresh one in admin.";
+    status.textContent = "Check your projector code in admin. After repeated attempts, wait five minutes.";
   } finally { button.disabled = false; }
 });
 document.addEventListener("visibilitychange", tick);
@@ -2617,7 +2617,7 @@ async function rotate() {
           pairedUid = null;
           localStorage.removeItem("pairedProjectorUid");
           login.hidden = false;
-          status.textContent = "Enter a fresh projector code.";
+          status.textContent = "Enter your projector code.";
         }
         throw error;
       }
