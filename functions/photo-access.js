@@ -108,9 +108,13 @@ exports.manageProjector = onCall(OPTIONS, async req => {
     return { disconnected: true };
   }
   if (req.data?.action !== "generate") throw new HttpsError("invalid-argument", "Unknown action.");
-  const code = crypto.randomInt(10000000,100000000).toString();
-  await ref.set({ hash: crypto.createHash("sha256").update(code).digest("hex"), expires: Date.now()+300000, attempts: 0 }, {merge:true});
-  return {code};
+  return getFirestore().runTransaction(async tx => {
+    const current = (await tx.get(ref)).data();
+    if (current?.code) return {code:current.code};
+    const code = crypto.randomInt(10000000,100000000).toString();
+    tx.set(ref,{code, attempts:0, blockedUntil:0, uid:current?.uid || null});
+    return {code};
+  });
 });
 exports.pairProjector = onCall(OPTIONS, async req => {
   if (req.auth?.token.firebase?.sign_in_provider !== "anonymous") throw new HttpsError("permission-denied","Projector sign-in required.");
@@ -119,15 +123,16 @@ exports.pairProjector = onCall(OPTIONS, async req => {
   const ref = projectorState();
   const ok = await getFirestore().runTransaction(async tx => {
     const state = (await tx.get(ref)).data();
-    if (!state?.hash || state.expires <= Date.now() || state.attempts >= 8) return false;
-    if (crypto.createHash("sha256").update(code).digest("hex") !== state.hash) {
-      tx.update(ref,{attempts:state.attempts+1});
+    if (!state?.code || state.blockedUntil > Date.now()) return false;
+    if (code !== state.code) {
+      const attempts = state.attempts + 1;
+      tx.update(ref, attempts >= 8 ? {attempts:0, blockedUntil:Date.now()+300000} : {attempts});
       return false;
     }
-    tx.set(ref,{uid:req.auth.uid});
+    tx.update(ref,{uid:req.auth.uid,attempts:0,blockedUntil:0});
     return true;
   });
-  if (!ok) throw new HttpsError("permission-denied","Generate a fresh projector code.");
+  if (!ok) throw new HttpsError("permission-denied","Check the code. After repeated attempts, try again in five minutes.");
   return {paired:true};
 });
 exports.projectorReel = onCall(OPTIONS, async req => {
