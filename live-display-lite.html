@@ -1533,7 +1533,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
       }).join("");
       if (wasAtBottom || autoScroll) container.scrollTop = container.scrollHeight;
       if (autoScroll) flashChat();
-      checkHypeOverlay(messages.length);
+
     }
 
     // ==========================================================
@@ -1629,7 +1629,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
       const delay = 45000 + Math.random() * 30000;
       setTimeout(() => { showGhostBubble(); scheduleGhostBubble(); }, delay);
     }
-    setTimeout(scheduleGhostBubble, 15000); // first ghost bubble after 15s
+
 
     // ==========================================================
     // SPOTLIGHT — new song announcement overlay
@@ -2140,7 +2140,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
       setTimeout(() => { showNameCallout(); scheduleNameCallouts(); }, 900000); // 15 min
     }
     // *** First callout at 15 min
-    setTimeout(scheduleNameCallouts, 900000);
+
 
 
 
@@ -2208,8 +2208,8 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
     }
     // first engagement delayed 3 minutes minimum after page load
     // To change: edit 180000 below. 180000 = 3 min. 60000 = 1 min.
-    setTimeout(showEngagement, 180000);
-    setTimeout(scheduleEngagement, 480000);
+
+
 
   </script>
 
@@ -2313,7 +2313,9 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
     window.addEventListener("resize",()=>{ fwCanvas.width=STAGE_W; fwCanvas.height=STAGE_H; });
     const FW_COLORS = ["#FFD700","#f472b6","#a78bfa","#34d399","#fb923c","#fff","#c8102e","#60a5fa"];
     let particles = [];
+    let fireworksRunning = false;
     function launchFirework(x,y){
+      if (!fireworksRunning) { fireworksRunning = true; requestAnimationFrame(animateFireworks); }
       // count:80 particles per firework. Change to adjust burst size.
       const count  = 50;
       const color  = FW_COLORS[Math.floor(Math.random()*FW_COLORS.length)];
@@ -2327,7 +2329,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
     let _fwClear = true;
     function animateFireworks(){
       particles = particles.filter(p=>p.alpha>0.01);
-      if (!particles.length) { if (!_fwClear) { fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height); _fwClear = true; } requestAnimationFrame(animateFireworks); return; }
+      if (!particles.length) { if (!_fwClear) { fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height); _fwClear = true; } fireworksRunning = false; return; }
       _fwClear = false;
       fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
       particles.forEach(p=>{
@@ -2338,7 +2340,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
       });
       requestAnimationFrame(animateFireworks);
     }
-    animateFireworks();
+
     // Ambient sparkles from screen edges — fires every 3–6 seconds
     function launchSparkle(){
       const sides = [{x:0,y:Math.random()*STAGE_H},{x:STAGE_W,y:Math.random()*STAGE_H},{x:Math.random()*STAGE_W,y:0}];
@@ -2352,7 +2354,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
       }
     }
     function scheduleSparkle(){ launchSparkle(); setTimeout(scheduleSparkle, 7000+Math.random()*5000); }
-    setTimeout(scheduleSparkle, 2000);
+
   </script>
 
   <!-- ======================================================
@@ -2375,7 +2377,12 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
     let confetti = [];
 
     // iMessage-style confetti: paper rectangles that flutter down.
+    let confettiRunning = false;
+    function startConfetti() {
+      if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(animateConfetti); }
+    }
     function confettiBurst(opts){
+      startConfetti();
       opts = opts || {};
       const n = opts.count || 70;
       const originX = opts.x != null ? opts.x : fxCanvas.width/2;
@@ -2399,6 +2406,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
 
     // Celebration: gold/pink shimmer that rises and fades — softer than fireworks.
     function celebrationBurst(){
+      startConfetti();
       const cx = fxCanvas.width/2;
       for(let i=0;i<70;i++){
         const angle = -Math.PI/2 + (Math.random()-0.5)*1.4;
@@ -2419,7 +2427,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
     let _fxClear = true;
     function animateConfetti(){
       confetti = confetti.filter(p => p.alpha>0.02 && p.y < fxCanvas.height+40);
-      if (!confetti.length) { if (!_fxClear) { fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height); _fxClear = true; } requestAnimationFrame(animateConfetti); return; }
+      if (!confetti.length) { if (!_fxClear) { fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height); _fxClear = true; } confettiRunning = false; return; }
       _fxClear = false;
       fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
       confetti.forEach(p=>{
@@ -2439,7 +2447,7 @@ var STAGE_W = 1920, STAGE_H = 1080, LITE_MAX_CARDS = 30;
       });
       requestAnimationFrame(animateConfetti);
     }
-    animateConfetti();
+
 
     // Smart picker — rotates effects so it never feels repetitive.
     let _lastFx = "";
@@ -2577,6 +2585,22 @@ function clockText(seconds) {
   const whole = Math.floor(seconds);
   return Math.floor(whole / 60) + ":" + String(whole % 60).padStart(2, "0");
 }
+function brightenPhoto(image) {
+  let gain = 1.08;
+  try {
+    const sample = document.createElement("canvas");
+    sample.width = sample.height = 16;
+    const ctx = sample.getContext("2d");
+    ctx.drawImage(image, 0, 0, 16, 16);
+    const pixels = ctx.getImageData(0, 0, 16, 16).data;
+    let luminance = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      luminance += 0.2126*pixels[i] + 0.7152*pixels[i+1] + 0.0722*pixels[i+2];
+    }
+    gain = Math.min(1.28, Math.max(1, 115 / Math.max(1, luminance / 256)));
+  } catch { /* Some photo hosts permit display but block pixel sampling. */ }
+  if (gain > 1) image.style.filter = "brightness(" + gain + ")";
+}
 function present(url, type, name) {
   return new Promise(resolve => {
     const video = type === "video";
@@ -2629,7 +2653,13 @@ function present(url, type, name) {
       media.src = url;
       media.play().catch(() => finish(false));
     } else {
-      media.onload = () => { reveal(); timeout(5000, true); };
+      media.crossOrigin = "anonymous";
+      media.onerror = () => {
+        media.onerror = () => finish(false);
+        media.removeAttribute("crossorigin");
+        media.src = url;
+      };
+      media.onload = () => { brightenPhoto(media); reveal(); timeout(5000, true); };
       media.src = url;
     }
   });
