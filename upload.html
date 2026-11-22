@@ -185,12 +185,12 @@ body{
     </div>
 
     <div class="step s2">
-      <div class="sh"><span class="num">2</span><span class="sl">Photo or video</span><span class="sn">your full video plays on screen</span></div>
+      <div class="sh"><span class="num">2</span><span class="sl">Photos and videos</span><span class="sn">your full video plays on screen</span></div>
       <label class="drop" id="drop">
-        <input type="file" id="file" accept="image/*,video/*" aria-label="Photo or video">
+        <input type="file" id="file" multiple accept="image/*,video/*" aria-label="Photos and videos">
         <span class="drop-idle">
           <span class="drop-big">Tap<br>to pick</span>
-          <span class="drop-sm">Choose from your camera roll or shoot a new one.</span>
+          <span class="drop-sm">Choose one or more photos and videos.</span>
         </span>
         <span class="prev" id="prev" hidden></span>
         <span class="meta" id="meta" hidden></span>
@@ -294,6 +294,7 @@ function guestId() {
 }
 
 let busy = false;
+let postedCount = 0;
 let objUrl = null;
 function setPct(p) {
   const n = Math.round(p * SEGMENTS);
@@ -334,7 +335,8 @@ function clearPreview() {
 fileIn.addEventListener("change", () => {
   clearStatus();
   clearPreview();
-  const f = fileIn.files && fileIn.files[0];
+  postedCount = 0;
+  const f = fileIn.files[0];
   if (!f) return;
   const isV = f.type.indexOf("video/") === 0;
   const isI = f.type.indexOf("image/") === 0;
@@ -359,7 +361,8 @@ fileIn.addEventListener("change", () => {
   meta.textContent = f.name + " (" + fmtSize(f.size) + "). Tap to change.";
   meta.hidden = false;
   drop.classList.add("has");
-  mediaEditor.selected(objUrl, isV);
+  if (fileIn.files.length === 1) mediaEditor.selected(objUrl, isV);
+  else meta.textContent = fileIn.files.length + " items selected. Tap to change.";
   if (isV && f.size > MAX_VIDEO_MB * 1048576) {
     fail("That video is " + fmtSize(f.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Choose a smaller or shorter video.");
   }
@@ -440,15 +443,13 @@ form.addEventListener("submit", async (e) => {
   clearStatus();
 
   const name = nameIn.value.trim().slice(0, 24);
-  const file = fileIn.files && fileIn.files[0];
+  const files = Array.from(fileIn.files);
   if (!name) return fail("Add your name first.", nameIn);
-  if (!file) return fail("Pick a photo or video first.");
-
-  const isVideo = file.type.indexOf("video/") === 0;
-  const isImage = file.type.indexOf("image/") === 0;
-  if (!isVideo && !isImage) return fail("That file type can't play on the screen. Pick a photo or a video.");
-  if (isVideo && file.size > MAX_VIDEO_MB * 1048576) {
-    return fail("That video is " + fmtSize(file.size) + ". The limit is " + MAX_VIDEO_MB + " MB. Choose a smaller or shorter video.");
+  if (!files.length) return fail("Pick a photo or video first.");
+  for (const file of files) {
+    if (!/^(image|video)\//.test(file.type)) return fail(file.name + " is not a photo or video.");
+    if (file.type.startsWith("video/") && file.size > MAX_VIDEO_MB * 1048576)
+      return fail(file.name + " exceeds the " + MAX_VIDEO_MB + " MB video limit.");
   }
 
   setBusy(true);
@@ -457,57 +458,63 @@ form.addEventListener("submit", async (e) => {
   try {
     try { localStorage.setItem(NAME_KEY, name); } catch (_) {}
 
-    meter.hidden = true;
-    goLabel.textContent = "Preparing your memory…";
-    statusEl.textContent = "Getting everything ready.";
-    const edited = await mediaEditor.prepare(file, MAX_EDGE, MAX_VIDEO_MB * 1048576, (elapsed, duration) => {
-      goLabel.textContent = "Saving video edits";
-      statusEl.textContent = mediaClock(elapsed) + " / " + mediaClock(duration) + " · Keep this tab open.";
-    });
-    const prepared = isImage && edited === file ? await squeezeImage(file) : edited;
+    let upload, ref;
+    while (postedCount < files.length) {
+      const file = files[postedCount];
+      meter.hidden = true;
+      goLabel.textContent = "Preparing your memory…";
+      statusEl.textContent = "Getting everything ready.";
+      const edited = files.length > 1 ? file : await mediaEditor.prepare(file, MAX_EDGE, MAX_VIDEO_MB * 1048576, (elapsed, duration) => {
+        goLabel.textContent = "Saving video edits";
+        statusEl.textContent = mediaClock(elapsed) + " / " + mediaClock(duration) + " · Keep this tab open.";
+      });
+      const prepared = file.type.startsWith("image/") && edited === file ? await squeezeImage(file) : edited;
 
-    setPct(0);
-    meter.hidden = false;
-    statusEl.textContent = "Uploading your memory. The percentage tracks your file transfer.";
-    const { data: upload } = await createUpload();
-    const r = await cloudinaryUpload(prepared, upload.params, setPct);
-    if (r.type !== "authenticated" || r.public_id !== upload.params.public_id) {
-      throw new Error("The media provider did not confirm a private upload.");
+      setPct(0);
+      meter.hidden = false;
+      statusEl.textContent = "Uploading " + (postedCount + 1) + " of " + files.length + " · " + file.name;
+      const result = await createUpload();
+      upload = result.data;
+      const r = await cloudinaryUpload(prepared, upload.params, setPct);
+      if (r.type !== "authenticated" || r.public_id !== upload.params.public_id) {
+        throw new Error("The media provider did not confirm a private upload.");
+      }
+      meter.hidden = true;
+      goLabel.textContent = "Getting your memory ready…";
+      statusEl.textContent = "Almost ready for the live album.";
+      const vid = r.resource_type === "video";
+      const url = finalUrl(r);
+
+      meter.hidden = true;
+      goLabel.textContent = "Posting to the live album…";
+      statusEl.textContent = "Adding your memory to the live feed…";
+      ref = doc(db, "media_queue", r.public_id);
+      await setDoc(ref, {
+        name: name,
+        url: url,
+        publicId: r.public_id,
+        type: vid ? "video" : "image",
+        timestamp: serverTimestamp(),
+        likes: 0,
+        rx: {},
+        rxTotal: 0,
+        uid: guestId(),
+        eventId: upload.eventId,
+        v: 3
+      });
+      try { localStorage.setItem(LAST_KEY, ref.id); } catch (_) {}
+
+      postedCount++;
     }
-    meter.hidden = true;
-    goLabel.textContent = "Getting your memory ready…";
-    statusEl.textContent = "Almost ready for the live album.";
-    const vid = r.resource_type === "video";
-    const url = finalUrl(r);
-
-    meter.hidden = true;
-    goLabel.textContent = "Posting to the live album…";
-    statusEl.textContent = "Adding your memory to the live feed…";
-    const ref = doc(db, "media_queue", r.public_id);
-    await setDoc(ref, {
-      name: name,
-      url: url,
-      publicId: r.public_id,
-      type: vid ? "video" : "image",
-      timestamp: serverTimestamp(),
-      likes: 0,
-      rx: {},
-      rxTotal: 0,
-      uid: guestId(),
-      eventId: upload.eventId,
-      v: 3
-    });
-    try { localStorage.setItem(LAST_KEY, ref.id); } catch (_) {}
-
     const version = ++confirmationVersion;
     form.hidden = $("#uploadHeading").hidden = $("#uploadLede").hidden = true;
     shotNumber.hidden = true;
-    liveMessage.textContent = "Shot posted. Keep an eye on the big screen!";
+    liveMessage.textContent = files.length > 1 ? files.length + " shots posted to the live album!" : "Shot posted. Keep an eye on the big screen!";
     done.hidden = false;
     window.scrollTo(0, 0);
     $("#liveTitle").focus({ preventScroll: true });
 
-    if (upload.eventId) void (async () => {
+    if (files.length === 1 && upload.eventId) void (async () => {
       try {
         await auth.authStateReady();
         if (!auth.currentUser || version !== confirmationVersion) return;
@@ -524,9 +531,9 @@ form.addEventListener("submit", async (e) => {
       }
     })();
   } catch (err) {
-    alert(err.message);
+
     console.error(err);
-    fail("Post not confirmed: " + (err.message || "Unknown error") + ". Check gallery before retrying.");
+    fail(postedCount + " of " + files.length + " posted. Post not confirmed: " + (err.message || "Unknown error") + ". Check gallery before retrying.");
   } finally {
     setBusy(false);
   }
