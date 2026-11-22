@@ -1143,6 +1143,7 @@ function playUrl(m) {
    const trans=[];
    if(Number(m.trimStart)>0)trans.push("so_"+Number(m.trimStart).toFixed(2));
    if(Number(m.trimEnd)>0)trans.push("eo_"+Number(m.trimEnd).toFixed(2));
+   if (jukeboxHybrid) trans.push("c_limit","w_1280","h_720","fps_24","br_1800k");
    trans.push("f_mp4","vc_h264","ac_aac","q_auto");
    return p.pre+"video/"+p.delivery+"/"+trans.join(",")+"/"+swapExt(p.tail,".mp4");
  }
